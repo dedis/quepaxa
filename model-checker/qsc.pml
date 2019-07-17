@@ -70,94 +70,90 @@ proctype NodeProc(byte i) {
 			do
 			::	// Pick another node to "receive" a message from
 				select (j : 1 .. N);
+				atomic {
 
-				// Now handle specific types of messages: Raw, Ack, or Wit.
-				if
+					// Track the best potential spoiler we encounter
+					if
+					// Node j knows about a strictly better potential spoiler
+					:: node[j].rnd[r].spoil.tkt > node[i].rnd[r].spoil.tkt ->
+						node[i].rnd[r].spoil.from = node[j].rnd[r].spoil.from;
+						node[i].rnd[r].spoil.tkt = node[j].rnd[r].spoil.tkt;
 
-				// We "receive" a raw unwitnessed message from node j
-				:: node[j].rnd[r].step[s].sent && !node[i].rnd[r].step[s].seen[j] ->
+					// Node j knows about a spoiler that's tied with our best
+					:: node[j].rnd[r].spoil.tkt == node[i].rnd[r].spoil.tkt &&
+						node[j].rnd[r].spoil.from != node[i].rnd[r].spoil.from ->
+						node[i].rnd[r].spoil.from = 0; // tied, so mark invalid
 
-					atomic {
+					:: else -> skip
+					fi
+
+					// Track the best confirmed proposal we encounter
+					if
+					:: node[j].rnd[r].conf.tkt > node[i].rnd[r].conf.tkt ->
+						node[i].rnd[r].conf.from = node[j].rnd[r].conf.from;
+						node[i].rnd[r].conf.tkt = node[j].rnd[r].conf.tkt;
+					:: else -> skip
+					fi
+
+					// Track the best reconfirmed proposal we encounter
+					if
+					:: node[j].rnd[r].reconf.tkt > node[i].rnd[r].reconf.tkt ->
+						node[i].rnd[r].reconf.from = node[j].rnd[r].reconf.from;
+						node[i].rnd[r].reconf.tkt = node[j].rnd[r].reconf.tkt;
+					:: else -> skip
+					fi
+
+					// Now handle specific types of messages: Raw, Ack, or Wit.
+					if
+
+					// We "receive" a raw unwitnessed message from node j
+					:: node[j].rnd[r].step[s].sent && !node[i].rnd[r].step[s].seen[j] ->
+
 						node[i].rnd[r].step[s].seen[j] = 1;
 
-						// Track the best potential spoiler we encounter
-						if
-						// Node j knows about a strictly better potential spoiler
-						:: node[j].rnd[r].spoil.tkt > node[i].rnd[r].spoil.tkt ->
-							node[i].rnd[r].spoil.from = node[j].rnd[r].spoil.from;
-							node[i].rnd[r].spoil.tkt = node[j].rnd[r].spoil.tkt;
+					// We "receive" an acknowledgment of our message from node j
+					:: node[j].rnd[r].step[s].seen[i] && !node[i].rnd[r].step[s].ackd[j] ->
 
-						// Node j knows about a spoiler that's tied with our best
-						:: node[j].rnd[r].spoil.tkt == node[i].rnd[r].spoil.tkt &&
-							node[j].rnd[r].spoil.from != node[i].rnd[r].spoil.from ->
-							node[i].rnd[r].spoil.from = 0; // tied, so mark invalid
+						node[i].rnd[r].step[s].ackd[j] = 1;
+						acks++;
+						if
+						:: acks >= T ->
+							// Our proposal is now fully threshold witnessed
+							node[i].rnd[r].step[s].witd = 1
+
+							// See if our proposal is now the best confirmed proposal
+							if
+							:: s == 0 &&
+								node[i].rnd[r].ticket > node[i].rnd[r].conf.tkt ->
+								node[i].rnd[r].conf.from = i;
+								node[i].rnd[r].conf.tkt = node[i].rnd[r].ticket;
+							:: else -> skip
+							fi
+
+							// See if we're reconfirming a best confirmed proposal
+							if
+							:: s == 1 &&
+								node[i].rnd[r].conf.tkt > node[i].rnd[r].reconf.tkt ->
+								node[i].rnd[r].reconf.from = node[i].rnd[r].conf.from;
+								node[i].rnd[r].reconf.tkt = node[i].rnd[r].conf.tkt;
+							:: else -> skip
+							fi
 
 						:: else -> skip
 						fi
-					} // atomic
 
-				// We "receive" an acknowledgment of our message from node j
-				:: node[j].rnd[r].step[s].seen[i] && !node[i].rnd[r].step[s].ackd[j] ->
+					// We "receive" a fully threshold witnessed message from node j
+					:: node[j].rnd[r].step[s].witd && !node[i].rnd[r].step[s].witn[j] ->
 
-					atomic {
-							node[i].rnd[r].step[s].ackd[j] = 1;
-							acks++;
-							if
-							:: acks >= T ->
-								// Our proposal is now fully threshold witnessed
-								node[i].rnd[r].step[s].witd = 1
-
-								// See if our proposal is now the best confirmed proposal
-								if
-								:: s == 0 &&
-									node[i].rnd[r].ticket > node[i].rnd[r].conf.tkt ->
-									node[i].rnd[r].conf.from = i;
-									node[i].rnd[r].conf.tkt = node[i].rnd[r].ticket;
-								:: else -> skip
-								fi
-
-								// See if we're reconfirming a best confirmed proposal
-								if
-								:: s == 1 &&
-									node[i].rnd[r].conf.tkt > node[i].rnd[r].reconf.tkt ->
-									node[i].rnd[r].reconf.from = node[i].rnd[r].conf.from;
-									node[i].rnd[r].reconf.tkt = node[i].rnd[r].conf.tkt;
-								:: else -> skip
-								fi
-
-							:: else -> skip
-							fi
-					} // atomic
-
-				// We "receive" a fully threshold witnessed message from node j
-				:: node[j].rnd[r].step[s].witd && !node[i].rnd[r].step[s].witn[j] ->
-
-					atomic {
 						node[i].rnd[r].step[s].witn[j] = 1
 						wits++;
 
-						// Track the best confirmed proposal we encounter
-						if
-						:: node[j].rnd[r].conf.tkt > node[i].rnd[r].conf.tkt ->
-							node[i].rnd[r].conf.from = node[j].rnd[r].conf.from;
-							node[i].rnd[r].conf.tkt = node[j].rnd[r].conf.tkt;
-						:: else -> skip
-						fi
+					// End this step if we've seen enough witnessed proposals
+					:: wits >= T -> break;
 
-						// Track the best reconfirmed proposal we encounter
-						if
-						:: node[j].rnd[r].reconf.tkt > node[i].rnd[r].reconf.tkt ->
-							node[i].rnd[r].reconf.from = node[j].rnd[r].reconf.from;
-							node[i].rnd[r].reconf.tkt = node[j].rnd[r].reconf.tkt;
-						:: else -> skip
-						fi
-					}
-
-				// End this step if we've seen enough witnessed proposals
-				:: wits >= T -> break;
-
-				:: else -> skip
-				fi
+					:: else -> skip
+					fi
+				} // atomic
 			od
 		}
 
