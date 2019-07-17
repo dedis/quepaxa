@@ -8,6 +8,7 @@
 #define ROUNDS	2		// number of consensus rounds to run
 #define TICKETS	3		// proposal lottery ticket space
 
+// TLC state for each logical time-step
 typedef Step {
 	bit sent;			// true if we've sent our raw proposal
 	bit seen[1+N];		// nodes whose raw proposals we've received
@@ -16,11 +17,13 @@ typedef Step {
 	bit witn[1+N];		// nodes we've gotten threshold witnessed msgs from
 }
 
+// QSC summary information for a "best" proposal seen so far
 typedef Best {
 	byte from;			// node number the proposal is from, 0 if tied spoiler
 	byte tkt;			// proposal's genetic fitness ticket value
 }
 
+// TLC and QSC state per round
 typedef Round {
 	Step step[STEPS];	// TLC state for each logical time-step
 
@@ -31,6 +34,7 @@ typedef Round {
 	byte picked;		// which proposal this node picked this round, 0 if not yet
 }
 
+// Per-node state
 typedef Node {
 	Round rnd[ROUNDS];	// each node's per-consensus-round information
 }
@@ -38,19 +42,20 @@ typedef Node {
 Node node[1+N];			// all state of each node 1..N
 
 
+// Implement a given node i.
 proctype NodeProc(byte i) {
 	byte j, r, s, tkt, step, acks, wits;
 
 	for (r : 0 .. ROUNDS-1) {
 
 		atomic {
-				// select a "random" (here just arbitrary) ticket
-				select (tkt : 1 .. TICKETS);
-				node[i].rnd[r].ticket = tkt;
+			// select a "random" (here just arbitrary) ticket
+			select (tkt : 1 .. TICKETS);
+			node[i].rnd[r].ticket = tkt;
 
-				// start with our own proposal as best potential spoiler
-				node[i].rnd[r].spoil.from = i;
-				node[i].rnd[r].spoil.tkt = tkt;
+			// start with our own proposal as best potential spoiler
+			node[i].rnd[r].spoil.from = i;
+			node[i].rnd[r].spoil.tkt = tkt;
 		} // atomic
 
 		// Run the round to completion
@@ -63,15 +68,16 @@ proctype NodeProc(byte i) {
 			acks = 0;
 			wits = 0;
 			do
-			::	// Pick another node to try to "receive" from
+			::	// Pick another node to "receive" a message from
 				select (j : 1 .. N);
+
+				// Now handle specific types of messages: Raw, Ack, or Wit.
 				if
 
 				// We "receive" a raw unwitnessed message from node j
 				:: node[j].rnd[r].step[s].sent && !node[i].rnd[r].step[s].seen[j] ->
 
 					atomic {
-						//printf("%d received message from %d\n", n, j);
 						node[i].rnd[r].step[s].seen[j] = 1;
 
 						// Track the best potential spoiler we encounter
@@ -84,7 +90,7 @@ proctype NodeProc(byte i) {
 						// Node j knows about a spoiler that's tied with our best
 						:: node[j].rnd[r].spoil.tkt == node[i].rnd[r].spoil.tkt &&
 							node[j].rnd[r].spoil.from != node[i].rnd[r].spoil.from ->
-							node[i].rnd[r].spoil.from = 0; // tied 
+							node[i].rnd[r].spoil.from = 0; // tied, so mark invalid
 
 						:: else -> skip
 						fi
@@ -98,7 +104,7 @@ proctype NodeProc(byte i) {
 							acks++;
 							if
 							:: acks >= T ->
-								// Our proposal is now threshold witnessed
+								// Our proposal is now fully threshold witnessed
 								node[i].rnd[r].step[s].witd = 1
 
 								// See if our proposal is now the best confirmed proposal
@@ -107,23 +113,23 @@ proctype NodeProc(byte i) {
 									node[i].rnd[r].ticket > node[i].rnd[r].conf.tkt ->
 									node[i].rnd[r].conf.from = i;
 									node[i].rnd[r].conf.tkt = node[i].rnd[r].ticket;
-								:: else ->  skip
+								:: else -> skip
 								fi
 
-								// See if we're confirming a best confirmed proposal
+								// See if we're reconfirming a best confirmed proposal
 								if
 								:: s == 1 &&
-									node[i].rnd[r].conf.tkt > node[i].rnd[r].reconf.tkt  ->
+									node[i].rnd[r].conf.tkt > node[i].rnd[r].reconf.tkt ->
 									node[i].rnd[r].reconf.from = node[i].rnd[r].conf.from;
 									node[i].rnd[r].reconf.tkt = node[i].rnd[r].conf.tkt;
-								:: else ->  skip
+								:: else -> skip
 								fi
 
 							:: else -> skip
 							fi
 					} // atomic
 
-				// We "receive" a fully threshold witnessed message from node  j
+				// We "receive" a fully threshold witnessed message from node j
 				:: node[j].rnd[r].step[s].witd && !node[i].rnd[r].step[s].witn[j] ->
 
 					atomic {
@@ -169,8 +175,8 @@ proctype NodeProc(byte i) {
 			// We can be sure everyone has converged on this proposal
 			// if it is also the best spoiler and best reconfirmed proposal.
 			if
-			:: node[i].rnd[r].spoil.from == node[i].rnd[r].conf.from &&
-				node[i].rnd[r].reconf.from == node[i].rnd[r].conf.from ->
+			:: node[i].rnd[r].spoil.from == node[i].rnd[r].picked &&
+				node[i].rnd[r].reconf.from == node[i].rnd[r].picked ->
 				printf("%d round %d definitely COMMITTED\n", i, r);
 
 				// Verify that what we decided doesn't conflict with
@@ -179,10 +185,10 @@ proctype NodeProc(byte i) {
 				assert(!node[j].rnd[r].picked ||
 					(node[j].rnd[r].picked == node[i].rnd[r].picked));
 
-			:: node[i].rnd[r].reconf.from != node[i].rnd[r].conf.from ->
+			:: node[i].rnd[r].reconf.from != node[i].rnd[r].picked ->
 				printf("%d round %d FAILED to be reconfirmed\n", i, r);
 
-			:: node[i].rnd[r].spoil.from != node[i].rnd[r].conf.from ->
+			:: node[i].rnd[r].spoil.from != node[i].rnd[r].picked ->
 				printf("%d round %d FAILED due to spoiler\n", i, r);
 
 			:: node[i].rnd[r].spoil.from == 0 ->
