@@ -78,7 +78,7 @@ proctype NodeProc(byte n) {
 					:: step == 0 ->
 						prsn = prsn | (1 << nn);
 						if
-						:: node[nn].round[rnd].ticket < btkt ->
+						:: node[nn].round[rnd].ticket > btkt ->
 							best = nn;
 							btkt = node[nn].round[rnd].ticket;
 						:: node[nn].round[rnd].ticket == btkt ->
@@ -90,7 +90,7 @@ proctype NodeProc(byte n) {
 					:: step > 0 ->
 						prsn = prsn | node[nn].round[rnd].prsn[step-1];
 						if
-						:: node[nn].round[rnd].btkt[step-1] < btkt ->
+						:: node[nn].round[rnd].btkt[step-1] > btkt ->
 							best = node[nn].round[rnd].best[step-1];
 							btkt  = node[nn].round[rnd].btkt[step-1];
 						:: (node[nn].round[rnd].btkt[step-1] == btkt) &&
@@ -134,7 +134,7 @@ proctype NodeProc(byte n) {
 		// This ensures that ALL nodes at least know of its existence
 		// (though not necessarily its eligibility) by t+2.
 		belig = 255;	// start with a fake 'tie' state
-		betkt = 255;	// worst possible ticket value
+		betkt = 0;		// worst possible ticket value
 		beseen = 0;
 		for (nn : 0 .. N-1) {
 
@@ -153,7 +153,7 @@ proctype NodeProc(byte n) {
 
 			if
 			:: (nnseen >= Fa+1) &&	// nn's proposal is eligible
-			   (node[nn].round[rnd].ticket < betkt) -> // is better
+			   (node[nn].round[rnd].ticket > betkt) -> // is better
 				belig = nn;
 				betkt = node[nn].round[rnd].ticket;
 				beseen = nnseen;
@@ -168,7 +168,7 @@ proctype NodeProc(byte n) {
 			n, belig, betkt, beseen);
 
 		// we should have found at least one eligible proposal!
-		assert(betkt < 255);
+		assert(betkt > 0);
 
 		// The round is now complete in terms of picking a proposal.
 		node[n].round[rnd].picked = belig;
