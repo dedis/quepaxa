@@ -5,12 +5,20 @@
 #define T	(Fa+Fc+1)	// consensus threshold required
 
 #define STEPS	3		// TLC time-steps per consensus round
-#define ROUNDS	2		// number of consensus rounds to run
+//#define ROUNDS	2		// number of consensus rounds to run
+#define ROUNDS	1		// number of consensus rounds to run
 #define TICKETS	3		// proposal lottery ticket space
 
+typedef Step {
+	bit sent;			// true if we've sent our raw proposal
+	bit seen[1+N];		// nodes whose raw proposals we've received
+	bit ackd[1+N];		// nodes who have acknowledged our raw proposal
+	bit witd;			// true if our proposal is threshold witnessed
+	bit witn[1+N];		// nodes we've gotten threshold witnessed msgs from
+}
 
 typedef Round {
-	bit sent[STEPS];	// whether we've sent yet each time step
+	Step step[STEPS];	// state for each logical time-step
 	byte ticket;		// lottery ticket assigned to proposal at t+0
 	byte seen[STEPS];	// bitmask of msgs we've seen from each step
 	byte prsn[STEPS];	// bitmaks of proposals we've seen after each
@@ -28,101 +36,114 @@ Node node[1+N];			// all state of each node 1..N
 
 
 proctype NodeProc(byte i) {
-	byte j, r, s, tkt, step, seen, scnt, prsn, best, btkt;
+	byte j, r, s, tkt, step, seen, acks, wits, prsn, best, btkt;
 	byte belig, betkt, beseen, k;
-	//bool correct = (n < T);
-
-	//printf("Node %d correct %d\n", n, correct);
 
 	for (r : 0 .. ROUNDS-1) {
 
 		atomic {
+				// select a "random" (here just arbitrary) ticket
+				select (tkt : 1 .. TICKETS);
+				node[i].round[r].ticket = tkt;
 
-		// select a "random" (here just arbitrary) ticket
-		select (tkt : 1 .. TICKETS);
-		node[i].round[r].ticket = tkt;
+				// we've already seen our own proposal
+				prsn  = 1 << i;
 
-		// we've already seen our own proposal
-		prsn  = 1 << i;
-
-		// finding the "best proposal" starts with our own...
-		best = i;
-		btkt = tkt;
-
+				// finding the "best proposal" starts with our own...
+				best = i;
+				btkt = tkt;
 		} // atomic
 
 		// Run the round to completion
 		for (s : 0 .. STEPS-1) {
 
 			// "send" the broadcast for this time-step
-			node[i].round[r].sent[s] = 1;
+			node[i].round[r].step[s].sent = 1;
 
 			// collect a threshold of other nodes' broadcasts
 			seen = 1 << i;		// we've already seen our own
-			scnt = 1;
+			acks = 0;
+			wits = 0;
 			do
-			::	// Pick another node to try to 'receive' from
+			::	// Pick another node to try to "receive" from
 				select (j : 1 .. N);
 				if
-				:: ((seen & (1 << j)) == 0) && 
-				    (node[j].round[r].sent[s] != 0) ->
+
+				// We "receive" a raw proposal from node j
+				:: node[j].round[r].step[s].sent &&
+					((seen & (1 << j)) == 0) ->
 
 					atomic {
+							//printf("%d received proposal from %d\n", n, j);
+							seen = seen | (1 << j);
+							node[i].round[r].step[s].seen[j] = 1;
 
-					//printf("%d received from %d\n", n, j);
-					seen = seen | (1 << j);
-					scnt++;
+							// Track the best proposal we've seen
+							if
+							:: step == 0 ->
+								prsn = prsn | (1 << j);
+								if
+								:: node[j].round[r].ticket > btkt ->
+									best = j;
+									btkt = node[j].round[r].ticket;
+								:: node[j].round[r].ticket == btkt ->
+									best = 0;	// tied tickets
+								:: else -> skip
+								fi
 
-					// Track the best proposal we've seen
-					if
-					:: step == 0 ->
-						prsn = prsn | (1 << j);
-						if
-						:: node[j].round[r].ticket > btkt ->
-							best = j;
-							btkt = node[j].round[r].ticket;
-						:: node[j].round[r].ticket == btkt ->
-							best = 0;	// tied tickets
-						:: else -> skip
-						fi
-
-					// Track proposals we've seen indirectly
-					:: step > 0 ->
-						prsn = prsn | node[j].round[r].prsn[s-1];
-						if
-						:: node[j].round[r].btkt[s-1] > btkt ->
-							best = node[j].round[r].best[s-1];
-							btkt  = node[j].round[r].btkt[s-1];
-						:: (node[j].round[r].btkt[s-1] == btkt) &&
-							(node[j].round[r].best[s-1] != best) ->
-							best = 0;	// tied tickets
-						:: else -> skip
-						fi
-					fi
-
+							// Track proposals we've seen indirectly
+							:: step > 0 ->
+								prsn = prsn | node[j].round[r].prsn[s-1];
+								if
+								:: node[j].round[r].btkt[s-1] > btkt ->
+									best = node[j].round[r].best[s-1];
+									btkt  = node[j].round[r].btkt[s-1];
+								:: (node[j].round[r].btkt[s-1] == btkt) &&
+									(node[j].round[r].best[s-1] != best) ->
+									best = 0;	// tied tickets
+								:: else -> skip
+								fi
+							fi
 					} // atomic
 
-				:: else -> skip
-				fi
+				// We "receive" an acknowledgment of our proposal from node j
+				:: node[j].round[r].step[s].seen[i] &&
+					(node[i].round[r].step[s].ackd[j] == 0) ->
 
-				// Threshold test: have we seen enough?
-				if
-				:: scnt >= T -> break;
-				:: else -> skip;
+					atomic {
+							node[i].round[r].step[s].ackd[j] = 1;
+							acks++;
+							if
+							:: acks >= T -> node[i].round[r].step[s].witd = 1
+							:: else -> skip
+							fi
+					} // atomic
+
+				// We "receive" a threshold witnessed proposal from node  j
+				:: node[j].round[r].step[s].witd && 
+					(node[i].round[r].step[s].witn[j] == 0) ->
+
+					atomic {
+						node[i].round[r].step[s].witn[j] = 1
+						wits++;
+					}
+
+				// End this step if we've seen enough witnessed proposals
+				:: wits >= T -> break;
+
+				:: else -> skip
 				fi
 			od
 
 			atomic {
+					// Record what we've seen for the benefit of others
+					node[i].round[r].seen[s] = seen;
+					node[i].round[r].prsn[s] = prsn;
+					node[i].round[r].best[s] = best;
+					node[i].round[r].btkt[s] = btkt;
 
-			// Record what we've seen for the benefit of others
-			node[i].round[r].seen[s] = seen;
-			node[i].round[r].prsn[s] = prsn;
-			node[i].round[r].best[s] = best;
-			node[i].round[r].btkt[s] = btkt;
-
-			printf("%d step %d complete: seen %x best %d ticket %d\n",
-				i, s, seen, best, btkt);
-
+					printf("%d step %d complete: seen %x best %d ticket %d\n",
+						i, s, seen, best, btkt);
 			} // atomic
 		}
 
