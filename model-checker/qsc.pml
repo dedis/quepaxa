@@ -1,8 +1,8 @@
 
 #define N	4		// total number of nodes
 #define Fa	1		// max number of availability failures
-#define Fcu	1		// max number of unknown correctness failures
-#define T	(Fa+Fcu+1)	// consensus threshold required
+#define Fc	1		// max number of unknown correctness failures
+#define T	(Fa+Fc+1)	// consensus threshold required
 
 #define STEPS	3		// TLC time-steps per consensus round
 #define ROUNDS	2		// number of consensus rounds to run
@@ -26,21 +26,6 @@ typedef Node {
 
 Node node[N];			// all state of each node
 
-
-// Calculate n number of bits set in byte v
-inline nset(v, n) {
-	atomic {
-		int i;
-
-		n = 0;
-		for (i : 0 .. 7) {
-			if
-			:: ((v & (1 << j)) != 0) -> n++;
-			:: else -> skip;
-			fi
-		}
-	}
-}
 
 proctype NodeProc(byte n) {
 	byte rnd, tkt, step, seen, scnt, prsn, best, btkt, nn;
@@ -97,7 +82,7 @@ proctype NodeProc(byte n) {
 							best = nn;
 							btkt = node[nn].round[rnd].ticket;
 						:: node[nn].round[rnd].ticket == btkt ->
-							best = 255;	// means tied
+							best = 255;	// tied tickets
 						:: else -> skip
 						fi
 
@@ -108,8 +93,9 @@ proctype NodeProc(byte n) {
 						:: node[nn].round[rnd].btkt[step-1] < btkt ->
 							best = node[nn].round[rnd].best[step-1];
 							btkt  = node[nn].round[rnd].btkt[step-1];
-						:: (node[nn].round[rnd].btkt[step-1] == btkt) && (node[nn].round[rnd].best[step-1] != best) ->
-							best = 255;	// tied
+						:: (node[nn].round[rnd].btkt[step-1] == btkt) &&
+							(node[nn].round[rnd].best[step-1] != best) ->
+							best = 255;	// tied tickets
 						:: else -> skip
 						fi
 					fi
@@ -134,7 +120,8 @@ proctype NodeProc(byte n) {
 			node[n].round[rnd].best[step] = best;
 			node[n].round[rnd].btkt[step] = btkt;
 
-			printf("%d step %d complete: seen %x best %d ticket %d\n", n, step, seen, best, btkt);
+			printf("%d step %d complete: seen %x best %d ticket %d\n",
+				n, step, seen, best, btkt);
 
 			} // atomic
 		}
@@ -156,11 +143,13 @@ proctype NodeProc(byte n) {
 			int nnseen = 0;
 			for (k : 0 .. N-1) {
 				if
-				:: ((node[n].round[rnd].seen[2] & (1 << k)) != 0) && ((node[k].round[rnd].prsn[1] & (1 << nn)) != 0) -> nnseen++;
-				:: else -> skip
+				:: ((node[n].round[rnd].seen[2] & (1 << k)) != 0) &&
+					((node[k].round[rnd].prsn[1] & (1 << nn)) != 0) ->
+					nnseen++;
+				:: else ->
+					skip
 				fi
 			}
-			//printf("%d from %d nnseen %d\n", n, nn, nnseen);
 
 			if
 			:: (nnseen >= Fa+1) &&	// nn's proposal is eligible
@@ -168,7 +157,6 @@ proctype NodeProc(byte n) {
 				belig = nn;
 				betkt = node[nn].round[rnd].ticket;
 				beseen = nnseen;
-				//printf("%d new belig %d ticket %d seen %d\n", n, belig, betkt, beseen);
 			:: (nnseen >= Fa+1) &&	// nn's proposal is eligible
 			   (node[nn].round[rnd].ticket == betkt) -> // is tied
 				belig = 255;
@@ -176,7 +164,8 @@ proctype NodeProc(byte n) {
 			:: else -> skip
 			fi
 		}
-		printf("%d best eligible proposal %d ticket %d seen by %d\n", n, belig, betkt, beseen);
+		printf("%d best eligible proposal %d ticket %d seen by %d\n",
+			n, belig, betkt, beseen);
 
 		// we should have found at least one eligible proposal!
 		assert(betkt < 255);
