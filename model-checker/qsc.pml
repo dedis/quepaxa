@@ -17,9 +17,19 @@ typedef Step {
 	bit witn[1+N];		// nodes we've gotten threshold witnessed msgs from
 }
 
+typedef Best {
+	byte from;			// node number the proposal is from, 0 if tied spoiler
+	byte tkt;			// proposal's genetic fitness ticket value
+}
+
 typedef Round {
 	Step step[STEPS];	// state for each logical time-step
+
 	byte ticket;		// lottery ticket assigned to proposal at t+0
+	Best spoil;			// best potential spoiler(s) we've found so far
+	Best conf;			// best confirmed proposal we've seen so far
+	Best reconf;		// best reconfirmed proposal we've seen so far
+
 	byte seen[STEPS];	// bitmask of msgs we've seen from each step
 	byte prsn[STEPS];	// bitmaks of proposals we've seen after each
 	byte best[STEPS];
@@ -29,7 +39,7 @@ typedef Round {
 }
 
 typedef Node {
-	Round round[ROUNDS];	// each node's per-consensus-round information
+	Round rnd[ROUNDS];	// each node's per-consensus-round information
 }
 
 Node node[1+N];			// all state of each node 1..N
@@ -44,7 +54,11 @@ proctype NodeProc(byte i) {
 		atomic {
 				// select a "random" (here just arbitrary) ticket
 				select (tkt : 1 .. TICKETS);
-				node[i].round[r].ticket = tkt;
+				node[i].rnd[r].ticket = tkt;
+
+				// start with our own proposal as best potential spoiler
+				node[i].rnd[r].spoil.from = i;
+				node[i].rnd[r].spoil.tkt = tkt;
 
 				// we've already seen our own proposal
 				prsn  = 1 << i;
@@ -58,7 +72,7 @@ proctype NodeProc(byte i) {
 		for (s : 0 .. STEPS-1) {
 
 			// "send" the broadcast for this time-step
-			node[i].round[r].step[s].sent = 1;
+			node[i].rnd[r].step[s].sent = 1;
 
 			// collect a threshold of other nodes' broadcasts
 			seen = 1 << i;		// we've already seen our own
@@ -69,63 +83,114 @@ proctype NodeProc(byte i) {
 				select (j : 1 .. N);
 				if
 
-				// We "receive" a raw proposal from node j
-				:: node[j].round[r].step[s].sent &&
+				// We "receive" a raw message from node j
+				:: node[j].rnd[r].step[s].sent &&
 					((seen & (1 << j)) == 0) ->
 
 					atomic {
-							//printf("%d received proposal from %d\n", n, j);
-							seen = seen | (1 << j);
-							node[i].round[r].step[s].seen[j] = 1;
+						//printf("%d received message from %d\n", n, j);
+						seen = seen | (1 << j);
+						node[i].rnd[r].step[s].seen[j] = 1;
 
-							// Track the best proposal we've seen
+						// Track the best potential spoiler we encounter
+						if
+						// Node j knows about a strictly better potential spoiler
+						:: node[j].rnd[r].spoil.tkt > node[i].rnd[r].spoil.tkt ->
+							node[i].rnd[r].spoil.from = node[j].rnd[r].spoil.from;
+							node[i].rnd[r].spoil.tkt = node[j].rnd[r].spoil.tkt;
+
+						// Node j knows about a spoiler that's tied with our best
+						:: node[j].rnd[r].spoil.tkt == node[i].rnd[r].spoil.tkt &&
+							node[j].rnd[r].spoil.from != node[i].rnd[r].spoil.from ->
+							node[i].rnd[r].spoil.from = 0; // tied 
+
+						:: else -> skip
+						fi
+
+						if
+						:: step == 0 ->
+							prsn = prsn | (1 << j);
 							if
-							:: step == 0 ->
-								prsn = prsn | (1 << j);
-								if
-								:: node[j].round[r].ticket > btkt ->
-									best = j;
-									btkt = node[j].round[r].ticket;
-								:: node[j].round[r].ticket == btkt ->
-									best = 0;	// tied tickets
-								:: else -> skip
-								fi
-
-							// Track proposals we've seen indirectly
-							:: step > 0 ->
-								prsn = prsn | node[j].round[r].prsn[s-1];
-								if
-								:: node[j].round[r].btkt[s-1] > btkt ->
-									best = node[j].round[r].best[s-1];
-									btkt  = node[j].round[r].btkt[s-1];
-								:: (node[j].round[r].btkt[s-1] == btkt) &&
-									(node[j].round[r].best[s-1] != best) ->
-									best = 0;	// tied tickets
-								:: else -> skip
-								fi
+							:: node[j].rnd[r].ticket > btkt ->
+								best = j;
+								btkt = node[j].rnd[r].ticket;
+							:: node[j].rnd[r].ticket == btkt ->
+								best = 0;	// tied tickets
+							:: else -> skip
 							fi
+
+						// Track proposals we've seen indirectly
+						:: step > 0 ->
+							prsn = prsn | node[j].rnd[r].prsn[s-1];
+							if
+							:: node[j].rnd[r].btkt[s-1] > btkt ->
+								best = node[j].rnd[r].best[s-1];
+								btkt  = node[j].rnd[r].btkt[s-1];
+							:: (node[j].rnd[r].btkt[s-1] == btkt) &&
+								(node[j].rnd[r].best[s-1] != best) ->
+								best = 0;	// tied tickets
+							:: else -> skip
+							fi
+						fi
 					} // atomic
 
 				// We "receive" an acknowledgment of our proposal from node j
-				:: node[j].round[r].step[s].seen[i] &&
-					(node[i].round[r].step[s].ackd[j] == 0) ->
+				:: node[j].rnd[r].step[s].seen[i] &&
+					(node[i].rnd[r].step[s].ackd[j] == 0) ->
 
 					atomic {
-							node[i].round[r].step[s].ackd[j] = 1;
+							node[i].rnd[r].step[s].ackd[j] = 1;
 							acks++;
 							if
-							:: acks >= T -> node[i].round[r].step[s].witd = 1
+							:: acks >= T ->
+								// Our proposal is now threshold witnessed
+								node[i].rnd[r].step[s].witd = 1
+
+								// See if our proposal is now the best confirmed proposal
+								if
+								:: s == 0 &&
+									node[i].rnd[r].ticket > node[i].rnd[r].conf.tkt ->
+									node[i].rnd[r].conf.from = i;
+									node[i].rnd[r].conf.tkt = node[i].rnd[r].ticket;
+								:: else ->  skip
+								fi
+
+								// See if we're confirming a best confirmed proposal
+								if
+								:: s == 1 &&
+									node[i].rnd[r].conf.tkt > node[i].rnd[r].reconf.tkt  ->
+									node[i].rnd[r].reconf.from = node[i].rnd[r].conf.from;
+									node[i].rnd[r].reconf.tkt = node[i].rnd[r].conf.tkt;
+								:: else ->  skip
+								fi
+
 							:: else -> skip
 							fi
 					} // atomic
 
-				// We "receive" a threshold witnessed proposal from node  j
-				:: node[j].round[r].step[s].witd && 
-					(node[i].round[r].step[s].witn[j] == 0) ->
+				// We "receive" a threshold witnessed message from node  j
+				:: node[j].rnd[r].step[s].witd && 
+					(node[i].rnd[r].step[s].witn[j] == 0) ->
 
 					atomic {
-						node[i].round[r].step[s].witn[j] = 1
+						node[i].rnd[r].step[s].witn[j] = 1
 						wits++;
+
+						// Track the best confirmed proposal we encounter
+						if
+						:: node[j].rnd[r].conf.tkt > node[i].rnd[r].conf.tkt ->
+							node[i].rnd[r].conf.from = node[j].rnd[r].conf.from;
+							node[i].rnd[r].conf.tkt = node[j].rnd[r].conf.tkt;
+						:: else -> skip
+						fi
+
+						// Track the best reconfirmed proposal we encounter
+						if
+						:: node[j].rnd[r].reconf.tkt > node[i].rnd[r].reconf.tkt ->
+							node[i].rnd[r].reconf.from = node[j].rnd[r].reconf.from;
+							node[i].rnd[r].reconf.tkt = node[j].rnd[r].reconf.tkt;
+						:: else -> skip
+						fi
 					}
 
 				// End this step if we've seen enough witnessed proposals
@@ -137,10 +202,10 @@ proctype NodeProc(byte i) {
 
 			atomic {
 					// Record what we've seen for the benefit of others
-					node[i].round[r].seen[s] = seen;
-					node[i].round[r].prsn[s] = prsn;
-					node[i].round[r].best[s] = best;
-					node[i].round[r].btkt[s] = btkt;
+					node[i].rnd[r].seen[s] = seen;
+					node[i].rnd[r].prsn[s] = prsn;
+					node[i].rnd[r].best[s] = best;
+					node[i].rnd[r].btkt[s] = btkt;
 
 					printf("%d step %d complete: seen %x best %d ticket %d\n",
 						i, s, seen, best, btkt);
@@ -164,8 +229,8 @@ proctype NodeProc(byte i) {
 			int jseen = 0;
 			for (k : 0 .. N-1) {
 				if
-				:: ((node[i].round[r].seen[2] & (1 << k)) != 0) &&
-					((node[k].round[r].prsn[1] & (1 << j)) != 0) ->
+				:: ((node[i].rnd[r].seen[2] & (1 << k)) != 0) &&
+					((node[k].rnd[r].prsn[1] & (1 << j)) != 0) ->
 					jseen++;
 				:: else ->
 					skip
@@ -174,12 +239,12 @@ proctype NodeProc(byte i) {
 
 			if
 			:: (jseen >= Fa+1) &&	// j's proposal is eligible
-			   (node[j].round[r].ticket > betkt) -> // is better
+			   (node[j].rnd[r].ticket > betkt) -> // is better
 				belig = j;
-				betkt = node[j].round[r].ticket;
+				betkt = node[j].rnd[r].ticket;
 				beseen = jseen;
 			:: (jseen >= Fa+1) &&	// j's proposal is eligible
-			   (node[j].round[r].ticket == betkt) -> // is tied
+			   (node[j].rnd[r].ticket == betkt) -> // is tied
 				belig = 0;
 				beseen = 0;
 			:: else -> skip
@@ -192,8 +257,8 @@ proctype NodeProc(byte i) {
 		assert(betkt > 0);
 
 		// The round is now complete in terms of picking a proposal.
-		node[i].round[r].picked = belig;
-		node[i].round[r].done = 1;
+		node[i].rnd[r].picked = belig;
+		node[i].rnd[r].done = 1;
 
 		// Can we determine a proposal to be definitely committed?
 		// To do so, we must be able to see that:
@@ -210,8 +275,8 @@ proctype NodeProc(byte i) {
 			// Verify that what we decided doesn't conflict with
 			// the proposal any other node chooses.
 			select (j : 1 .. N);
-			assert(!node[j].round[r].done ||
-				(node[j].round[r].picked == belig));
+			assert(!node[j].rnd[r].done ||
+				(node[j].rnd[r].picked == belig));
 
 		:: (belig != 0) && (beseen < T) ->
 			printf("%d round %d failed due to threshold\n", i, r);
