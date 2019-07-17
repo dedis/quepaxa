@@ -27,74 +27,74 @@ typedef Node {
 Node node[N];			// all state of each node
 
 
-proctype NodeProc(byte n) {
-	byte rnd, tkt, step, seen, scnt, prsn, best, btkt, nn;
+proctype NodeProc(byte i) {
+	byte j, r, s, tkt, step, seen, scnt, prsn, best, btkt;
 	byte belig, betkt, beseen, k;
 	//bool correct = (n < T);
 
 	//printf("Node %d correct %d\n", n, correct);
 
-	for (rnd : 0 .. ROUNDS-1) {
+	for (r : 0 .. ROUNDS-1) {
 
 		atomic {
 
 		// select a "random" (here just arbitrary) ticket
 		select (tkt : 1 .. TICKETS);
-		node[n].round[rnd].ticket = tkt;
+		node[i].round[r].ticket = tkt;
 
 		// we've already seen our own proposal
-		prsn  = 1 << n;
+		prsn  = 1 << i;
 
 		// finding the "best proposal" starts with our own...
-		best = n;
+		best = i;
 		btkt = tkt;
 
 		} // atomic
 
 		// Run the round to completion
-		for (step : 0 .. STEPS-1) {
+		for (s : 0 .. STEPS-1) {
 
 			// "send" the broadcast for this time-step
-			node[n].round[rnd].sent[step] = 1;
+			node[i].round[r].sent[s] = 1;
 
 			// collect a threshold of other nodes' broadcasts
-			seen = 1 << n;		// we've already seen our own
+			seen = 1 << i;		// we've already seen our own
 			scnt = 1;
 			do
 			::	// Pick another node to try to 'receive' from
-				select (nn : 1 .. N); nn--;
+				select (j : 1 .. N); j--;
 				if
-				:: ((seen & (1 << nn)) == 0) && 
-				    (node[nn].round[rnd].sent[step] != 0) ->
+				:: ((seen & (1 << j)) == 0) && 
+				    (node[j].round[r].sent[s] != 0) ->
 
 					atomic {
 
-					//printf("%d received from %d\n", n, nn);
-					seen = seen | (1 << nn);
+					//printf("%d received from %d\n", n, j);
+					seen = seen | (1 << j);
 					scnt++;
 
 					// Track the best proposal we've seen
 					if
 					:: step == 0 ->
-						prsn = prsn | (1 << nn);
+						prsn = prsn | (1 << j);
 						if
-						:: node[nn].round[rnd].ticket > btkt ->
-							best = nn;
-							btkt = node[nn].round[rnd].ticket;
-						:: node[nn].round[rnd].ticket == btkt ->
+						:: node[j].round[r].ticket > btkt ->
+							best = j;
+							btkt = node[j].round[r].ticket;
+						:: node[j].round[r].ticket == btkt ->
 							best = 255;	// tied tickets
 						:: else -> skip
 						fi
 
 					// Track proposals we've seen indirectly
 					:: step > 0 ->
-						prsn = prsn | node[nn].round[rnd].prsn[step-1];
+						prsn = prsn | node[j].round[r].prsn[s-1];
 						if
-						:: node[nn].round[rnd].btkt[step-1] > btkt ->
-							best = node[nn].round[rnd].best[step-1];
-							btkt  = node[nn].round[rnd].btkt[step-1];
-						:: (node[nn].round[rnd].btkt[step-1] == btkt) &&
-							(node[nn].round[rnd].best[step-1] != best) ->
+						:: node[j].round[r].btkt[s-1] > btkt ->
+							best = node[j].round[r].best[s-1];
+							btkt  = node[j].round[r].btkt[s-1];
+						:: (node[j].round[r].btkt[s-1] == btkt) &&
+							(node[j].round[r].best[s-1] != best) ->
 							best = 255;	// tied tickets
 						:: else -> skip
 						fi
@@ -115,13 +115,13 @@ proctype NodeProc(byte n) {
 			atomic {
 
 			// Record what we've seen for the benefit of others
-			node[n].round[rnd].seen[step] = seen;
-			node[n].round[rnd].prsn[step] = prsn;
-			node[n].round[rnd].best[step] = best;
-			node[n].round[rnd].btkt[step] = btkt;
+			node[i].round[r].seen[s] = seen;
+			node[i].round[r].prsn[s] = prsn;
+			node[i].round[r].best[s] = best;
+			node[i].round[r].btkt[s] = btkt;
 
 			printf("%d step %d complete: seen %x best %d ticket %d\n",
-				n, step, seen, best, btkt);
+				i, s, seen, best, btkt);
 
 			} // atomic
 		}
@@ -136,43 +136,43 @@ proctype NodeProc(byte n) {
 		belig = 255;	// start with a fake 'tie' state
 		betkt = 0;		// worst possible ticket value
 		beseen = 0;
-		for (nn : 0 .. N-1) {
+		for (j : 0 .. N-1) {
 
-			// determine number of nodes that knew of nn's proposal
+			// determine number of nodes that knew of j's proposal
 			// by time t+2.
-			int nnseen = 0;
+			int jseen = 0;
 			for (k : 0 .. N-1) {
 				if
-				:: ((node[n].round[rnd].seen[2] & (1 << k)) != 0) &&
-					((node[k].round[rnd].prsn[1] & (1 << nn)) != 0) ->
-					nnseen++;
+				:: ((node[i].round[r].seen[2] & (1 << k)) != 0) &&
+					((node[k].round[r].prsn[1] & (1 << j)) != 0) ->
+					jseen++;
 				:: else ->
 					skip
 				fi
 			}
 
 			if
-			:: (nnseen >= Fa+1) &&	// nn's proposal is eligible
-			   (node[nn].round[rnd].ticket > betkt) -> // is better
-				belig = nn;
-				betkt = node[nn].round[rnd].ticket;
-				beseen = nnseen;
-			:: (nnseen >= Fa+1) &&	// nn's proposal is eligible
-			   (node[nn].round[rnd].ticket == betkt) -> // is tied
+			:: (jseen >= Fa+1) &&	// j's proposal is eligible
+			   (node[j].round[r].ticket > betkt) -> // is better
+				belig = j;
+				betkt = node[j].round[r].ticket;
+				beseen = jseen;
+			:: (jseen >= Fa+1) &&	// j's proposal is eligible
+			   (node[j].round[r].ticket == betkt) -> // is tied
 				belig = 255;
 				beseen = 0;
 			:: else -> skip
 			fi
 		}
 		printf("%d best eligible proposal %d ticket %d seen by %d\n",
-			n, belig, betkt, beseen);
+			i, belig, betkt, beseen);
 
 		// we should have found at least one eligible proposal!
 		assert(betkt > 0);
 
 		// The round is now complete in terms of picking a proposal.
-		node[n].round[rnd].picked = belig;
-		node[n].round[rnd].done = 1;
+		node[i].round[r].picked = belig;
+		node[i].round[r].done = 1;
 
 		// Can we determine a proposal to be definitely committed?
 		// To do so, we must be able to see that:
@@ -184,22 +184,22 @@ proctype NodeProc(byte n) {
 		// #2 ensures no node could judge another proposal as eligible.
 		if
 		:: (belig < 255) && (beseen >= T) && (belig == best) ->
-			printf("%d round %d definitely committed\n", n, rnd);
+			printf("%d round %d definitely committed\n", i, r);
 
 			// Verify that what we decided doesn't conflict with
 			// the proposal any other node chooses.
-			select (nn : 1 .. N); nn--;
-			assert(!node[nn].round[rnd].done ||
-				(node[nn].round[rnd].picked == belig));
+			select (j : 1 .. N); j--;
+			assert(!node[j].round[r].done ||
+				(node[j].round[r].picked == belig));
 
 		:: (belig < 255) && (beseen < T) ->
-			printf("%d round %d failed due to threshold\n", n, rnd);
+			printf("%d round %d failed due to threshold\n", i, r);
 
 		:: (belig < 255) && (belig != best) ->
-			printf("%d round %d failed due to spoiler\n", n, rnd);
+			printf("%d round %d failed due to spoiler\n", i, r);
 
 		:: (belig == 255) ->
-			printf("%d round %d failed due to tie\n", n, rnd);
+			printf("%d round %d failed due to tie\n", i, r);
 		fi
 
 		} // atomic
