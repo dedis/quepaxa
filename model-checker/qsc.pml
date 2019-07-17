@@ -24,7 +24,7 @@ typedef Node {
 	Round round[ROUNDS];	// each node's per-consensus-round information
 }
 
-Node node[N];			// all state of each node
+Node node[1+N];			// all state of each node 1..N
 
 
 proctype NodeProc(byte i) {
@@ -62,7 +62,7 @@ proctype NodeProc(byte i) {
 			scnt = 1;
 			do
 			::	// Pick another node to try to 'receive' from
-				select (j : 1 .. N); j--;
+				select (j : 1 .. N);
 				if
 				:: ((seen & (1 << j)) == 0) && 
 				    (node[j].round[r].sent[s] != 0) ->
@@ -82,7 +82,7 @@ proctype NodeProc(byte i) {
 							best = j;
 							btkt = node[j].round[r].ticket;
 						:: node[j].round[r].ticket == btkt ->
-							best = 255;	// tied tickets
+							best = 0;	// tied tickets
 						:: else -> skip
 						fi
 
@@ -95,7 +95,7 @@ proctype NodeProc(byte i) {
 							btkt  = node[j].round[r].btkt[s-1];
 						:: (node[j].round[r].btkt[s-1] == btkt) &&
 							(node[j].round[r].best[s-1] != best) ->
-							best = 255;	// tied tickets
+							best = 0;	// tied tickets
 						:: else -> skip
 						fi
 					fi
@@ -133,7 +133,7 @@ proctype NodeProc(byte i) {
 		// it was seen by at least f+1 nodes by time t+1.
 		// This ensures that ALL nodes at least know of its existence
 		// (though not necessarily its eligibility) by t+2.
-		belig = 255;	// start with a fake 'tie' state
+		belig = 0;		// start with a fake 'tie' state
 		betkt = 0;		// worst possible ticket value
 		beseen = 0;
 		for (j : 0 .. N-1) {
@@ -159,7 +159,7 @@ proctype NodeProc(byte i) {
 				beseen = jseen;
 			:: (jseen >= Fa+1) &&	// j's proposal is eligible
 			   (node[j].round[r].ticket == betkt) -> // is tied
-				belig = 255;
+				belig = 0;
 				beseen = 0;
 			:: else -> skip
 			fi
@@ -183,22 +183,22 @@ proctype NodeProc(byte i) {
 		// #1 ensures ALL nodes will judge this proposal as eligible;
 		// #2 ensures no node could judge another proposal as eligible.
 		if
-		:: (belig < 255) && (beseen >= T) && (belig == best) ->
+		:: (belig != 0) && (beseen >= T) && (belig == best) ->
 			printf("%d round %d definitely committed\n", i, r);
 
 			// Verify that what we decided doesn't conflict with
 			// the proposal any other node chooses.
-			select (j : 1 .. N); j--;
+			select (j : 1 .. N);
 			assert(!node[j].round[r].done ||
 				(node[j].round[r].picked == belig));
 
-		:: (belig < 255) && (beseen < T) ->
+		:: (belig != 0) && (beseen < T) ->
 			printf("%d round %d failed due to threshold\n", i, r);
 
-		:: (belig < 255) && (belig != best) ->
+		:: (belig != 0) && (belig != best) ->
 			printf("%d round %d failed due to spoiler\n", i, r);
 
-		:: (belig == 255) ->
+		:: (belig == 0) ->
 			printf("%d round %d failed due to tie\n", i, r);
 		fi
 
@@ -210,7 +210,7 @@ proctype NodeProc(byte i) {
 init {
 	atomic {
 		int i;
-		for (i : 0 .. N-1) {
+		for (i : 1 .. N) {
 			run NodeProc(i)
 		}
 	}
