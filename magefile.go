@@ -45,9 +45,9 @@ func Deps() error {
 // Generate code.
 func Generate() error {
 
-	err = sh.RunV("protoc", "--go_out=./", "./proto/consensus/consensus.proto")
-	err = sh.RunV("protoc", "--go_out=./", "./proto/smr/smr.proto")
-	err = sh.RunV("protoc", "--go_out=./", "./proto/client/client.proto")
+	err := sh.RunV("protoc", "--go_out=./", "./proto/consensus/consensus.proto")
+	//err = sh.RunV("protoc", "--go_out=./", "./proto/smr/smr.proto")
+	//err = sh.RunV("protoc", "--go_out=./", "./proto/client/client.proto")
 
 	if err != nil {
 		return err
@@ -64,9 +64,9 @@ func Test() error {
 // Build binary executables.
 func Build() error {
 	err := sh.RunV("go", "build", "-v", "-o", "./proposer/bin/proposer", "./proposer/")
-	err := sh.RunV("go", "build", "-v", "-o", "./recorder/bin/recorder", "./recorder/")
-	err := sh.RunV("go", "build", "-v", "-o", "./client/traffic/bin/traffic", "./client/traffic/")
-	err := sh.RunV("go", "build", "-v", "-o", "./client/attack/bin/attack", "./client/attack/")
+	err = sh.RunV("go", "build", "-v", "-o", "./recorder/bin/recorder", "./recorder/")
+	err = sh.RunV("go", "build", "-v", "-o", "./client/traffic/bin/traffic", "./client/traffic/")
+	err = sh.RunV("go", "build", "-v", "-o", "./client/attack/bin/attack", "./client/attack/")
 	if err != nil {
 		return err
 	}

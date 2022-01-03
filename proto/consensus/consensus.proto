@@ -1,0 +1,21 @@
+syntax = "proto3";
+option go_package = "proto/consensus";
+
+message GenericConsensus {
+
+  int64 index = 1;
+  int64 M = 2;  // propose=1 , spreadE=2 , spreadC=3, gather=4, decide=5, commit=6
+  int64 S = 3;  // step
+
+  message value {
+    string id = 1;
+    int64 fit = 2;
+  }
+
+  value P = 4;
+  repeated value E = 5;
+  repeated value    C = 6;
+  bool D = 7;
+  value DS = 8;
+  int64 PR = 9; // id of the proposer who decided this index
+}
