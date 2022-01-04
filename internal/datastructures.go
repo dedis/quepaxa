@@ -1,42 +1,42 @@
 package internal
 
 /*
-	clientRequest corresponds to a single client request
+	ClientRequest corresponds to a single client request
 */
-type clientRequest struct {
+type ClientRequest struct {
 	id      string // assumed to be unique
 	message string
 }
 
 /*
-	messageBlock corresponds to a batch of requests that will be replicated
+	MessageBlock corresponds to a batch of requests that will be replicated
 */
-type messageBlock struct {
+type MessageBlock struct {
 	id       string // assumed to be unique
-	requests []clientRequest
+	requests []ClientRequest
 }
 
 /*
-	value associates the id of message block with a priority assigned by the recorders
+	Value associates the id of message block with a priority assigned by the recorders
 */
 
-type value struct {
-	id  string // id of the messageBlock
+type Value struct {
+	id  string // id of the MessageBlock
 	fit int
 }
 
 /*
-	slot maintains the consensus and the smr state of a single slot
+	Slot maintains the consensus and the smr state of a single Slot
 */
-type slot struct {
+type Slot struct {
 	index     int
 	S         int // step
-	P         value
-	E         []value
-	C         []value
-	U         []value
+	P         Value
+	E         []Value
+	C         []Value
+	U         []Value
 	committed bool
 	decided   bool
-	decision  value
+	decision  Value
 	proposer  int // id of the proposer who decided this index
 }

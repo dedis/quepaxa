@@ -1,23 +1,25 @@
 package internal
 
-import "sync"
+import (
+	"sync"
+)
 
 type MessageStore struct {
-	messageBlocks map[string]messageBlock
+	messageBlocks map[string]MessageBlock
 	mutex         sync.Mutex
 }
 
-func (ms *MessageStore) init() {
-	ms.messageBlocks = make(map[string]messageBlock)
+func (ms *MessageStore) Init() {
+	ms.messageBlocks = make(map[string]MessageBlock)
 }
 
-func (ms *MessageStore) add(block messageBlock) {
+func (ms *MessageStore) Add(block MessageBlock) {
 	ms.mutex.Lock()
 	ms.messageBlocks[block.id] = block
 	ms.mutex.Unlock()
 }
 
-func (ms *MessageStore) get(id string) (messageBlock, bool) {
+func (ms *MessageStore) Get(id string) (MessageBlock, bool) {
 	ms.mutex.Lock()
 	i, ok := ms.messageBlocks[id]
 	ms.mutex.Unlock()
@@ -25,7 +27,7 @@ func (ms *MessageStore) get(id string) (messageBlock, bool) {
 
 }
 
-func (ms *MessageStore) remove(id string) {
+func (ms *MessageStore) Remove(id string) {
 	ms.mutex.Lock()
 	delete(ms.messageBlocks, id)
 	ms.mutex.Unlock()

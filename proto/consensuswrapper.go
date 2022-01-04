@@ -12,16 +12,17 @@ type Serializable interface {
 	New() Serializable
 }
 
-// Prepare
+// GenericConsensus
 
-func (t *consensus.GenericConsensus) Marshal(wire io.Writer) {
+func (t *GenericConsensus) Marshal(wire io.Writer) {
+
 	data, err := proto.Marshal(t)
 	if err != nil {
 		return
 	}
 	lengthWritten := len(data)
-	var b [8]byte
-	bs := b[:8]
+	var b [4]byte
+	bs := b[:4]
 	binary.LittleEndian.PutUint64(bs, uint64(lengthWritten))
 	_, err = wire.Write(bs)
 	if err != nil {
@@ -35,8 +36,8 @@ func (t *consensus.GenericConsensus) Marshal(wire io.Writer) {
 
 func (t *GenericConsensus) Unmarshal(wire io.Reader) error {
 
-	var b [8]byte
-	bs := b[:8]
+	var b [4]byte
+	bs := b[:4]
 
 	_, err := io.ReadFull(wire, bs)
 	if err != nil {
@@ -56,5 +57,5 @@ func (t *GenericConsensus) Unmarshal(wire io.Reader) error {
 	return nil
 }
 func (t *GenericConsensus) New() Serializable {
-	return new(Prepare)
+	return new(GenericConsensus)
 }

@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "proto/client";
+option go_package = "proto/";
 
 message ClientRequest {
   string id = 1;
