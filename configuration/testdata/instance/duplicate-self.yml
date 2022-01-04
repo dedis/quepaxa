@@ -1,0 +1,14 @@
+---
+name: london
+increment: 1
+timeout: 500ms
+listen: 0.0.0.0:9000
+peers:
+- name: oregon
+  address: 0.0.0.0:9001
+- name: spaulo
+  address: 0.0.0.0:9002
+- name: london
+  address: 0.0.0.0:9000
+- name: taiwan
+  address: 0.0.0.0:9003

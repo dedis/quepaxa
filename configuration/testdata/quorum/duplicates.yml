@@ -1,0 +1,11 @@
+---
+timeout: 5s
+instances:
+- name: london
+  address: 0.0.0.0:9000
+- name: oregon
+  address: 0.0.0.0:9001
+- name: london
+  address: 0.0.0.0:9002
+- name: oregon
+  address: 0.0.0.0:9003
