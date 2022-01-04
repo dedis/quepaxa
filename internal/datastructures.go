@@ -1,19 +1,19 @@
 package internal
 
 /*
-	client_request corresponds to a single client request
+	clientRequest corresponds to a single client request
 */
-type client_request struct {
+type clientRequest struct {
 	id      string // assumed to be unique
 	message string
 }
 
 /*
-	message_block corresponds to a batch of requests that will be replicated
+	messageBlock corresponds to a batch of requests that will be replicated
 */
-type message_block struct {
-	requests []client_request
+type messageBlock struct {
 	id       string // assumed to be unique
+	requests []clientRequest
 }
 
 /*
@@ -21,7 +21,7 @@ type message_block struct {
 */
 
 type value struct {
-	id  string // id of the message_block
+	id  string // id of the messageBlock
 	fit int
 }
 

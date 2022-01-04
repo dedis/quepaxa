@@ -1,0 +1,12 @@
+syntax = "proto3";
+option go_package = "proto/client";
+
+message ClientRequest {
+  string id = 1;
+  string message = 2;
+}
+
+message ClientResponse {
+  string id = 1;
+  string message = 2;
+}

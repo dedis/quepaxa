@@ -1,0 +1,17 @@
+syntax = "proto3";
+option go_package = "proto/smr";
+
+message MessageBlockReply {
+
+  message ClientRequest {
+    string id = 1;
+    string message = 2;
+  }
+
+  int64 hash = 1;
+  repeated ClientRequest requests = 2;
+}
+
+message MessageBlockRequest {
+  int64 hash = 1;
+}
