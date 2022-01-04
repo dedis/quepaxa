@@ -2,18 +2,11 @@ package configuration
 
 import (
 	"errors"
-	"io/ioutil"
-	"time"
-
 	yaml "gopkg.in/yaml.v2"
+	"io/ioutil"
 )
 
 var (
-	// ErrInvalidTimeout is returned when the timeout is not valid, e.g. zero or negative
-	ErrInvalidTimeout = errors.New("invalid timeout")
-
-	// ErrInvalidIncrement is returned when the increment is not valid, e.g. zero or negative
-	ErrInvalidIncrement = errors.New("invalid increment")
 
 	// ErrNoInstance is returned when an instance definition is expected but missing
 	ErrNoInstance = errors.New("missing instance definition")
@@ -34,17 +27,14 @@ type Instance struct {
 
 // InstanceConfig describes a  instance configuration
 type InstanceConfig struct {
-	Name      string        `yaml:"name"`
-	Increment uint64        `yaml:"increment"`
-	Timeout   time.Duration `yaml:"timeout"`
-	Listen    string        `yaml:"listen"`
-	Peers     []Instance    `yaml:"peers"`
+	Name   string     `yaml:"name"`
+	Listen string     `yaml:"listen"`
+	Peers  []Instance `yaml:"peers"`
 }
 
 // QuorumConfig describes a  quorum configuration file
 type QuorumConfig struct {
-	Timeout   time.Duration `yaml:"timeout"`
-	Instances []Instance    `yaml:"instances"`
+	Instances []Instance `yaml:"instances"`
 }
 
 // NewInstanceConfig loads a  instance configuration from given file
@@ -61,12 +51,6 @@ func NewInstanceConfig(fname string) (*InstanceConfig, error) {
 	}
 
 	// sanity checks
-	if cfg.Increment < 1 {
-		return nil, ErrInvalidIncrement
-	}
-	if err := checkTimeout(cfg.Timeout); err != nil {
-		return nil, err
-	}
 	instances := append(cfg.Peers, Instance{Name: cfg.Name, Address: cfg.Listen})
 	if err := checkInstanceList(instances...); err != nil {
 		return nil, err
@@ -88,22 +72,11 @@ func NewQuorumConfig(fname string) (*QuorumConfig, error) {
 	}
 
 	// sanity checks
-	if err := checkTimeout(cfg.Timeout); err != nil {
-		return nil, err
-	}
 	if err := checkInstanceList(cfg.Instances...); err != nil {
 		return nil, err
 	}
 
 	return cfg, nil
-}
-
-// checkTimeout performs a sanity check for a timeout value
-func checkTimeout(timeout time.Duration) error {
-	if timeout <= time.Duration(0) {
-		return ErrInvalidTimeout
-	}
-	return nil
 }
 
 // checkInstanceList performs a sanity check for a list of instances

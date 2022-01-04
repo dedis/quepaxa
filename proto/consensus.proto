@@ -18,4 +18,5 @@ message GenericConsensus {
   bool D = 7;
   value DS = 8;
   int64 PR = 9; // id of the proposer who decided this index
+  int64 destination = 10 ; // 1 for the proposer and 2 for the recorder
 }

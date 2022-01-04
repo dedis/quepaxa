@@ -1,7 +1,5 @@
 ---
 name: 3
-increment: 1
-timeout: 20s
 listen: 0.0.0.0:9002
 peers:
   - name: 1
