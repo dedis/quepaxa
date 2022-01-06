@@ -1,4 +1,4 @@
-package configuration
+package main
 
 import (
 	"errors"
@@ -27,14 +27,8 @@ type Instance struct {
 
 // InstanceConfig describes a  instance configuration
 type InstanceConfig struct {
-	Name   string     `yaml:"name"`
-	Listen string     `yaml:"listen"`
-	Peers  []Instance `yaml:"peers"`
-}
-
-// QuorumConfig describes a  quorum configuration file
-type QuorumConfig struct {
-	Instances []Instance `yaml:"instances"`
+	Peers   []Instance `yaml:"peers"`
+	Clients []Instance `yaml:"clients"`
 }
 
 // NewInstanceConfig loads a  instance configuration from given file
@@ -51,32 +45,13 @@ func NewInstanceConfig(fname string) (*InstanceConfig, error) {
 	}
 
 	// sanity checks
-	instances := append(cfg.Peers, Instance{Name: cfg.Name, Address: cfg.Listen})
-	if err := checkInstanceList(instances...); err != nil {
+	if err := checkInstanceList(cfg.Peers...); err != nil {
 		return nil, err
 	}
-
+	if err := checkInstanceList(cfg.Clients...); err != nil {
+		return nil, err
+	}
 	return &cfg, nil
-}
-
-// NewQuorumConfig loads a  quorum configuration from given file
-func NewQuorumConfig(fname string) (*QuorumConfig, error) {
-	cfg := &QuorumConfig{}
-	data, err := ioutil.ReadFile(fname)
-	if err != nil {
-		return nil, err
-	}
-	err = yaml.UnmarshalStrict(data, cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	// sanity checks
-	if err := checkInstanceList(cfg.Instances...); err != nil {
-		return nil, err
-	}
-
-	return cfg, nil
 }
 
 // checkInstanceList performs a sanity check for a list of instances

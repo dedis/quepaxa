@@ -1,8 +1,0 @@
----
-instances:
-  - name: 1
-    address: 0.0.0.0:9000
-  - name: 2
-    address: 0.0.0.0:9001
-  - name: 3
-    address: 0.0.0.0:9002

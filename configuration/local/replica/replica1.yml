@@ -1,8 +1,0 @@
----
-name: 1
-listen: 0.0.0.0:9000
-peers:
-  - name: 2
-    address: 0.0.0.0:9001
-  - name: 3
-    address: 0.0.0.0:9002

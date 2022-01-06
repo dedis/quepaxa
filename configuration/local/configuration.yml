@@ -1,0 +1,22 @@
+peers:
+  - name: 1
+    address: 0.0.0.0:9000
+  - name: 2
+    address: 0.0.0.0:9001
+  - name: 3
+    address: 0.0.0.0:9002
+  - name: 4
+    address: 0.0.0.0:9003
+  - name: 5
+    address: 0.0.0.0:9004
+clients:
+  - name: 1
+    address: 0.0.0.0:10000
+  - name: 2
+    address: 0.0.0.0:10001
+  - name: 3
+    address: 0.0.0.0:10002
+  - name: 4
+    address: 0.0.0.0:10003
+  - name: 5
+    address: 0.0.0.0:10004
