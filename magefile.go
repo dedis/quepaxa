@@ -45,9 +45,9 @@ func Deps() error {
 // Generate code.
 func Generate() error {
 
-	err := sh.RunV("protoc", "--go_out=./", "./proto/consensus/consensus.proto")
-	err = sh.RunV("protoc", "--go_out=./", "./proto/smr/smr.proto")
-	err = sh.RunV("protoc", "--go_out=./", "./proto/client/client.proto")
+	err := sh.RunV("protoc", "--go_out=./", "./proto/consensus.proto")
+	err = sh.RunV("protoc", "--go_out=./", "./proto/smr.proto")
+	err = sh.RunV("protoc", "--go_out=./", "./proto/client.proto")
 
 	if err != nil {
 		return err

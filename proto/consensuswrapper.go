@@ -6,12 +6,6 @@ import (
 	"io"
 )
 
-type Serializable interface {
-	Marshal(io.Writer)
-	Unmarshal(io.Reader) error
-	New() Serializable
-}
-
 // GenericConsensus
 
 func (t *GenericConsensus) Marshal(wire io.Writer) {
