@@ -1,12 +1,23 @@
 syntax = "proto3";
 option go_package = "proto/";
 
-message ClientRequest {
-  string id = 1;
-  string message = 2;
+message ClientRequestBatch {
+
+  message SingleClientRequest {
+    string message = 1;
+  }
+
+  int64 sender = 1;
+  repeated SingleClientRequest requests = 2;
+  string id = 3; // unique identifier
 }
 
-message ClientResponse {
-  string id = 1;
-  string message = 2;
+message ClientResponseBatch {
+  message SingleClientResponse {
+    string message = 1;
+  }
+
+  int64 receiver = 1;
+  repeated SingleClientResponse responses = 2;
+  string id = 3; // unique identifier
 }

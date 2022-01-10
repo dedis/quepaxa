@@ -3,6 +3,7 @@ package raxos
 import "raxos/proto"
 
 func (in *Instance) handleClientRequest(request *proto.ClientRequest) {
+	// forward the request to the buffer that collects batches of requests
 
 }
 

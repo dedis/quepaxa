@@ -30,7 +30,7 @@ func getStringOfSizeN(length int) string {
 	return str
 }
 
-func (in *Instance) getNewCopyofMessage(code uint8, msg proto.Serializable) proto.Serializable {
+func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) proto.Serializable {
 
 	if code == in.clientRequestRpc {
 

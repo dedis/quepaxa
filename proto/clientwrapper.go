@@ -8,7 +8,7 @@ import (
 
 // ClientRequest
 
-func (t *ClientRequest) Marshal(wire io.Writer) {
+func (t *ClientRequestBatch) Marshal(wire io.Writer) {
 
 	data, err := proto.Marshal(t)
 	if err != nil {
@@ -28,7 +28,7 @@ func (t *ClientRequest) Marshal(wire io.Writer) {
 	}
 }
 
-func (t *ClientRequest) Unmarshal(wire io.Reader) error {
+func (t *ClientRequestBatch) Unmarshal(wire io.Reader) error {
 
 	var b [4]byte
 	bs := b[:4]
@@ -50,13 +50,13 @@ func (t *ClientRequest) Unmarshal(wire io.Reader) error {
 	}
 	return nil
 }
-func (t *ClientRequest) New() Serializable {
-	return new(GenericConsensus)
+func (t *ClientRequestBatch) New() Serializable {
+	return new(ClientRequestBatch)
 }
 
 // ClientResponse
 
-func (t *ClientResponse) Marshal(wire io.Writer) {
+func (t *ClientResponseBatch) Marshal(wire io.Writer) {
 
 	data, err := proto.Marshal(t)
 	if err != nil {
@@ -76,7 +76,7 @@ func (t *ClientResponse) Marshal(wire io.Writer) {
 	}
 }
 
-func (t *ClientResponse) Unmarshal(wire io.Reader) error {
+func (t *ClientResponseBatch) Unmarshal(wire io.Reader) error {
 
 	var b [4]byte
 	bs := b[:4]
@@ -98,6 +98,6 @@ func (t *ClientResponse) Unmarshal(wire io.Reader) error {
 	}
 	return nil
 }
-func (t *ClientResponse) New() Serializable {
-	return new(GenericConsensus)
+func (t *ClientResponseBatch) New() Serializable {
+	return new(ClientResponseBatch)
 }

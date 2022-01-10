@@ -20,17 +20,18 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type ClientRequest struct {
+type ClientRequestBatch struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id      string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Sender   int64                                     `protobuf:"varint,1,opt,name=sender,proto3" json:"sender,omitempty"`
+	Requests []*ClientRequestBatch_SingleClientRequest `protobuf:"bytes,2,rep,name=requests,proto3" json:"requests,omitempty"`
+	Id       string                                    `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"` // unique identifier
 }
 
-func (x *ClientRequest) Reset() {
-	*x = ClientRequest{}
+func (x *ClientRequestBatch) Reset() {
+	*x = ClientRequestBatch{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_proto_client_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -38,13 +39,13 @@ func (x *ClientRequest) Reset() {
 	}
 }
 
-func (x *ClientRequest) String() string {
+func (x *ClientRequestBatch) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ClientRequest) ProtoMessage() {}
+func (*ClientRequestBatch) ProtoMessage() {}
 
-func (x *ClientRequest) ProtoReflect() protoreflect.Message {
+func (x *ClientRequestBatch) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_client_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -56,36 +57,44 @@ func (x *ClientRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ClientRequest.ProtoReflect.Descriptor instead.
-func (*ClientRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ClientRequestBatch.ProtoReflect.Descriptor instead.
+func (*ClientRequestBatch) Descriptor() ([]byte, []int) {
 	return file_proto_client_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *ClientRequest) GetId() string {
+func (x *ClientRequestBatch) GetSender() int64 {
+	if x != nil {
+		return x.Sender
+	}
+	return 0
+}
+
+func (x *ClientRequestBatch) GetRequests() []*ClientRequestBatch_SingleClientRequest {
+	if x != nil {
+		return x.Requests
+	}
+	return nil
+}
+
+func (x *ClientRequestBatch) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *ClientRequest) GetMessage() string {
-	if x != nil {
-		return x.Message
-	}
-	return ""
-}
-
-type ClientResponse struct {
+type ClientResponseBatch struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id      string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Receiver  int64                                       `protobuf:"varint,1,opt,name=receiver,proto3" json:"receiver,omitempty"`
+	Responses []*ClientResponseBatch_SingleClientResponse `protobuf:"bytes,2,rep,name=responses,proto3" json:"responses,omitempty"`
+	Id        string                                      `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"` // unique identifier
 }
 
-func (x *ClientResponse) Reset() {
-	*x = ClientResponse{}
+func (x *ClientResponseBatch) Reset() {
+	*x = ClientResponseBatch{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_proto_client_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -93,13 +102,13 @@ func (x *ClientResponse) Reset() {
 	}
 }
 
-func (x *ClientResponse) String() string {
+func (x *ClientResponseBatch) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ClientResponse) ProtoMessage() {}
+func (*ClientResponseBatch) ProtoMessage() {}
 
-func (x *ClientResponse) ProtoReflect() protoreflect.Message {
+func (x *ClientResponseBatch) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_client_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -111,19 +120,120 @@ func (x *ClientResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ClientResponse.ProtoReflect.Descriptor instead.
-func (*ClientResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ClientResponseBatch.ProtoReflect.Descriptor instead.
+func (*ClientResponseBatch) Descriptor() ([]byte, []int) {
 	return file_proto_client_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ClientResponse) GetId() string {
+func (x *ClientResponseBatch) GetReceiver() int64 {
+	if x != nil {
+		return x.Receiver
+	}
+	return 0
+}
+
+func (x *ClientResponseBatch) GetResponses() []*ClientResponseBatch_SingleClientResponse {
+	if x != nil {
+		return x.Responses
+	}
+	return nil
+}
+
+func (x *ClientResponseBatch) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *ClientResponse) GetMessage() string {
+type ClientRequestBatch_SingleClientRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Message string `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+}
+
+func (x *ClientRequestBatch_SingleClientRequest) Reset() {
+	*x = ClientRequestBatch_SingleClientRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_client_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ClientRequestBatch_SingleClientRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClientRequestBatch_SingleClientRequest) ProtoMessage() {}
+
+func (x *ClientRequestBatch_SingleClientRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_client_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClientRequestBatch_SingleClientRequest.ProtoReflect.Descriptor instead.
+func (*ClientRequestBatch_SingleClientRequest) Descriptor() ([]byte, []int) {
+	return file_proto_client_proto_rawDescGZIP(), []int{0, 0}
+}
+
+func (x *ClientRequestBatch_SingleClientRequest) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type ClientResponseBatch_SingleClientResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Message string `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+}
+
+func (x *ClientResponseBatch_SingleClientResponse) Reset() {
+	*x = ClientResponseBatch_SingleClientResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_client_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ClientResponseBatch_SingleClientResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClientResponseBatch_SingleClientResponse) ProtoMessage() {}
+
+func (x *ClientResponseBatch_SingleClientResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_client_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClientResponseBatch_SingleClientResponse.ProtoReflect.Descriptor instead.
+func (*ClientResponseBatch_SingleClientResponse) Descriptor() ([]byte, []int) {
+	return file_proto_client_proto_rawDescGZIP(), []int{1, 0}
+}
+
+func (x *ClientResponseBatch_SingleClientResponse) GetMessage() string {
 	if x != nil {
 		return x.Message
 	}
@@ -134,15 +244,31 @@ var File_proto_client_proto protoreflect.FileDescriptor
 
 var file_proto_client_proto_rawDesc = []byte{
 	0x0a, 0x12, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x22, 0x39, 0x0a, 0x0d, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x18, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22,
-	0x3a, 0x0a, 0x0e, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69,
-	0x64, 0x12, 0x18, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x08, 0x5a, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x6f, 0x74, 0x6f, 0x22, 0xb2, 0x01, 0x0a, 0x12, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x42, 0x61, 0x74, 0x63, 0x68, 0x12, 0x16, 0x0a, 0x06, 0x73,
+	0x65, 0x6e, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x06, 0x73, 0x65, 0x6e,
+	0x64, 0x65, 0x72, 0x12, 0x43, 0x0a, 0x08, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x73, 0x18,
+	0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x42, 0x61, 0x74, 0x63, 0x68, 0x2e, 0x53, 0x69, 0x6e, 0x67, 0x6c,
+	0x65, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x08,
+	0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x73, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x1a, 0x2f, 0x0a, 0x13, 0x53, 0x69, 0x6e, 0x67,
+	0x6c, 0x65, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
+	0x18, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0xbc, 0x01, 0x0a, 0x13, 0x43, 0x6c,
+	0x69, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x61, 0x74, 0x63,
+	0x68, 0x12, 0x1a, 0x0a, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x03, 0x52, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x12, 0x47, 0x0a,
+	0x09, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x29, 0x2e, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x42, 0x61, 0x74, 0x63, 0x68, 0x2e, 0x53, 0x69, 0x6e, 0x67, 0x6c, 0x65, 0x43, 0x6c, 0x69,
+	0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x09, 0x72, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x73, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x1a, 0x30, 0x0a, 0x14, 0x53, 0x69, 0x6e, 0x67, 0x6c, 0x65,
+	0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18,
+	0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x08, 0x5a, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x2f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -157,17 +283,21 @@ func file_proto_client_proto_rawDescGZIP() []byte {
 	return file_proto_client_proto_rawDescData
 }
 
-var file_proto_client_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_client_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_client_proto_goTypes = []interface{}{
-	(*ClientRequest)(nil),  // 0: ClientRequest
-	(*ClientResponse)(nil), // 1: ClientResponse
+	(*ClientRequestBatch)(nil),                       // 0: ClientRequestBatch
+	(*ClientResponseBatch)(nil),                      // 1: ClientResponseBatch
+	(*ClientRequestBatch_SingleClientRequest)(nil),   // 2: ClientRequestBatch.SingleClientRequest
+	(*ClientResponseBatch_SingleClientResponse)(nil), // 3: ClientResponseBatch.SingleClientResponse
 }
 var file_proto_client_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	2, // 0: ClientRequestBatch.requests:type_name -> ClientRequestBatch.SingleClientRequest
+	3, // 1: ClientResponseBatch.responses:type_name -> ClientResponseBatch.SingleClientResponse
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_proto_client_proto_init() }
@@ -177,7 +307,7 @@ func file_proto_client_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_proto_client_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ClientRequest); i {
+			switch v := v.(*ClientRequestBatch); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -189,7 +319,31 @@ func file_proto_client_proto_init() {
 			}
 		}
 		file_proto_client_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ClientResponse); i {
+			switch v := v.(*ClientResponseBatch); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_client_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ClientRequestBatch_SingleClientRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_client_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ClientResponseBatch_SingleClientResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -207,7 +361,7 @@ func file_proto_client_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_proto_client_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

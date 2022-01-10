@@ -1,22 +1,6 @@
 package internal
 
 /*
-	ClientRequest corresponds to a single client request
-*/
-type ClientRequest struct {
-	id      string // assumed to be unique
-	message string
-}
-
-/*
-	MessageBlock corresponds to a batch of requests that will be replicated
-*/
-type MessageBlock struct {
-	id       string // assumed to be unique
-	requests []ClientRequest
-}
-
-/*
 	Value associates the id of message block with a priority assigned by the recorders
 */
 
