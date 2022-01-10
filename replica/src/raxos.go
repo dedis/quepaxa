@@ -8,6 +8,7 @@ import (
 	"net"
 	"raxos/benchmark"
 	"raxos/configuration"
+	"raxos/proto"
 	"sync"
 	"time"
 )
@@ -49,14 +50,22 @@ type Instance struct {
 
 	Listener net.Listener // listening to replicas and clients
 
+	rpcTable     map[uint8]*RPCPair
+	incomingChan chan *RPCPair
+
+	clientRequestRpc       uint8 // 0
+	clientResponseRpc      uint8 // 1
+	genericConsensusRpc    uint8 // 2
+	messageBlockReplyRpc   uint8 // 3
+	messageBlockRequestRpc uint8 // 4
+
 	connectedToReplicas bool
 	connectedToClients  bool
 	startedServer       bool
 	startedHeartBeats   bool
 	startedBatch        bool
 
-	rpcTable map[uint8]*RPCPair
-
+	// from here
 	instances        []instance
 	nextFreeInstance int64
 
@@ -71,16 +80,7 @@ type Instance struct {
 	requestsIn  chan request
 	requestsOut chan bool
 
-	replicaChan chan replicaMessage
-
 	clientOutChan chan int
-
-	prepareRpc uint8
-	ackRpc     uint8
-	proposeRpc uint8
-	acceptRpc  uint8
-	learnRpc   uint8
-	emptyRpc   uint8
 
 	expected  int64
 	index     int64
@@ -97,6 +97,26 @@ type Instance struct {
 
 func (in *Instance) debug(message string) {
 	fmt.Printf("%s\n", message)
+
+}
+
+func (in *Instance) handleClientRequest(request *proto.ClientRequest) {
+
+}
+
+func (in *Instance) handleClientResponse(response *proto.ClientResponse) {
+
+}
+
+func (in *Instance) handleGenericConsensus(consensus *proto.GenericConsensus) {
+
+}
+
+func (in *Instance) handleMessageBlockReply(reply *proto.MessageBlockReply) {
+
+}
+
+func (in *Instance) handleMessageBlockRequest(request *proto.MessageBlockRequest) {
 
 }
 
