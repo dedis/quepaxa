@@ -2,34 +2,14 @@ package raxos
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/gob"
-	"fmt"
 	"net"
 	"raxos/benchmark"
 	"raxos/configuration"
-	"raxos/proto"
+	"raxos/internal"
+	_ "raxos/proto"
 	"sync"
 	"time"
 )
-
-func getRealSizeOf(v interface{}) (int, error) {
-	b := new(bytes.Buffer)
-	if err := gob.NewEncoder(b).Encode(v); err != nil {
-		return 0, err
-	}
-	return b.Len(), nil
-}
-
-func getStringOfSizeN(length int) string {
-	str := "a"
-	size, _ := getRealSizeOf(str)
-	for size < length {
-		str = str + "a"
-		size, _ = getRealSizeOf(str)
-	}
-	return str
-}
 
 type Instance struct {
 	nodeName    int64
@@ -59,15 +39,15 @@ type Instance struct {
 	messageBlockReplyRpc   uint8 // 3
 	messageBlockRequestRpc uint8 // 4
 
-	connectedToReplicas bool
-	connectedToClients  bool
-	startedServer       bool
-	startedHeartBeats   bool
-	startedBatch        bool
-
 	// from here
-	instances        []instance
-	nextFreeInstance int64
+	instances    []internal.Slot
+	stateMachine *benchmark.App
+
+	committedIndex int64
+	proposedIndex  int64
+
+	pendingRepliesMap map[uint64]int64 // assigns request identifier cm to the client cl that is waiting for the reply
+	proposed          []int64          // assigns the proposed request to the slot
 
 	logFilePath string
 	serviceTime int64
@@ -75,8 +55,11 @@ type Instance struct {
 	responseSize   int64
 	responseString string
 
-	batchSize   int64
-	batchTime   int64
+	batchSize int64
+	batchTime int64
+
+	// from here
+
 	requestsIn  chan request
 	requestsOut chan bool
 
@@ -92,32 +75,6 @@ type Instance struct {
 	outgoingMessageChannels []chan RPCPair
 
 	debugOn bool
-	app     *benchmark.App
-}
-
-func (in *Instance) debug(message string) {
-	fmt.Printf("%s\n", message)
-
-}
-
-func (in *Instance) handleClientRequest(request *proto.ClientRequest) {
-
-}
-
-func (in *Instance) handleClientResponse(response *proto.ClientResponse) {
-
-}
-
-func (in *Instance) handleGenericConsensus(consensus *proto.GenericConsensus) {
-
-}
-
-func (in *Instance) handleMessageBlockReply(reply *proto.MessageBlockReply) {
-
-}
-
-func (in *Instance) handleMessageBlockRequest(request *proto.MessageBlockRequest) {
-
 }
 
 func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serviceTime int64, responseSize int64, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmark int64, numKeys int64) {
