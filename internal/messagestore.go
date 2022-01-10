@@ -1,21 +1,25 @@
 package internal
 
+import (
+	"raxos/proto"
+)
+
 type MessageStore struct {
-	messageBlocks map[string]MessageBlock
+	messageBlocks map[string]*proto.MessageBlock
 	//mutex         sync.Mutex
 }
 
 func (ms *MessageStore) Init() {
-	ms.messageBlocks = make(map[string]MessageBlock)
+	ms.messageBlocks = make(map[string]*proto.MessageBlock)
 }
 
-func (ms *MessageStore) Add(block MessageBlock) {
+func (ms *MessageStore) Add(block *proto.MessageBlock) {
 	//ms.mutex.Lock()
-	ms.messageBlocks[block.id] = block
+	ms.messageBlocks[block.Hash] = block
 	//ms.mutex.Unlock()
 }
 
-func (ms *MessageStore) Get(id string) (MessageBlock, bool) {
+func (ms *MessageStore) Get(id string) (*proto.MessageBlock, bool) {
 	//ms.mutex.Lock()
 	i, ok := ms.messageBlocks[id]
 	//ms.mutex.Unlock()

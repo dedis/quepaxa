@@ -6,6 +6,7 @@ import (
 	"raxos/benchmark"
 	"raxos/configuration"
 	"raxos/internal"
+	"raxos/proto"
 	_ "raxos/proto"
 	"time"
 )
@@ -48,7 +49,7 @@ type Instance struct {
 	committedIndex int64
 	proposedIndex  int64
 
-	pendingRepliesMap map[uint64]int64 // assigns request identifier cm to the client cl that is waiting for the reply
+	pendingRepliesMap map[string]int64 // assigns client batch request identifier cm to the client cl that is waiting for the reply
 	proposed          []int64          // assigns the proposed request to the slot
 
 	logFilePath string
@@ -62,9 +63,12 @@ type Instance struct {
 
 	outgoingMessageChan chan *OutgoingRPC
 
+	requestsIn   chan *proto.ClientRequestBatch
+	messageStore internal.MessageStore
+	blockCounter int64
+
 	// from here
 
-	requestsIn  chan request
 	requestsOut chan bool
 
 	clientOutChan chan int
