@@ -16,10 +16,10 @@ type RPCPair struct {
 
 	/*
 		Message	Codes
-			ClientRequest 0
-			ClientResponse 1
+			ClientRequestBatch 0
+			ClientResponseBatch 1
 			GenericConsensus 2
-			MessageBlockReply 3
+			MessageBlock 3
 			MessageBlockRequest 4
 	*/
 }
@@ -138,16 +138,16 @@ func (in *Instance) run() {
 			in.debug("Received replica message")
 			code := replicaMessage.code
 			switch code {
-			case in.clientRequestRpc:
-				clientRequest := replicaMessage.Obj.(*proto.ClientRequest)
-				in.debug("Client Request" + fmt.Sprintf("%#v", clientRequest))
-				in.handleClientRequest(clientRequest)
+			case in.clientRequestBatchRpc:
+				clientRequestBatch := replicaMessage.Obj.(*proto.ClientRequestBatch)
+				in.debug("Client request batch" + fmt.Sprintf("%#v", clientRequestBatch))
+				in.handleClientRequestBatch(clientRequestBatch)
 				break
 
-			case in.clientResponseRpc:
-				clientResponse := replicaMessage.Obj.(*proto.ClientResponse)
-				in.debug("Client Response " + fmt.Sprintf("%#v", clientResponse))
-				in.handleClientResponse(clientResponse)
+			case in.clientResponseBatchRpc:
+				clientResponseBatch := replicaMessage.Obj.(*proto.ClientResponseBatch)
+				in.debug("Client response batch " + fmt.Sprintf("%#v", clientResponseBatch))
+				in.handleClientResponseBatch(clientResponseBatch)
 				break
 
 			case in.genericConsensusRpc:
@@ -156,13 +156,13 @@ func (in *Instance) run() {
 				in.handleGenericConsensus(genericConsensus)
 				break
 
-			case in.messageBlockReplyRpc:
-				messageBlockReply := replicaMessage.Obj.(*proto.MessageBlockReply)
-				in.debug("Message Block Reply  " + fmt.Sprintf("%#v", messageBlockReply))
-				in.handleMessageBlockReply(messageBlockReply)
+			case in.MessageBlockRpc:
+				messageBlock := replicaMessage.Obj.(*proto.MessageBlock)
+				in.debug("Message Block  " + fmt.Sprintf("%#v", messageBlock))
+				in.handleMessageBlock(messageBlock)
 				break
 
-			case in.messageBlockRequestRpc:
+			case in.MessageBlockRequestRpc:
 				messageBlockRequest := replicaMessage.Obj.(*proto.MessageBlockRequest)
 				in.debug("Message Block Request " + fmt.Sprintf("%#v", messageBlockRequest))
 				in.handleMessageBlockRequest(messageBlockRequest)
@@ -177,7 +177,7 @@ func (in *Instance) sendMessage(peer int64, rpcPair *RPCPair) {
 	code := rpcPair.code
 	oriMsg := rpcPair.Obj
 	var msg proto.Serializable
-	msg = in.getNewCopyofMessage(code, oriMsg)
+	msg = in.getNewCopyOfMessage(code, oriMsg)
 	var w *bufio.Writer
 
 	if peer < in.numReplicas {

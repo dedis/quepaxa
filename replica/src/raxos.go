@@ -36,11 +36,11 @@ type Instance struct {
 	rpcTable     map[uint8]*RPCPair
 	incomingChan chan *RPCPair
 
-	clientRequestRpc       uint8 // 0
-	clientResponseRpc      uint8 // 1
+	clientRequestBatchRpc  uint8 // 0
+	clientResponseBatchRpc uint8 // 1
 	genericConsensusRpc    uint8 // 2
-	messageBlockReplyRpc   uint8 // 3
-	messageBlockRequestRpc uint8 // 4
+	MessageBlockRpc        uint8 // 3
+	MessageBlockRequestRpc uint8 // 4
 
 	instances    []internal.Slot
 	stateMachine *benchmark.App

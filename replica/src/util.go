@@ -32,21 +32,23 @@ func getStringOfSizeN(length int) string {
 
 func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) proto.Serializable {
 
-	if code == in.clientRequestRpc {
+	if code == in.clientRequestBatchRpc {
 
-		clientRequest := msg.(*proto.ClientRequest)
-		return &proto.ClientRequest{
-			Id:      clientRequest.Id,
-			Message: clientRequest.Message,
+		clientRequestBatch := msg.(*proto.ClientRequestBatch)
+		return &proto.ClientRequestBatch{
+			Sender:   clientRequestBatch.Sender,
+			Requests: clientRequestBatch.Requests,
+			Id:       clientRequestBatch.Id,
 		}
 
 	}
 
-	if code == in.clientResponseRpc {
-		clientResponse := msg.(*proto.ClientResponse)
-		return &proto.ClientResponse{
-			Id:      clientResponse.Id,
-			Message: clientResponse.Message,
+	if code == in.clientResponseBatchRpc {
+		clientResponseBatch := msg.(*proto.ClientResponseBatch)
+		return &proto.ClientResponseBatch{
+			Receiver:  clientResponseBatch.Receiver,
+			Responses: clientResponseBatch.Responses,
+			Id:        clientResponseBatch.Id,
 		}
 
 	}
@@ -69,20 +71,19 @@ func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) prot
 
 	}
 
-	if code == in.messageBlockReplyRpc {
+	if code == in.MessageBlockRpc {
 
-		messageBlockReply := msg.(*proto.MessageBlockReply)
-		return &proto.MessageBlockReply{
-			Hash:     messageBlockReply.Hash,
-			Requests: messageBlockReply.Requests,
+		messageBlock := msg.(*proto.MessageBlock)
+		return &proto.MessageBlock{
+			Hash:     messageBlock.Hash,
+			Requests: messageBlock.Requests,
 		}
 
 	}
 
-	if code == in.messageBlockRequestRpc {
+	if code == in.MessageBlockRequestRpc {
 		messageBlockRequest := msg.(*proto.MessageBlockRequest)
 		return &proto.MessageBlockRequest{Hash: messageBlockRequest.Hash}
-
 	}
 
 	return nil

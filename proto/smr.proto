@@ -14,10 +14,10 @@ message MessageBlock{
   message  ClientRequestBatch{
     int64 sender = 1;
     repeated SingleClientRequest requests = 2;
-    string id = 3; // unique identifier
+    string id = 3; // unique identifier specified by client
   }
 
-  int64 hash = 1;
+  string hash = 1; // unique identifier specified by proposer
   repeated ClientRequestBatch requests = 2;
 }
 
