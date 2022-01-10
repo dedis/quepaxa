@@ -7,16 +7,19 @@ import (
 	"raxos/configuration"
 	"raxos/internal"
 	_ "raxos/proto"
-	"sync"
 	"time"
 )
+
+const numOutgoingThreads = 200
+const incomingBufferSize = 1000000
+const outgoingBufferSize = int(incomingBufferSize / numOutgoingThreads)
 
 type Instance struct {
 	nodeName    int64
 	numReplicas int64
 	numClients  int64
 
-	lock sync.Mutex
+	//lock sync.Mutex
 
 	replicaAddrList        []string   // array with the IP:port address of every replica
 	replicaConnections     []net.Conn // cache of replica connections to all other replicas
@@ -39,7 +42,6 @@ type Instance struct {
 	messageBlockReplyRpc   uint8 // 3
 	messageBlockRequestRpc uint8 // 4
 
-	// from here
 	instances    []internal.Slot
 	stateMachine *benchmark.App
 
@@ -57,6 +59,8 @@ type Instance struct {
 
 	batchSize int64
 	batchTime int64
+
+	outgoingMessageChan chan *OutgoingRPC
 
 	// from here
 

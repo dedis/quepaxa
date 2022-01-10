@@ -24,6 +24,11 @@ type RPCPair struct {
 	*/
 }
 
+type OutgoingRPC struct {
+	rpcPair *RPCPair
+	peer    int64
+}
+
 func (in *Instance) RegisterRPC(msgObj proto.Serializable, code uint8) {
 	in.rpcTable[code] = &RPCPair{code, msgObj}
 }
@@ -129,7 +134,7 @@ func (in *Instance) run() {
 			in.debug("Checking channel\n")
 
 			replicaMessage := <-in.incomingChan
-			in.lock.Lock()
+			//in.lock.Lock()
 			in.debug("Received replica message")
 			code := replicaMessage.code
 			switch code {
@@ -163,15 +168,16 @@ func (in *Instance) run() {
 				in.handleMessageBlockRequest(messageBlockRequest)
 				break
 			}
-			in.lock.Unlock()
+			//in.lock.Unlock()
 		}
 	}()
 }
 
 func (in *Instance) sendMessage(peer int64, rpcPair *RPCPair) {
 	code := rpcPair.code
-	msg := rpcPair.Obj
-
+	oriMsg := rpcPair.Obj
+	var msg proto.Serializable
+	msg = in.getNewCopyofMessage(code, oriMsg)
 	var w *bufio.Writer
 
 	if peer < in.numReplicas {
@@ -188,5 +194,16 @@ func (in *Instance) sendMessage(peer int64, rpcPair *RPCPair) {
 	err = w.Flush()
 	if err != nil {
 		return
+	}
+}
+
+func (in *Instance) startOutgoingLinks() {
+	for i := 0; i < numOutgoingThreads; i++ {
+		go func() {
+			for true {
+				outgoingMessage := <-in.outgoingMessageChan
+				in.sendMessage(outgoingMessage.peer, outgoingMessage.rpcPair)
+			}
+		}()
 	}
 }
