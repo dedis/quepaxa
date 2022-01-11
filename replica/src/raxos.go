@@ -6,7 +6,6 @@ import (
 	"net"
 	"raxos/benchmark"
 	"raxos/configuration"
-	"raxos/internal"
 	"raxos/proto"
 	_ "raxos/proto"
 	"time"
@@ -44,14 +43,13 @@ type Instance struct {
 	MessageBlockRpc        uint8 // 3
 	MessageBlockRequestRpc uint8 // 4
 
-	instances    []internal.Slot
-	stateMachine *benchmark.App
+	replicatedLog []Slot
+	stateMachine  *benchmark.App
 
 	committedIndex int64
 	proposedIndex  int64
 
-	pendingRepliesMap map[string]int64 // assigns client batch request identifier cm to the client cl that is waiting for the reply
-	proposed          []int64          // assigns the proposed request to the slot
+	proposed []string // assigns the proposed request to the slot
 
 	logFilePath string
 	serviceTime int64
@@ -62,26 +60,18 @@ type Instance struct {
 	batchSize int64
 	batchTime int64
 
+	pipelineLength      int64
+	numInflightRequests int64
+
 	outgoingMessageChan chan *OutgoingRPC
 
 	requestsIn   chan *proto.ClientRequestBatch
-	messageStore internal.MessageStore
+	messageStore MessageStore
 	blockCounter int64
 
 	// from here
-
-	requestsOut chan bool
-
-	clientOutChan chan int
-
-	expected  int64
-	index     int64
-	est_index []int64
-
-	keepAliveTimeout int64 // in milli seconds
-	lastSeenTime     []time.Time
-
-	outgoingMessageChannels []chan RPCPair
+	leaderTimeout int64       // in milli seconds
+	lastSeenTime  []time.Time // time each replica was last seen
 
 	debugOn bool
 }

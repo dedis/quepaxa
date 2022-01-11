@@ -114,3 +114,27 @@ func (in *Instance) convertToMessageBlockRequests(requests []*proto.ClientReques
 	}
 	return returnArray
 }
+
+func (in *Instance) proposedPreviously(hash string) (bool, int) {
+	// checks if this value appears in the proposed array
+	for i := 0; i < len(in.proposed); i++ {
+		if in.proposed[i] == hash {
+			return true, i
+		}
+	}
+	return false, -1
+}
+
+func (in *Instance) committedPreviously(hash string) (bool, int) {
+	// checks if this value is previously decided
+	for i := 0; i < len(in.replicatedLog); i++ {
+		if in.replicatedLog[i].decision.id == hash {
+			return true, i
+		}
+	}
+	return false, -1
+}
+
+func (in *Instance) getDeterministicLeader1() int {
+	return 0 // node 0 is the default leader
+}

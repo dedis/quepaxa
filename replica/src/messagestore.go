@@ -1,6 +1,7 @@
-package internal
+package raxos
 
 import (
+	"fmt"
 	"raxos/proto"
 )
 
@@ -31,4 +32,16 @@ func (ms *MessageStore) Remove(id string) {
 	//ms.mutex.Lock()
 	delete(ms.messageBlocks, id)
 	//ms.mutex.Unlock()
+}
+
+func (ms *MessageStore) printStore() {
+	for hash, block := range ms.messageBlocks {
+		fmt.Print("Hash:", hash, ": \n")
+		for i := 0; i < len(block.Requests); i++ {
+			for j := 0; j < len(block.Requests[i].Requests); j++ {
+				fmt.Print(block.Requests[i].Requests[j].Message, " \n")
+			}
+		}
+		fmt.Print("\n")
+	}
 }

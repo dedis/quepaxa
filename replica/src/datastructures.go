@@ -1,4 +1,4 @@
-package internal
+package raxos
 
 /*
 	Value associates the id of message block with a priority assigned by the recorders
