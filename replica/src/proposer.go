@@ -1,6 +1,7 @@
 package raxos
 
 import (
+	"math/rand"
 	"raxos/proto"
 	"strconv"
 	"time"
@@ -56,7 +57,7 @@ func (in *Instance) handleClientRequestBatch(batch *proto.ClientRequestBatch) {
 }
 
 func (in *Instance) handleClientResponseBatch(batch *proto.ClientResponseBatch) {
-
+	// the proposer doesn't receive any client responses
 }
 
 func (in *Instance) handleMessageBlock(block *proto.MessageBlock) {
@@ -66,5 +67,34 @@ func (in *Instance) handleMessageBlock(block *proto.MessageBlock) {
 }
 
 func (in *Instance) handleMessageBlockRequest(request *proto.MessageBlockRequest) {
+	messageBlock, ok := in.messageStore.Get(request.Hash)
+	if ok {
+		// the block exists
+
+		rpcPair := RPCPair{
+			code: in.MessageBlockRpc,
+			Obj:  messageBlock,
+		}
+		in.outgoingMessageChan <- &OutgoingRPC{
+			rpcPair: &rpcPair,
+			peer:    request.Sender,
+		}
+
+	}
+}
+
+func (in *Instance) sendMessageBlockRequest(hash string) {
+	// send a Message block request to a random recorder
+
+	messageBlockRequest := proto.MessageBlockRequest{Hash: hash, Sender: in.nodeName}
+	randomPeer := rand.Intn(int(in.numReplicas))
+	rpcPair := RPCPair{
+		code: in.MessageBlockRequestRpc,
+		Obj:  &messageBlockRequest,
+	}
+	in.outgoingMessageChan <- &OutgoingRPC{
+		rpcPair: &rpcPair,
+		peer:    int64(randomPeer),
+	}
 
 }

@@ -83,7 +83,7 @@ func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) prot
 
 	if code == in.MessageBlockRequestRpc {
 		messageBlockRequest := msg.(*proto.MessageBlockRequest)
-		return &proto.MessageBlockRequest{Hash: messageBlockRequest.Hash}
+		return &proto.MessageBlockRequest{Hash: messageBlockRequest.Hash, Sender: messageBlockRequest.Sender}
 	}
 
 	return nil

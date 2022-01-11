@@ -2,6 +2,7 @@ package raxos
 
 import (
 	"bufio"
+	"math/rand"
 	"net"
 	"raxos/benchmark"
 	"raxos/configuration"
@@ -87,4 +88,5 @@ type Instance struct {
 
 func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serviceTime int64, responseSize int64, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmark int64, numKeys int64) {
 
+	rand.Seed(time.Now().UTC().UnixNano())
 }

@@ -2,7 +2,8 @@ syntax = "proto3";
 option go_package = "proto/";
 
 message MessageBlockRequest {
-  int64 hash = 1;
+  string hash = 1;
+  int64 sender = 2;
 }
 
 message MessageBlock{
