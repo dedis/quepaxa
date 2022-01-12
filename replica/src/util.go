@@ -37,6 +37,7 @@ func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) prot
 		clientRequestBatch := msg.(*proto.ClientRequestBatch)
 		return &proto.ClientRequestBatch{
 			Sender:   clientRequestBatch.Sender,
+			Receiver: clientRequestBatch.Receiver,
 			Requests: clientRequestBatch.Requests,
 			Id:       clientRequestBatch.Id,
 		}
@@ -46,6 +47,7 @@ func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) prot
 	if code == in.clientResponseBatchRpc {
 		clientResponseBatch := msg.(*proto.ClientResponseBatch)
 		return &proto.ClientResponseBatch{
+			Sender:    clientResponseBatch.Sender,
 			Receiver:  clientResponseBatch.Receiver,
 			Responses: clientResponseBatch.Responses,
 			Id:        clientResponseBatch.Id,
@@ -57,6 +59,8 @@ func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) prot
 
 		genericConsensus := msg.(*proto.GenericConsensus)
 		return &proto.GenericConsensus{
+			Sender:      genericConsensus.Sender,
+			Receiver:    genericConsensus.Receiver,
 			Index:       genericConsensus.Index,
 			M:           genericConsensus.M,
 			S:           genericConsensus.S,
@@ -75,6 +79,8 @@ func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) prot
 
 		messageBlock := msg.(*proto.MessageBlock)
 		return &proto.MessageBlock{
+			Sender:   messageBlock.Sender,
+			Receiver: messageBlock.Receiver,
 			Hash:     messageBlock.Hash,
 			Requests: messageBlock.Requests,
 		}
@@ -83,7 +89,31 @@ func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) prot
 
 	if code == in.MessageBlockRequestRpc {
 		messageBlockRequest := msg.(*proto.MessageBlockRequest)
-		return &proto.MessageBlockRequest{Hash: messageBlockRequest.Hash, Sender: messageBlockRequest.Sender}
+		return &proto.MessageBlockRequest{
+			Sender:   messageBlockRequest.Sender,
+			Receiver: messageBlockRequest.Receiver,
+			Hash:     messageBlockRequest.Hash,
+		}
+	}
+
+	if code == in.ClientStatusRequestRpc {
+		clientStatusRequest := msg.(*proto.ClientStatusRequest)
+		return &proto.ClientStatusRequest{
+			Sender:    clientStatusRequest.Sender,
+			Receiver:  clientStatusRequest.Receiver,
+			Operation: clientStatusRequest.Operation,
+			Message:   clientStatusRequest.Message,
+		}
+	}
+
+	if code == in.ClientStatusResponseRpc {
+		clientStatusResponse := msg.(*proto.ClientStatusResponse)
+		return &proto.ClientStatusResponse{
+			Sender:    clientStatusResponse.Sender,
+			Receiver:  clientStatusResponse.Receiver,
+			Operation: clientStatusResponse.Operation,
+			Message:   clientStatusResponse.Message,
+		}
 	}
 
 	return nil

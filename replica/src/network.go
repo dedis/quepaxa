@@ -21,6 +21,8 @@ type RPCPair struct {
 			GenericConsensus 2
 			MessageBlock 3
 			MessageBlockRequest 4
+			ClientStatusRequest 5
+			ClientStatusResponse 6
 	*/
 }
 
@@ -166,6 +168,18 @@ func (in *Instance) run() {
 				messageBlockRequest := replicaMessage.Obj.(*proto.MessageBlockRequest)
 				in.debug("Message Block Request " + fmt.Sprintf("%#v", messageBlockRequest))
 				in.handleMessageBlockRequest(messageBlockRequest)
+				break
+
+			case in.ClientStatusRequestRpc:
+				clientStatusRequest := replicaMessage.Obj.(*proto.ClientStatusRequest)
+				in.debug("Client Status Request " + fmt.Sprintf("%#v", clientStatusRequest))
+				in.handleClientStatusRequest(clientStatusRequest)
+				break
+
+			case in.ClientStatusResponseRpc:
+				clientStatusResponse := replicaMessage.Obj.(*proto.ClientStatusResponse)
+				in.debug("Client Status Response " + fmt.Sprintf("%#v", clientStatusResponse))
+				in.handleClientStatusResponse(clientStatusResponse)
 				break
 			}
 			//in.lock.Unlock()

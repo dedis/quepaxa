@@ -20,6 +20,8 @@ func (in *Instance) broadcastBlock() {
 			}
 
 			messageBlock := proto.MessageBlock{
+				Sender:   in.nodeName,
+				Receiver: 0,
 				Hash:     strconv.Itoa(int(in.nodeName)) + "." + strconv.Itoa(int(in.blockCounter)),
 				Requests: in.convertToMessageBlockRequests(requests),
 			}
@@ -67,6 +69,8 @@ func (in *Instance) handleMessageBlockRequest(request *proto.MessageBlockRequest
 	messageBlock, ok := in.messageStore.Get(request.Hash)
 	if ok {
 		// the block exists
+		messageBlock.Sender = in.nodeName
+		messageBlock.Receiver = request.Sender
 
 		rpcPair := RPCPair{
 			code: in.MessageBlockRpc,
@@ -81,8 +85,8 @@ func (in *Instance) handleMessageBlockRequest(request *proto.MessageBlockRequest
 func (in *Instance) sendMessageBlockRequest(hash string) {
 	// send a Message block request to a random recorder
 
-	messageBlockRequest := proto.MessageBlockRequest{Hash: hash, Sender: in.nodeName}
 	randomPeer := rand.Intn(int(in.numReplicas))
+	messageBlockRequest := proto.MessageBlockRequest{Hash: hash, Sender: in.nodeName, Receiver: int64(randomPeer)}
 	rpcPair := RPCPair{
 		code: in.MessageBlockRequestRpc,
 		Obj:  &messageBlockRequest,
@@ -99,5 +103,13 @@ func (in *Instance) handleGenericConsensus(consensus *proto.GenericConsensus) {
 	} else if consensus.Destination == 2 {
 		in.handleRecorderConsensusMessage(consensus)
 	}
+
+}
+
+func (in *Instance) handleClientStatusRequest(request *proto.ClientStatusRequest) {
+
+}
+
+func (in *Instance) handleClientStatusResponse(response *proto.ClientStatusResponse) {
 
 }
