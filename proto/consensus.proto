@@ -3,20 +3,23 @@ option go_package = "proto/";
 
 message GenericConsensus {
 
-  int64 index = 1;
-  int64 M = 2;  // propose=1 , spreadE=2 , spreadC=3, gather=4, decide=5, commit=6
-  int64 S = 3;  // step
+  int64 sender = 1;
+  int64 receiver = 2;
+
+  int64 index = 3;
+  int64 M = 4;  // propose=1 , spreadE=2 , spreadC=3, gather=4, decide=5, commit=6
+  int64 S = 5;  // step
 
   message value {
     string id = 1;
     int64 fit = 2;
   }
 
-  value P = 4;
-  repeated value E = 5;
-  repeated value    C = 6;
-  bool D = 7;
-  value DS = 8;
-  int64 PR = 9; // id of the proposer who decided this index
-  int64 destination = 10 ; // 1 for the proposer and 2 for the recorder
+  value P = 6;
+  repeated value E = 7;
+  repeated value    C = 8;
+  bool D = 9;
+  value DS = 10;
+  int64 PR = 11; // id of the proposer who decided this index
+  int64 destination = 12 ; // 1 for the proposer and 2 for the recorder
 }

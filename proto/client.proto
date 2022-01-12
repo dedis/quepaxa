@@ -3,21 +3,38 @@ option go_package = "proto/";
 
 message ClientRequestBatch {
 
+  int64 sender = 1;
+  int64 receiver = 2;
+
   message SingleClientRequest {
     string message = 1;
   }
 
-  int64 sender = 1;
-  repeated SingleClientRequest requests = 2;
-  string id = 3; // unique identifier
+  repeated SingleClientRequest requests = 3;
+  string id = 4; // unique identifier
 }
 
 message ClientResponseBatch {
+  int64 sender = 1;
+  int64 receiver = 2;
   message SingleClientResponse {
     string message = 1;
   }
-
-  int64 receiver = 1;
-  repeated SingleClientResponse responses = 2;
-  string id = 3; // unique identifier
+  repeated SingleClientResponse responses = 3;
+  string id = 4; // unique identifier
 }
+
+message ClientStatusRequest {
+  int64 sender = 1;
+  int64 receiver = 2;
+  int64 operation = 3;
+  string message = 4;
+}
+
+message ClientStatusResponse {
+  int64 sender = 1;
+  int64 receiver = 2;
+  int64 operation = 3;
+  string message = 4;
+}
+
