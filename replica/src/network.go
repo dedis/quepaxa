@@ -158,25 +158,25 @@ func (in *Instance) run() {
 				in.handleGenericConsensus(genericConsensus)
 				break
 
-			case in.MessageBlockRpc:
+			case in.messageBlockRpc:
 				messageBlock := replicaMessage.Obj.(*proto.MessageBlock)
 				in.debug("Message Block  " + fmt.Sprintf("%#v", messageBlock))
 				in.handleMessageBlock(messageBlock)
 				break
 
-			case in.MessageBlockRequestRpc:
+			case in.messageBlockRequestRpc:
 				messageBlockRequest := replicaMessage.Obj.(*proto.MessageBlockRequest)
 				in.debug("Message Block Request " + fmt.Sprintf("%#v", messageBlockRequest))
 				in.handleMessageBlockRequest(messageBlockRequest)
 				break
 
-			case in.ClientStatusRequestRpc:
+			case in.clientStatusRequestRpc:
 				clientStatusRequest := replicaMessage.Obj.(*proto.ClientStatusRequest)
 				in.debug("Client Status Request " + fmt.Sprintf("%#v", clientStatusRequest))
 				in.handleClientStatusRequest(clientStatusRequest)
 				break
 
-			case in.ClientStatusResponseRpc:
+			case in.clientStatusResponseRpc:
 				clientStatusResponse := replicaMessage.Obj.(*proto.ClientStatusResponse)
 				in.debug("Client Status Response " + fmt.Sprintf("%#v", clientStatusResponse))
 				in.handleClientStatusResponse(clientStatusResponse)

@@ -2,8 +2,10 @@ package raxos
 
 import (
 	"bufio"
+	"fmt"
 	"math/rand"
 	"net"
+	"os"
 	"raxos/benchmark"
 	"raxos/configuration"
 	"raxos/proto"
@@ -11,6 +13,7 @@ import (
 	"time"
 )
 
+const incomingRequestBufferSize = 2000
 const numOutgoingThreads = 200
 const incomingBufferSize = 1000000
 const outgoingBufferSize = int(incomingBufferSize / numOutgoingThreads)
@@ -40,10 +43,10 @@ type Instance struct {
 	clientRequestBatchRpc   uint8 // 0
 	clientResponseBatchRpc  uint8 // 1
 	genericConsensusRpc     uint8 // 2
-	MessageBlockRpc         uint8 // 3
-	MessageBlockRequestRpc  uint8 // 4
-	ClientStatusRequestRpc  uint8 // 5
-	ClientStatusResponseRpc uint8 // 6
+	messageBlockRpc         uint8 // 3
+	messageBlockRequestRpc  uint8 // 4
+	clientStatusRequestRpc  uint8 // 5
+	clientStatusResponseRpc uint8 // 6
 
 	replicatedLog []Slot
 	stateMachine  *benchmark.App
@@ -78,7 +81,63 @@ type Instance struct {
 	debugOn bool
 }
 
-func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serviceTime int64, responseSize int64, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmark int64, numKeys int64) {
-
+func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serviceTime int64, responseSize int64, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmarkNumber int64, numKeys int64) *Instance {
+	in := Instance{
+		nodeName:                name,
+		numReplicas:             int64(len(cfg.Peers)),
+		numClients:              int64(len(cfg.Clients)),
+		replicaAddrList:         getReplicaAddressList(cfg), // from here
+		replicaConnections:      make([]net.Conn, len(cfg.Peers)),
+		incomingReplicaReaders:  make([]*bufio.Reader, len(cfg.Peers)),
+		outgoingReplicaWriters:  make([]*bufio.Writer, len(cfg.Peers)),
+		clientAddrList:          getClientAddressList(cfg),
+		clientConnections:       make([]net.Conn, len(cfg.Clients)),
+		incomingClientReaders:   make([]*bufio.Reader, len(cfg.Clients)),
+		outgoingClientWriters:   make([]*bufio.Writer, len(cfg.Clients)),
+		Listener:                nil,
+		rpcTable:                make(map[uint8]*RPCPair),
+		incomingChan:            make(chan *RPCPair, incomingBufferSize),
+		clientRequestBatchRpc:   0,
+		clientResponseBatchRpc:  1,
+		genericConsensusRpc:     2,
+		messageBlockRpc:         3,
+		messageBlockRequestRpc:  4,
+		clientStatusRequestRpc:  5,
+		clientStatusResponseRpc: 6,
+		//replicatedLog:           nil,
+		stateMachine:   benchmark.InitApp(benchmarkNumber, serviceTime, numKeys),
+		committedIndex: -1,
+		proposedIndex:  -1,
+		//proposed:                nil,
+		logFilePath:         logFilePath,
+		serviceTime:         serviceTime,
+		responseSize:        responseSize,
+		responseString:      getStringOfSizeN(int(responseSize)),
+		batchSize:           batchSize,
+		batchTime:           batchTime,
+		pipelineLength:      pipelineLength,
+		numInflightRequests: 0,
+		outgoingMessageChan: make(chan *OutgoingRPC, outgoingBufferSize),
+		requestsIn:          make(chan *proto.ClientRequestBatch, incomingRequestBufferSize),
+		messageStore:        MessageStore{},
+		blockCounter:        0,
+		leaderTimeout:       leaderTimeout,
+		lastSeenTime:        make([]time.Time, len(cfg.Peers)),
+		debugOn:             false,
+	}
 	rand.Seed(time.Now().UTC().UnixNano())
+	in.messageStore.Init()
+	/**/
+	in.RegisterRPC(new(proto.ClientRequestBatch), in.clientRequestBatchRpc)
+	in.RegisterRPC(new(proto.ClientResponseBatch), in.clientResponseBatchRpc)
+	in.RegisterRPC(new(proto.GenericConsensus), in.genericConsensusRpc)
+	in.RegisterRPC(new(proto.MessageBlock), in.messageBlockRpc)
+	in.RegisterRPC(new(proto.MessageBlockRequest), in.messageBlockRequestRpc)
+	in.RegisterRPC(new(proto.ClientStatusRequest), in.clientStatusRequestRpc)
+	in.RegisterRPC(new(proto.ClientStatusResponse), in.clientStatusResponseRpc)
+
+	pid := os.Getpid()
+	fmt.Printf("initialized Raxos with process id: %v \n", pid)
+	return &in
+
 }

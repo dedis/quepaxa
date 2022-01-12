@@ -1,7 +1,9 @@
 package raxos
 
 import (
+	"log"
 	"math/rand"
+	"os"
 	"raxos/proto"
 	"strconv"
 	"time"
@@ -27,7 +29,7 @@ func (in *Instance) broadcastBlock() {
 			}
 
 			rpcPair := RPCPair{
-				code: in.MessageBlockRpc,
+				code: in.messageBlockRpc,
 				Obj:  &messageBlock,
 			}
 
@@ -73,7 +75,7 @@ func (in *Instance) handleMessageBlockRequest(request *proto.MessageBlockRequest
 		messageBlock.Receiver = request.Sender
 
 		rpcPair := RPCPair{
-			code: in.MessageBlockRpc,
+			code: in.messageBlockRpc,
 			Obj:  messageBlock,
 		}
 
@@ -88,7 +90,7 @@ func (in *Instance) sendMessageBlockRequest(hash string) {
 	randomPeer := rand.Intn(int(in.numReplicas))
 	messageBlockRequest := proto.MessageBlockRequest{Hash: hash, Sender: in.nodeName, Receiver: int64(randomPeer)}
 	rpcPair := RPCPair{
-		code: in.MessageBlockRequestRpc,
+		code: in.messageBlockRequestRpc,
 		Obj:  &messageBlockRequest,
 	}
 
@@ -107,9 +109,67 @@ func (in *Instance) handleGenericConsensus(consensus *proto.GenericConsensus) {
 }
 
 func (in *Instance) handleClientStatusRequest(request *proto.ClientStatusRequest) {
-
+	if request.Operation == 1 {
+		in.startServer()
+	} else if request.Operation == 2 {
+		in.printLog()
+	}
 }
 
 func (in *Instance) handleClientStatusResponse(response *proto.ClientStatusResponse) {
 
+}
+
+func (in *Instance) startServer() {
+
+	go in.waitForConnections()
+	time.Sleep(2 * time.Second)
+
+	in.connectToReplicas()
+	time.Sleep(2 * time.Second)
+
+	in.startConnectionListners()
+	time.Sleep(2 * time.Second)
+
+	in.startOutgoingLinks()
+	time.Sleep(2 * time.Second)
+
+	in.run()
+	time.Sleep(2 * time.Second)
+
+	in.broadcastBlock()
+	time.Sleep(2 * time.Second)
+
+	in.updateStateMachine()
+	time.Sleep(2 * time.Second)
+
+}
+
+func (in *Instance) printLog() {
+	f, err := os.Create(in.logFilePath + strconv.Itoa(int(in.nodeName)) + ".txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	choiceNum := 0
+	for _, entry := range in.replicatedLog {
+
+		if entry.decided {
+
+			choiceLocalNum := 0
+
+			if len(entry.decisions) == 0 {
+				_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(choiceLocalNum) + ":")
+				_, _ = f.WriteString("no-op" + ",")
+			} else {
+
+				for _, decision := range entry.decisions {
+					_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(choiceLocalNum) + ":")
+					_, _ = f.WriteString(decision.id + ",")
+					choiceLocalNum++
+				}
+			}
+		}
+		choiceNum++
+	}
 }

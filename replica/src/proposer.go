@@ -17,4 +17,5 @@ func (in *Instance) delivered(index int, hash string, proposer int64) {
 
 func (in *Instance) updateStateMachine() {
 	// while true loop
+	go func() {}()
 }

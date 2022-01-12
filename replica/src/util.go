@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"raxos/configuration"
 	"raxos/proto"
 )
 
@@ -75,7 +76,7 @@ func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) prot
 
 	}
 
-	if code == in.MessageBlockRpc {
+	if code == in.messageBlockRpc {
 
 		messageBlock := msg.(*proto.MessageBlock)
 		return &proto.MessageBlock{
@@ -87,7 +88,7 @@ func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) prot
 
 	}
 
-	if code == in.MessageBlockRequestRpc {
+	if code == in.messageBlockRequestRpc {
 		messageBlockRequest := msg.(*proto.MessageBlockRequest)
 		return &proto.MessageBlockRequest{
 			Sender:   messageBlockRequest.Sender,
@@ -96,7 +97,7 @@ func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) prot
 		}
 	}
 
-	if code == in.ClientStatusRequestRpc {
+	if code == in.clientStatusRequestRpc {
 		clientStatusRequest := msg.(*proto.ClientStatusRequest)
 		return &proto.ClientStatusRequest{
 			Sender:    clientStatusRequest.Sender,
@@ -106,7 +107,7 @@ func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) prot
 		}
 	}
 
-	if code == in.ClientStatusResponseRpc {
+	if code == in.clientStatusResponseRpc {
 		clientStatusResponse := msg.(*proto.ClientStatusResponse)
 		return &proto.ClientStatusResponse{
 			Sender:    clientStatusResponse.Sender,
@@ -167,4 +168,20 @@ func (in *Instance) committedPreviously(hash string) (bool, int) {
 
 func (in *Instance) getDeterministicLeader1() int {
 	return 0 // node 0 is the default leader
+}
+
+func getClientAddressList(cfg *configuration.InstanceConfig) []string {
+	var clients []string
+	for i := 0; i < len(cfg.Clients); i++ {
+		clients = append(clients, cfg.Clients[i].Address)
+	}
+	return clients
+}
+
+func getReplicaAddressList(cfg *configuration.InstanceConfig) []string {
+	var replicas []string
+	for i := 0; i < len(cfg.Peers); i++ {
+		replicas = append(replicas, cfg.Peers[i].Address)
+	}
+	return replicas
 }
