@@ -173,7 +173,7 @@ func (in *Instance) run() {
 	}()
 }
 
-func (in *Instance) sendMessage(peer int64, rpcPair *RPCPair) {
+func (in *Instance) internalSendMessage(peer int64, rpcPair *RPCPair) {
 	code := rpcPair.code
 	oriMsg := rpcPair.Obj
 	var msg proto.Serializable
@@ -202,8 +202,15 @@ func (in *Instance) startOutgoingLinks() {
 		go func() {
 			for true {
 				outgoingMessage := <-in.outgoingMessageChan
-				in.sendMessage(outgoingMessage.peer, outgoingMessage.rpcPair)
+				in.internalSendMessage(outgoingMessage.peer, outgoingMessage.rpcPair)
 			}
 		}()
+	}
+}
+
+func (in *Instance) sendMessage(peer int64, rpcPair RPCPair) {
+	in.outgoingMessageChan <- &OutgoingRPC{
+		rpcPair: &rpcPair,
+		peer:    peer,
 	}
 }

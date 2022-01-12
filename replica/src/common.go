@@ -30,10 +30,7 @@ func (in *Instance) broadcastBlock() {
 			}
 
 			for i := int64(0); i < in.numReplicas; i++ {
-				in.outgoingMessageChan <- &OutgoingRPC{
-					rpcPair: &rpcPair,
-					peer:    i,
-				}
+				in.sendMessage(i, rpcPair)
 			}
 
 			lastSent = time.Now()
@@ -75,10 +72,8 @@ func (in *Instance) handleMessageBlockRequest(request *proto.MessageBlockRequest
 			code: in.MessageBlockRpc,
 			Obj:  messageBlock,
 		}
-		in.outgoingMessageChan <- &OutgoingRPC{
-			rpcPair: &rpcPair,
-			peer:    request.Sender,
-		}
+
+		in.sendMessage(request.Sender, rpcPair)
 
 	}
 }
@@ -92,10 +87,8 @@ func (in *Instance) sendMessageBlockRequest(hash string) {
 		code: in.MessageBlockRequestRpc,
 		Obj:  &messageBlockRequest,
 	}
-	in.outgoingMessageChan <- &OutgoingRPC{
-		rpcPair: &rpcPair,
-		peer:    int64(randomPeer),
-	}
+
+	in.sendMessage(int64(randomPeer), rpcPair)
 
 }
 
