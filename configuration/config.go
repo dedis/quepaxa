@@ -2,7 +2,7 @@ package configuration
 
 import (
 	"errors"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 )
 
@@ -11,8 +11,7 @@ var (
 	// ErrNoInstance is returned when an instance definition is expected but missing
 	ErrNoInstance = errors.New("missing instance definition")
 
-	// ErrInvalidInstanceDefinition is returned when an invalid instance definition is discovered, e.g. an empty name or
-	// address
+	// ErrInvalidInstanceDefinition is returned when an invalid instance definition is discovered, e.g. an empty name or address
 	ErrInvalidInstanceDefinition = errors.New("invalid instance definition")
 
 	// ErrDuplicateInstance is returned when there are multiple definitions for the same instance
@@ -25,7 +24,7 @@ type Instance struct {
 	Address string `yaml:"address"`
 }
 
-// InstanceConfig describes a  instance configuration
+// InstanceConfig describes the set of peers and clients in the system
 type InstanceConfig struct {
 	Peers   []Instance `yaml:"peers"`
 	Clients []Instance `yaml:"clients"`
@@ -55,6 +54,7 @@ func NewInstanceConfig(fname string) (*InstanceConfig, error) {
 }
 
 // checkInstanceList performs a sanity check for a list of instances
+// this method checks whether the identifier is unique and the address is unique for each replica and client
 func checkInstanceList(instances ...Instance) error {
 	if len(instances) == 0 {
 		return ErrNoInstance

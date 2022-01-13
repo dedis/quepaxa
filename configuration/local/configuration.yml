@@ -1,3 +1,6 @@
+# peers are the replicas which act as both recorders and proposers. clients are the clients
+# name and ip:port should be unique
+# to add more peers or clients: add new lines following the same structure
 peers:
   - name: 0
     address: 0.0.0.0:9000
