@@ -125,12 +125,40 @@ func (in *Instance) handleClientStatusRequest(request *proto.ClientStatusRequest
 	}
 }
 
+func (in *Instance) sendSampleClientResponse(ack *proto.MessageBlockAck) {
+	messageBlock, _ := in.messageStore.Get(ack.Hash)
+	// for each client block (client batch of requests) create a client batch reposne, and send it with the correct id
+
+	for i := 0; i < len(messageBlock.Requests); i++ {
+		clientRequestBatch := messageBlock.Requests[i]
+		var replies []*proto.ClientResponseBatch_SingleClientResponse
+		for j := 0; j < len(clientRequestBatch.Requests); j++ {
+			replies = append(replies, &proto.ClientResponseBatch_SingleClientResponse{Message: clientRequestBatch.Requests[j].Message})
+		}
+		responseBatch := proto.ClientResponseBatch{
+			Sender:    in.nodeName,
+			Receiver:  clientRequestBatch.Sender,
+			Responses: replies,
+			Id:        clientRequestBatch.Id,
+		}
+		rpcPair := RPCPair{
+			code: in.clientResponseBatchRpc,
+			Obj:  &responseBatch,
+		}
+
+		in.sendMessage(clientRequestBatch.Sender, rpcPair)
+
+	}
+}
+
 func (in *Instance) handleMessageBlockAck(ack *proto.MessageBlockAck) {
 	in.messageStore.addAck(ack.Hash)
 	acks := in.messageStore.getAcks(ack.Hash)
 	if acks != nil && int64(len(acks)) == in.numReplicas/2+1 {
 		// todo this block is guaranteed to be present in f+1 replicas, so its persistent
 		// todo invoke consensus or send to leader
+		// todo remove the following which are sample client responses
+		in.sendSampleClientResponse(ack)
 	}
 }
 
