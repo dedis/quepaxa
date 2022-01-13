@@ -9,12 +9,21 @@ import (
 	"time"
 )
 
+/*
+common.go implements the methods/functions that are common to both the proposer and the recorder
+*/
+
 func (in *Instance) broadcastBlock() {
+	/*
+		This is an infinite thread
+		It collects a batch of client requests batches (a 2d array of requests), creates a new block and broadcasts it to all the replicas
+	*/
 	go func() {
 		lastSent := time.Now() // used to get how long to wait
 		for true {             // this runs forever
 			numRequests := int64(0)
 			var requests []*proto.ClientRequestBatch
+			// this loop collects requests until the minimum batch time is met OR the batch time is timeout
 			for !(numRequests >= in.batchSize || (time.Now().Sub(lastSent).Microseconds() > in.batchTime && numRequests > 0)) {
 				newRequest := <-in.requestsIn // keep collecting new requests for the next batch
 				requests = append(requests, newRequest)
@@ -23,8 +32,8 @@ func (in *Instance) broadcastBlock() {
 
 			messageBlock := proto.MessageBlock{
 				Sender:   in.nodeName,
-				Receiver: 0,
-				Hash:     strconv.Itoa(int(in.nodeName)) + "." + strconv.Itoa(int(in.blockCounter)),
+				Receiver: 0,                                                                         // message block is a broadcast, so the receiver field is of no use
+				Hash:     strconv.Itoa(int(in.nodeName)) + "." + strconv.Itoa(int(in.blockCounter)), // unique block sequence number
 				Requests: in.convertToMessageBlockRequests(requests),
 			}
 
@@ -44,12 +53,17 @@ func (in *Instance) broadcastBlock() {
 
 }
 
+/*
+handler for new client requests received, the requests are sent to a channel for batching
+we allow clients to send requests in an open loop with an arbitrary passion arrival rate. To avoid buffer overflows, some client requests will be dropped
+*/
+
 func (in *Instance) handleClientRequestBatch(batch *proto.ClientRequestBatch) {
 
 	// forward the batch of client requests to the requests in buffer
 	select {
 	case in.requestsIn <- batch:
-		// Success
+		// Success: the server side buffers are not full
 	default:
 		//Unsuccessful
 		// if the buffer is full, then this request will be dropped (failed request)
@@ -57,9 +71,17 @@ func (in *Instance) handleClientRequestBatch(batch *proto.ClientRequestBatch) {
 
 }
 
+/*
+At the moment a replica does not receive client response batches
+*/
+
 func (in *Instance) handleClientResponseBatch(batch *proto.ClientResponseBatch) {
 	// the proposer doesn't receive any client responses
 }
+
+/*
+todo from here start code review 2022 Jan 14 00.04
+*/
 
 func (in *Instance) handleMessageBlock(block *proto.MessageBlock) {
 	// add this block to the MessageStore

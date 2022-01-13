@@ -31,6 +31,10 @@ func getStringOfSizeN(length int) string {
 	return str
 }
 
+/*
+Creates a new copy of the message. Since the protobuf methods are not thread safe, its not possible tp broadcast the same message without having separate message object for each
+*/
+
 func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) proto.Serializable {
 
 	if code == in.clientRequestBatchRpc {
@@ -54,6 +58,26 @@ func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) prot
 			Id:        clientResponseBatch.Id,
 		}
 
+	}
+
+	if code == in.clientStatusRequestRpc {
+		clientStatusRequest := msg.(*proto.ClientStatusRequest)
+		return &proto.ClientStatusRequest{
+			Sender:    clientStatusRequest.Sender,
+			Receiver:  clientStatusRequest.Receiver,
+			Operation: clientStatusRequest.Operation,
+			Message:   clientStatusRequest.Message,
+		}
+	}
+
+	if code == in.clientStatusResponseRpc {
+		clientStatusResponse := msg.(*proto.ClientStatusResponse)
+		return &proto.ClientStatusResponse{
+			Sender:    clientStatusResponse.Sender,
+			Receiver:  clientStatusResponse.Receiver,
+			Operation: clientStatusResponse.Operation,
+			Message:   clientStatusResponse.Message,
+		}
 	}
 
 	if code == in.genericConsensusRpc {
@@ -94,26 +118,6 @@ func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) prot
 			Sender:   messageBlockRequest.Sender,
 			Receiver: messageBlockRequest.Receiver,
 			Hash:     messageBlockRequest.Hash,
-		}
-	}
-
-	if code == in.clientStatusRequestRpc {
-		clientStatusRequest := msg.(*proto.ClientStatusRequest)
-		return &proto.ClientStatusRequest{
-			Sender:    clientStatusRequest.Sender,
-			Receiver:  clientStatusRequest.Receiver,
-			Operation: clientStatusRequest.Operation,
-			Message:   clientStatusRequest.Message,
-		}
-	}
-
-	if code == in.clientStatusResponseRpc {
-		clientStatusResponse := msg.(*proto.ClientStatusResponse)
-		return &proto.ClientStatusResponse{
-			Sender:    clientStatusResponse.Sender,
-			Receiver:  clientStatusResponse.Receiver,
-			Operation: clientStatusResponse.Operation,
-			Message:   clientStatusResponse.Message,
 		}
 	}
 

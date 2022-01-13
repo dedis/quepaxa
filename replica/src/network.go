@@ -194,6 +194,10 @@ func (in *Instance) run() {
 	}()
 }
 
+/*
+	Write a message to the wire, first the message type is written and then the actual message
+*/
+
 func (in *Instance) internalSendMessage(peer int64, rpcPair *RPCPair) {
 	code := rpcPair.code
 	oriMsg := rpcPair.Obj
@@ -218,6 +222,10 @@ func (in *Instance) internalSendMessage(peer int64, rpcPair *RPCPair) {
 	}
 }
 
+/*
+A set of threads that manages outgoing messages: write the message to the OS buffers
+*/
+
 func (in *Instance) startOutgoingLinks() {
 	for i := 0; i < numOutgoingThreads; i++ {
 		go func() {
@@ -228,6 +236,10 @@ func (in *Instance) startOutgoingLinks() {
 		}()
 	}
 }
+
+/*
+adds a new out going message to the out going channel
+*/
 
 func (in *Instance) sendMessage(peer int64, rpcPair RPCPair) {
 	in.outgoingMessageChan <- &OutgoingRPC{
