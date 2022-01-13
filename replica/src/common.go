@@ -171,22 +171,27 @@ func (in *Instance) printLog() {
 	defer f.Close()
 	choiceNum := 0
 	for _, entry := range in.replicatedLog {
-
-		if entry.decided {
-
+		// a single entry contains a 2D sequence of commands
+		if entry.committed {
+			// if an entry is committed, then it should contain the block in the message store
+			block, ok := in.messageStore.Get(entry.decision.id)
 			choiceLocalNum := 0
-
-			if len(entry.decisions) == 0 {
+			if ok {
+				for i := 0; i < len(block.Requests); i++ {
+					for j := 0; j < len(block.Requests[i].Requests); j++ {
+						_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(choiceLocalNum) + ":")
+						_, _ = f.WriteString(block.Requests[i].Requests[j].Message + ",")
+						choiceLocalNum++
+					}
+				}
+			} else {
 				_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(choiceLocalNum) + ":")
 				_, _ = f.WriteString("no-op" + ",")
-			} else {
-
-				for _, decision := range entry.decisions {
-					_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(choiceLocalNum) + ":")
-					_, _ = f.WriteString(decision.id + ",")
-					choiceLocalNum++
-				}
 			}
+
+		} else {
+			_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(0) + ":")
+			_, _ = f.WriteString("no-op" + ",")
 		}
 		choiceNum++
 	}
