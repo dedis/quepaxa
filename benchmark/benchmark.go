@@ -5,6 +5,15 @@ import (
 	"strconv"
 )
 
+/*
+
+App defines a generic state machine. Currntly it supports three implementations
+
+(1) no-op app: an echo app which returns the request as the response, with an added delay
+(2) key valie store app: a key value store
+(3) redis key value store
+*/
+
 type App struct {
 	Workload   int64
 	NoOpApp    *NoOpApplication
@@ -12,32 +21,33 @@ type App struct {
 	KvstoreApp *KVStoreApplication
 }
 
-func (app *App) Process(request string) {
+func (app *App) Process(request string) string {
 	if app.Workload == 0 {
-		app.NoOpApp.executeNoOpApp(request)
+		return app.NoOpApp.executeNoOpApp(request)
 	}
 	if app.Workload == 1 {
-		app.KvstoreApp.executeKVStoreApp(request)
+		return app.KvstoreApp.executeKVStoreApp(request)
 	}
 	if app.Workload == 2 {
-		app.RedisApp.executeRedisApp(request)
+		return app.RedisApp.executeRedisApp(request)
 	}
+	return ""
 }
 
-func Get100LengthValue() string {
+func GetNLengthValue(N int) string {
 	str := strconv.Itoa(rand.Intn(10))
 	size := len(str)
-	for size <= 100 {
+	for size <= N {
 		str = strconv.Itoa(rand.Intn(10)) + str
 		size = len(str)
 	}
 	return str
 }
 
-func Get23LengthRecord(i int) string {
+func GetNLengthRecord(i int, N int) string {
 	str := strconv.Itoa(i)
 	size := len(str)
-	for size <= 19 {
+	for size <= N-4 {
 		str = "0" + str
 		size = len(str)
 	}
