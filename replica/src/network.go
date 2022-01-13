@@ -181,6 +181,13 @@ func (in *Instance) run() {
 				in.debug("Client Status Response " + fmt.Sprintf("%#v", clientStatusResponse))
 				in.handleClientStatusResponse(clientStatusResponse)
 				break
+
+			case in.messageBlockAckRpc:
+				messageBlockAck := replicaMessage.Obj.(*proto.MessageBlockAck)
+				in.debug("Message Block Ack " + fmt.Sprintf("%#v", messageBlockAck))
+				in.handleMessageBlockAck(messageBlockAck)
+				break
+
 			}
 			//in.lock.Unlock()
 		}

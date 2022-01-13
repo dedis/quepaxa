@@ -24,3 +24,10 @@ type Slot struct {
 	decision  Value
 	proposer  int // id of the proposer who decided this index
 }
+
+func (sl *Slot) printSlot(index int) {
+	// prints a comma seperated line for each client command message if the block is committed, if not print a N/A
+	if sl.committed == false {
+
+	}
+}

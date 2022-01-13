@@ -64,6 +64,18 @@ func (in *Instance) handleClientResponseBatch(batch *proto.ClientResponseBatch) 
 func (in *Instance) handleMessageBlock(block *proto.MessageBlock) {
 	// add this block to the MessageStore
 	in.messageStore.Add(block)
+	messageBlockAck := proto.MessageBlockAck{
+		Sender:   in.nodeName,
+		Receiver: block.Sender,
+		Hash:     block.Hash,
+	}
+
+	rpcPair := RPCPair{
+		code: in.messageBlockAckRpc,
+		Obj:  &messageBlockAck,
+	}
+
+	in.sendMessage(block.Sender, rpcPair)
 
 }
 
@@ -73,14 +85,11 @@ func (in *Instance) handleMessageBlockRequest(request *proto.MessageBlockRequest
 		// the block exists
 		messageBlock.Sender = in.nodeName
 		messageBlock.Receiver = request.Sender
-
 		rpcPair := RPCPair{
 			code: in.messageBlockRpc,
 			Obj:  messageBlock,
 		}
-
 		in.sendMessage(request.Sender, rpcPair)
-
 	}
 }
 
@@ -116,8 +125,17 @@ func (in *Instance) handleClientStatusRequest(request *proto.ClientStatusRequest
 	}
 }
 
-func (in *Instance) handleClientStatusResponse(response *proto.ClientStatusResponse) {
+func (in *Instance) handleMessageBlockAck(ack *proto.MessageBlockAck) {
+	in.messageStore.addAck(ack.Hash)
+	acks := in.messageStore.getAcks(ack.Hash)
+	if acks != nil && int64(len(acks)) == in.numReplicas/2+1 {
+		// todo this block is guaranteed to be present in f+1 replicas, so its persistent
+		// todo invoke consensus or send to leader
+	}
+}
 
+func (in *Instance) handleClientStatusResponse(response *proto.ClientStatusResponse) {
+	// replica doesn't receive a client status response
 }
 
 func (in *Instance) startServer() {

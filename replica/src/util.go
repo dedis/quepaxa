@@ -117,6 +117,15 @@ func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) prot
 		}
 	}
 
+	if code == in.messageBlockAckRpc {
+		messageBlockAck := msg.(*proto.MessageBlockAck)
+		return &proto.MessageBlockAck{
+			Sender:   messageBlockAck.Sender,
+			Receiver: messageBlockAck.Receiver,
+			Hash:     messageBlockAck.Hash,
+		}
+	}
+
 	return nil
 
 }

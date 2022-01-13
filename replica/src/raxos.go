@@ -47,6 +47,7 @@ type Instance struct {
 	messageBlockRequestRpc  uint8 // 4
 	clientStatusRequestRpc  uint8 // 5
 	clientStatusResponseRpc uint8 // 6
+	messageBlockAckRpc      uint8 // 7
 
 	replicatedLog []Slot
 	stateMachine  *benchmark.App
@@ -104,6 +105,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 		messageBlockRequestRpc:  4,
 		clientStatusRequestRpc:  5,
 		clientStatusResponseRpc: 6,
+		messageBlockAckRpc:      7,
 		//replicatedLog:           nil,
 		stateMachine:   benchmark.InitApp(benchmarkNumber, serviceTime, numKeys),
 		committedIndex: -1,
@@ -135,6 +137,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 	in.RegisterRPC(new(proto.MessageBlockRequest), in.messageBlockRequestRpc)
 	in.RegisterRPC(new(proto.ClientStatusRequest), in.clientStatusRequestRpc)
 	in.RegisterRPC(new(proto.ClientStatusResponse), in.clientStatusResponseRpc)
+	in.RegisterRPC(new(proto.MessageBlockAck), in.messageBlockAckRpc)
 
 	pid := os.Getpid()
 	fmt.Printf("initialized Raxos with process id: %v \n", pid)
