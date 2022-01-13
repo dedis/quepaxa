@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-// MessageBlockReply
+// MessageBlockRequest
 
 func (t *MessageBlockRequest) Marshal(wire io.Writer) {
 
@@ -54,7 +54,7 @@ func (t *MessageBlockRequest) New() Serializable {
 	return new(MessageBlockRequest)
 }
 
-// MessageBlockRequest
+// MessageBlock
 
 func (t *MessageBlock) Marshal(wire io.Writer) {
 

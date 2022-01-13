@@ -90,7 +90,7 @@ type MessageBlock struct {
 
 	Sender   int64                              `protobuf:"varint,1,opt,name=sender,proto3" json:"sender,omitempty"`
 	Receiver int64                              `protobuf:"varint,2,opt,name=receiver,proto3" json:"receiver,omitempty"`
-	Hash     string                             `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty"` // unique identifier specified by proposer
+	Hash     string                             `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty"` // unique identifier specified by proposer for the block
 	Requests []*MessageBlock_ClientRequestBatch `protobuf:"bytes,4,rep,name=requests,proto3" json:"requests,omitempty"`
 }
 
@@ -271,7 +271,7 @@ type MessageBlock_ClientRequestBatch struct {
 
 	Sender   int64                               `protobuf:"varint,1,opt,name=sender,proto3" json:"sender,omitempty"`
 	Requests []*MessageBlock_SingleClientRequest `protobuf:"bytes,2,rep,name=requests,proto3" json:"requests,omitempty"`
-	Id       string                              `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"` // unique identifier specified by client
+	Id       string                              `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"` // unique identifier specified by client for the client batch
 }
 
 func (x *MessageBlock_ClientRequestBatch) Reset() {

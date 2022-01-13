@@ -11,7 +11,7 @@ message ClientRequestBatch {
   }
 
   repeated SingleClientRequest requests = 3;
-  string id = 4; // unique identifier
+  string id = 4; // unique identifier for a batch of requests
 }
 
 message ClientResponseBatch {
@@ -21,7 +21,7 @@ message ClientResponseBatch {
     string message = 1;
   }
   repeated SingleClientResponse responses = 3;
-  string id = 4; // unique identifier
+  string id = 4; // unique identifier for a batch of responses
 }
 
 message ClientStatusRequest {

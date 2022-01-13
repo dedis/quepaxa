@@ -28,7 +28,7 @@ type ClientRequestBatch struct {
 	Sender   int64                                     `protobuf:"varint,1,opt,name=sender,proto3" json:"sender,omitempty"`
 	Receiver int64                                     `protobuf:"varint,2,opt,name=receiver,proto3" json:"receiver,omitempty"`
 	Requests []*ClientRequestBatch_SingleClientRequest `protobuf:"bytes,3,rep,name=requests,proto3" json:"requests,omitempty"`
-	Id       string                                    `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty"` // unique identifier
+	Id       string                                    `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty"` // unique identifier for a batch of requests
 }
 
 func (x *ClientRequestBatch) Reset() {
@@ -99,7 +99,7 @@ type ClientResponseBatch struct {
 	Sender    int64                                       `protobuf:"varint,1,opt,name=sender,proto3" json:"sender,omitempty"`
 	Receiver  int64                                       `protobuf:"varint,2,opt,name=receiver,proto3" json:"receiver,omitempty"`
 	Responses []*ClientResponseBatch_SingleClientResponse `protobuf:"bytes,3,rep,name=responses,proto3" json:"responses,omitempty"`
-	Id        string                                      `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty"` // unique identifier
+	Id        string                                      `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty"` // unique identifier for a batch of responses
 }
 
 func (x *ClientResponseBatch) Reset() {

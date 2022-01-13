@@ -102,7 +102,7 @@ func (t *ClientResponseBatch) New() Serializable {
 	return new(ClientResponseBatch)
 }
 
-// Status Request
+// Client Status Request
 
 func (t *ClientStatusRequest) Marshal(wire io.Writer) {
 
@@ -150,7 +150,7 @@ func (t *ClientStatusRequest) New() Serializable {
 	return new(ClientStatusRequest)
 }
 
-// Status Response
+// Client Status Response
 
 func (t *ClientStatusResponse) Marshal(wire io.Writer) {
 
