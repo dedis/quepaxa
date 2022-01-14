@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	configFile := flag.String("config", "configuration/local/replica/replica1.yml", "raxos configuration file")
+	configFile := flag.String("config", "configuration/local/configuration.yml", "raxos configuration file")
 	name := flag.Int64("name", 1, "name of the replica")
 	logFilePath := flag.String("logFilePath", "logs/", "log file path")
 	serviceTime := flag.Int64("serviceTime", 1, "service time in micro seconds")

@@ -82,7 +82,10 @@ type Instance struct {
 }
 
 /*
-todo from here raxos.go Jan 14 16.12
+
+Instantiate a new Instance object, allocates the buffers
+Initializes the message store
+
 */
 
 func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serviceTime int64, responseSize int64, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmarkNumber int64, numKeys int64) *Instance {
