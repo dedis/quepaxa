@@ -10,30 +10,33 @@ import (
 	"strconv"
 )
 
+/*
+RPC paid assigns a unique id to each type of message defined in the proto files
+*/
+
 type RPCPair struct {
 	code uint8
 	Obj  proto.Serializable
-
-	/*
-		Message	Codes
-			ClientRequestBatch 0
-			ClientResponseBatch 1
-			GenericConsensus 2
-			MessageBlock 3
-			MessageBlockRequest 4
-			ClientStatusRequest 5
-			ClientStatusResponse 6
-	*/
 }
+
+/*
+Outgoing RPC assigns an rpc to its intended destination peer, the peer can be a replica or a client
+*/
 
 type OutgoingRPC struct {
 	rpcPair *RPCPair
 	peer    int64
 }
 
+/*Fill the RPC table by assigning a unique id to each message type*/
+
 func (in *Instance) RegisterRPC(msgObj proto.Serializable, code uint8) {
 	in.rpcTable[code] = &RPCPair{code, msgObj}
 }
+
+/*
+Each replica sends connection requests to itself and to all replicas with a higher id
+*/
 
 func (in *Instance) connectToReplicas() {
 	var b [1]byte
@@ -59,6 +62,14 @@ func (in *Instance) connectToReplicas() {
 	in.debug("Established all outgoing connections")
 }
 
+/*
+
+Listen on the server port for new connections
+Each replica receives connection from itself, and from all the replicas with lower id (replica 0 receives a connection from itself, replica 1 receives connection
+requests from 0, 1 and so on)
+Each replica receives connections from all the clients
+*/
+
 func (in *Instance) waitForConnections() {
 
 	// waits for connections from my self + all the replicas with lower ids + from all the clients
@@ -82,12 +93,14 @@ func (in *Instance) waitForConnections() {
 		in.debug("Received incoming tcp connection from " + strconv.Itoa(int(id)))
 
 		if int64(id) < in.numReplicas {
-			if int64(id) != in.nodeName {
+			// the connection is from a replica
+			if int64(id) != in.nodeName { // connection from myself is already registered when the connection was made
 				in.replicaConnections[id] = conn
 				in.outgoingReplicaWriters[id] = bufio.NewWriter(in.replicaConnections[id])
 				in.incomingReplicaReaders[id] = bufio.NewReader(in.replicaConnections[id])
 			}
 		} else if int64(id) < in.numReplicas+in.numClients {
+			// the connection is from a client
 			in.clientConnections[int64(id)-in.numReplicas] = conn
 			in.outgoingClientWriters[int64(id)-in.numReplicas] = bufio.NewWriter(in.clientConnections[int64(id)-in.numReplicas])
 			in.incomingClientReaders[int64(id)-in.numReplicas] = bufio.NewReader(in.clientConnections[int64(id)-in.numReplicas])
@@ -97,6 +110,10 @@ func (in *Instance) waitForConnections() {
 	in.debug("Established connections from all nodes")
 }
 
+/*
+Listen to all the established tcp connections
+*/
+
 func (in *Instance) startConnectionListners() {
 	for i := int64(0); i < in.numReplicas; i++ {
 		go in.connectionListener(in.incomingReplicaReaders[i])
@@ -105,6 +122,10 @@ func (in *Instance) startConnectionListners() {
 		go in.connectionListener(in.incomingClientReaders[i])
 	}
 }
+
+/*
+	listen to a given connection. Upon receiving any message, put it into the central buffer
+*/
 
 func (in *Instance) connectionListener(reader *bufio.Reader) {
 
@@ -129,6 +150,11 @@ func (in *Instance) connectionListener(reader *bufio.Reader) {
 		}
 	}
 }
+
+/*
+This is the main execution thread
+It listens to incoming messages from the incomingChan, and invoke the appropriate handler depending on the message type
+*/
 
 func (in *Instance) run() {
 	go func() {

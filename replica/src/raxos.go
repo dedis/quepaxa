@@ -13,17 +13,17 @@ import (
 	"time"
 )
 
-const incomingRequestBufferSize = 2000
-const numOutgoingThreads = 200
-const incomingBufferSize = 1000000
-const outgoingBufferSize = int(incomingBufferSize / numOutgoingThreads)
+const incomingRequestBufferSize = 2000                                  // size of the buffer that collects incoming client requests
+const numOutgoingThreads = 200                                          // number of wire writers: since the I/O writing is expensive we delegate that task to a thread pool and separate from the criticial path
+const incomingBufferSize = 1000000                                      // the size of the buffer which receives all the incoming messages
+const outgoingBufferSize = int(incomingBufferSize / numOutgoingThreads) // size of the buffer that collects messages to be written to the wire
 
 type Instance struct {
-	nodeName    int64
-	numReplicas int64
-	numClients  int64
+	nodeName    int64 // unique node identifier as defined in the configuration.yml
+	numReplicas int64 // number of replicas (a replica acts as a proposer and a recorder)
+	numClients  int64 // number of clients (this should be known apriori in order to establish tcp connections, since we don't use gRPC)
 
-	//lock sync.Mutex
+	//lock sync.Mutex // todo for the moment we don't need this because the shared state is accessed only by the single main thread, but have to verify this
 
 	replicaAddrList        []string   // array with the IP:port address of every replica
 	replicaConnections     []net.Conn // cache of replica connections to all other replicas
@@ -35,10 +35,10 @@ type Instance struct {
 	incomingClientReaders []*bufio.Reader
 	outgoingClientWriters []*bufio.Writer
 
-	Listener net.Listener // listening to replicas and clients
+	Listener net.Listener // tcp listener for replicas and clients
 
 	rpcTable     map[uint8]*RPCPair
-	incomingChan chan *RPCPair
+	incomingChan chan *RPCPair // used to make message block batches (batches of client requests)
 
 	clientRequestBatchRpc   uint8 // 0
 	clientResponseBatchRpc  uint8 // 1
@@ -49,38 +49,41 @@ type Instance struct {
 	clientStatusResponseRpc uint8 // 6
 	messageBlockAckRpc      uint8 // 7
 
-	replicatedLog []Slot
-	stateMachine  *benchmark.App
+	replicatedLog []Slot         // the replicated log
+	stateMachine  *benchmark.App // the application
 
-	committedIndex int64
-	proposedIndex  int64
+	committedIndex int64 // last index for which a request was committed and the result was sent to clent
+	proposedIndex  int64 // last index for which a request was proposed //todo think about the relationship between committed index and the proposed index
 
 	proposed []string // assigns the proposed request to the slot
 
-	logFilePath string
-	serviceTime int64
+	logFilePath string // the path to write the replicated log, used for sanity checks
+	serviceTime int64  // artificial service time for the no-op app
 
-	responseSize   int64
-	responseString string
+	responseSize   int64  // fixed response size (might not be useful if the replica doesn't send fixed sized responses)
+	responseString string // fixed response string to use if the response size is fixed (might not be used)
 
-	batchSize int64
-	batchTime int64
+	batchSize int64 // maximum server side batch size
+	batchTime int64 // maximum replica side batch time
 
-	pipelineLength      int64
-	numInflightRequests int64
+	pipelineLength      int64 // maximum number of inflight consensus instances
+	numInflightRequests int64 // current numInflight requests
 
-	outgoingMessageChan chan *OutgoingRPC
+	outgoingMessageChan chan *OutgoingRPC // buffer for messages that are written to the wire
 
-	requestsIn   chan *proto.ClientRequestBatch
-	messageStore MessageStore
-	blockCounter int64
+	requestsIn   chan *proto.ClientRequestBatch // buffer collecting incoming client requests to form blocks
+	messageStore MessageStore                   // message store that stores the blocks
+	blockCounter int64                          // local sequence number that is used to generate the hash of a block (unique block hash == nodename.blockcounter)
 
-	// from here
 	leaderTimeout int64       // in milli seconds
 	lastSeenTime  []time.Time // time each replica was last seen
 
-	debugOn bool
+	debugOn bool // if turned on, the debugg messages will be print on the console
 }
+
+/*
+todo from here raxos.go Jan 14 16.12
+*/
 
 func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serviceTime int64, responseSize int64, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmarkNumber int64, numKeys int64) *Instance {
 	in := Instance{

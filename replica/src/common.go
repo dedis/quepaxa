@@ -10,7 +10,7 @@ import (
 )
 
 /*
-common.go implements the methods/functions that are common to both the proposer and the recorder
+	common.go implements the methods/functions that are common to both the proposer and the recorder
 */
 
 func (in *Instance) broadcastBlock() {
@@ -80,7 +80,7 @@ func (in *Instance) handleClientResponseBatch(batch *proto.ClientResponseBatch) 
 }
 
 /*
-todo from here start code review 2022 Jan 14 00.04
+	When a new message block is received it is added to the store, and an ack is sent back to the creator of the block
 */
 
 func (in *Instance) handleMessageBlock(block *proto.MessageBlock) {
@@ -98,14 +98,16 @@ func (in *Instance) handleMessageBlock(block *proto.MessageBlock) {
 	}
 
 	in.sendMessage(block.Sender, rpcPair)
-
 }
+
+/*
+	Upon receiving a message block request, send the requested block if its found in the local message store
+*/
 
 func (in *Instance) handleMessageBlockRequest(request *proto.MessageBlockRequest) {
 	messageBlock, ok := in.messageStore.Get(request.Hash)
 	if ok {
 		// the block exists
-		messageBlock.Sender = in.nodeName
 		messageBlock.Receiver = request.Sender
 		rpcPair := RPCPair{
 			code: in.messageBlockRpc,
@@ -114,6 +116,8 @@ func (in *Instance) handleMessageBlockRequest(request *proto.MessageBlockRequest
 		in.sendMessage(request.Sender, rpcPair)
 	}
 }
+
+/*invoked when the replica needs the message block to commit a request, and its not already available in the store*/
 
 func (in *Instance) sendMessageBlockRequest(hash string) {
 	// send a Message block request to a random recorder
@@ -129,6 +133,8 @@ func (in *Instance) sendMessageBlockRequest(hash string) {
 
 }
 
+/*handler for generic consensus messages, corresponding method is called depending on the destination. Note that a replica acts as both a recorder and proposer*/
+
 func (in *Instance) handleGenericConsensus(consensus *proto.GenericConsensus) {
 	// 1 for the proposer and 2 for the recorder
 	if consensus.Destination == 1 {
@@ -139,6 +145,8 @@ func (in *Instance) handleGenericConsensus(consensus *proto.GenericConsensus) {
 
 }
 
+/*Clients send status requests to (1) bootstrap and print logs and (2) check status of the replica*/
+
 func (in *Instance) handleClientStatusRequest(request *proto.ClientStatusRequest) {
 	if request.Operation == 1 {
 		in.startServer()
@@ -147,9 +155,25 @@ func (in *Instance) handleClientStatusRequest(request *proto.ClientStatusRequest
 	}
 }
 
+/*
+this is a dummy method that is used for the testing of the message overlay. This method is triggered when a message block collects f+1 number of acks.
+In this implementation, for each client request batch, a response batch is generated that contains the same set of messages as the requests. Then for each batch of client requests
+a response is sent as a response batch.
+
+In the actual Raxos implementation, once a replica collects f+1  acks for its block, that replica sends a consensus request message to a leader / sequence of leaders
+Then that leader runs the consensus algorithm. When the leader decides on the message he does not have to send back the response to the client. Since we broadcast the
+decide messages, eventually the replica who originated that block will update the state machine, and find the client who sent the block in the MessageBlock.
+Then that client will be sent a reply
+
+This approach decreases the overhead imposed on the leader node.
+
+The drawback of this approach is, if the block originator (the replica which created the block is crashed, then the client will not receive the response, even though
+it is committed. We consider these requests as failed, and they will appear as the error rate in the client metrics)
+*/
+
 func (in *Instance) sendSampleClientResponse(ack *proto.MessageBlockAck) {
-	messageBlock, _ := in.messageStore.Get(ack.Hash)
-	// for each client block (client batch of requests) create a client batch reposne, and send it with the correct id
+	messageBlock, _ := in.messageStore.Get(ack.Hash) // at this point the request is defintly in the store, so we don't check the existence
+	// for each client block (client batch of requests) create a client batch response, and send it with the correct id (unique id for a batch of client requests)
 
 	for i := 0; i < len(messageBlock.Requests); i++ {
 		clientRequestBatch := messageBlock.Requests[i]
@@ -157,6 +181,9 @@ func (in *Instance) sendSampleClientResponse(ack *proto.MessageBlockAck) {
 		for j := 0; j < len(clientRequestBatch.Requests); j++ {
 			replies = append(replies, &proto.ClientResponseBatch_SingleClientResponse{Message: clientRequestBatch.Requests[j].Message})
 		}
+
+		// for each client batch send a response batch
+
 		responseBatch := proto.ClientResponseBatch{
 			Sender:    in.nodeName,
 			Receiver:  clientRequestBatch.Sender,
@@ -173,20 +200,44 @@ func (in *Instance) sendSampleClientResponse(ack *proto.MessageBlockAck) {
 	}
 }
 
+/*
+Handler for message block acks. When a replica broadcasts a new MessageBlock, it retrieves acks.
+When a replica receives f+1 acks, that means that this block is persistent (less than f+1 replicas can fail by assumption)
+When it receives f+1 acks, the replica sends a consensus request message to the leader / sequence of leaders
+*/
+
 func (in *Instance) handleMessageBlockAck(ack *proto.MessageBlockAck) {
 	in.messageStore.addAck(ack.Hash)
 	acks := in.messageStore.getAcks(ack.Hash)
 	if acks != nil && int64(len(acks)) == in.numReplicas/2+1 {
-		// todo this block is guaranteed to be present in f+1 replicas, so its persistent
-		// todo invoke consensus or send to leader
-		// todo remove the following which are sample client responses
+		// note that this block is guaranteed to be present in f+1 replicas, so its persistent
+		// todo remove the following invocation is only for testing purposes of the overlay
 		in.sendSampleClientResponse(ack)
+		// todo invoke to send to leader
+		in.sendConsensusRequest(ack.Hash)
 	}
 }
+
+/*
+Handler for client status responses, currently the replica does not receive client responses, only for testing purposes
+
+*/
 
 func (in *Instance) handleClientStatusResponse(response *proto.ClientStatusResponse) {
 	// replica doesn't receive a client status response
 }
+
+/*
+Server bootstrapping
+
+1. Listen to incoming connections from replicas and clients
+2. Connect to other replicas
+3. Start connection listeners (tcp connections from clients and replicas)
+4. Start outgoing links: a set of threads which writes to the wire
+5. Start main thread that listens to all the incoming messages from the centralied channel
+6. Start the client request batcher which collects and broadcasts new blocks
+
+*/
 
 func (in *Instance) startServer() {
 
@@ -208,10 +259,11 @@ func (in *Instance) startServer() {
 	in.broadcastBlock()
 	time.Sleep(2 * time.Second)
 
-	in.updateStateMachine()
-	time.Sleep(2 * time.Second)
-
 }
+
+/*
+Print the replicated log, this is a util function that is used to check the log consistency
+*/
 
 func (in *Instance) printLog() {
 	f, err := os.Create(in.logFilePath + strconv.Itoa(int(in.nodeName)) + ".txt")

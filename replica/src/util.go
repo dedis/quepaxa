@@ -8,10 +8,19 @@ import (
 	"raxos/proto"
 )
 
-func (in *Instance) debug(message string) {
-	fmt.Printf("%s\n", message)
+/*
+If enabled, print the messages to stdout
+*/
 
+func (in *Instance) debug(message string) {
+	if in.debugOn {
+		fmt.Printf("%s\n", message)
+	}
 }
+
+/*
+Returns the size of any type of object in bytes
+*/
 
 func getRealSizeOf(v interface{}) (int, error) {
 	b := new(bytes.Buffer)
@@ -20,6 +29,10 @@ func getRealSizeOf(v interface{}) (int, error) {
 	}
 	return b.Len(), nil
 }
+
+/*
+returns a deterministic string of size @length
+*/
 
 func getStringOfSizeN(length int) string {
 	str := "a"
@@ -32,7 +45,7 @@ func getStringOfSizeN(length int) string {
 }
 
 /*
-Creates a new copy of the message. Since the protobuf methods are not thread safe, its not possible tp broadcast the same message without having separate message object for each
+Creates a new copy of the message. Since the protobuf methods are not thread safe, its not possible to broadcast the same message without having separate message object for each
 */
 
 func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) proto.Serializable {
@@ -159,6 +172,10 @@ func (in *Instance) convertToMessageBlockRequests(requests []*proto.ClientReques
 	return returnArray
 }
 
+/*
+	Checks if this block was previous proposed
+*/
+
 func (in *Instance) proposedPreviously(hash string) (bool, int) {
 	// checks if this value appears in the proposed array
 	for i := 0; i < len(in.proposed); i++ {
@@ -168,6 +185,11 @@ func (in *Instance) proposedPreviously(hash string) (bool, int) {
 	}
 	return false, -1
 }
+
+/*
+
+checks of this value has been previously committed
+*/
 
 func (in *Instance) committedPreviously(hash string) (bool, int) {
 	// checks if this value is previously decided
@@ -179,9 +201,17 @@ func (in *Instance) committedPreviously(hash string) (bool, int) {
 	return false, -1
 }
 
+/*
+ returns a fixed leader (strawman1)
+*/
+
 func (in *Instance) getDeterministicLeader1() int {
 	return 0 // node 0 is the default leader
 }
+
+/*
+extracts clients ip:port list to an array
+*/
 
 func getClientAddressList(cfg *configuration.InstanceConfig) []string {
 	var clients []string
@@ -190,6 +220,10 @@ func getClientAddressList(cfg *configuration.InstanceConfig) []string {
 	}
 	return clients
 }
+
+/*
+extracts replicas ip:port list to an array
+*/
 
 func getReplicaAddressList(cfg *configuration.InstanceConfig) []string {
 	var replicas []string
