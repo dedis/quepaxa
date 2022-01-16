@@ -38,7 +38,7 @@ type Instance struct {
 	Listener net.Listener // tcp listener for replicas and clients
 
 	rpcTable     map[uint8]*RPCPair
-	incomingChan chan *RPCPair // used to make message block batches (batches of client requests)
+	incomingChan chan *RPCPair // used to collect all the incoming messages
 
 	clientRequestBatchRpc   uint8 // 0
 	clientResponseBatchRpc  uint8 // 1
