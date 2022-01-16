@@ -52,43 +52,60 @@ type Client struct {
 	arrivalRate    int64 // poisson rate of the request
 	benchmark      int64 // type of the workload: 0 for no-op, 1 for kv store and 2 for redis
 	numKeys        int64 // maximum number of keys for the key value store
+
+	arrivalChan       chan bool // channel to which the poisson process adds new request times
+	requestType       string    // request for sending the client requests, status for sending a status request
+	operationType     int64     // status operation type 1 (bootstrap server), 2: print log
+	sentRequests      []proto.ClientRequestBatch
+	receivedResponses []proto.ClientResponseBatch
 }
 
 /*
 	Instantiate a new Client object, allocates the buffers
 */
 
-func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batchSize int64, batchTime int64, defaultReplica int64, replicaTimeout int64, requestSize int64, testDuration int64, warmupDuration int64, arrivalRate int64, benchmark int64, numKeys int64) *Client {
+const incomingRequestBufferSize = 2000  // size of the buffer that collects incoming client requests
+const numOutgoingThreads = 200          // number of wire writers: since the I/O writing is expensive we delegate that task to a thread pool and separate from the critical path
+const numRequestGenerationThreads = 200 // number of  threads that generate client requests upon receiving an arrival indication
+const incomingBufferSize = 1000000      // the size of the buffer which receives all the incoming messages (client response bacth messages and client status response message)
+const outgoingBufferSize = 1000000      // size of the buffer that collects messages to be written to the wire
+const arrivalBufferSize = 1000000       // size of the buffer that collects messages to be written to the wire
+
+func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batchSize int64, batchTime int64, defaultReplica int64, replicaTimeout int64, requestSize int64, testDuration int64, warmupDuration int64, arrivalRate int64, benchmark int64, numKeys int64, requestType string, operationType int64) *Client {
 	cl := Client{
-		clientName:              0,
-		numReplicas:             0,
-		numClients:              0,
-		replicaAddrList:         nil,
-		replicaConnections:      nil,
-		incomingReplicaReaders:  nil,
-		outgoingReplicaWriters:  nil,
+		clientName:              name,
+		numReplicas:             int64(len(cfg.Peers)),
+		numClients:              int64(len(cfg.Clients)),
+		replicaAddrList:         raxos.GetReplicaAddressList(cfg),
+		replicaConnections:      make([]net.Conn, len(cfg.Peers)),
+		incomingReplicaReaders:  make([]*bufio.Reader, len(cfg.Peers)),
+		outgoingReplicaWriters:  make([]*bufio.Writer, len(cfg.Peers)),
 		Listener:                nil,
-		rpcTable:                nil,
-		incomingChan:            nil,
+		rpcTable:                make(map[uint8]*raxos.RPCPair),
+		incomingChan:            make(chan *raxos.RPCPair, incomingBufferSize),
 		clientRequestBatchRpc:   0,
-		clientResponseBatchRpc:  0,
-		clientStatusRequestRpc:  0,
-		clientStatusResponseRpc: 0,
-		logFilePath:             "",
-		batchSize:               0,
-		batchTime:               0,
-		outgoingMessageChan:     nil,
-		requestsIn:              nil,
-		defaultReplica:          0,
-		replicaTimeout:          0,
+		clientResponseBatchRpc:  1,
+		clientStatusRequestRpc:  5,
+		clientStatusResponseRpc: 6,
+		logFilePath:             logFilePath,
+		batchSize:               batchSize,
+		batchTime:               batchTime,
+		outgoingMessageChan:     make(chan *raxos.OutgoingRPC, outgoingBufferSize),
+		requestsIn:              make(chan *proto.ClientRequestBatch_SingleClientRequest, incomingRequestBufferSize),
+		defaultReplica:          defaultReplica,
+		replicaTimeout:          replicaTimeout,
 		lastSeenTimeReplica:     time.Time{},
 		debugOn:                 false,
-		requestSize:             0,
-		testDuration:            0,
-		warmupDuration:          0,
-		arrivalRate:             0,
-		benchmark:               0,
-		numKeys:                 0,
+		requestSize:             requestSize,
+		testDuration:            testDuration,
+		warmupDuration:          warmupDuration,
+		arrivalRate:             arrivalRate,
+		benchmark:               benchmark,
+		numKeys:                 numKeys,
+		arrivalChan:             make(chan bool, arrivalBufferSize),
+		requestType:             requestType,
+		operationType:           operationType,
 	}
-	return nil
+
+	return &cl
 }

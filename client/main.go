@@ -22,6 +22,9 @@ func main() {
 	arrivalRate := flag.Int64("arrivalRate", 1000, "poisson arrival rate in requests per second")
 	benchmark := flag.Int64("benchmark", 0, "Benchmark: 0 for echo service, 1 for KV store and 2 for Redis ")
 	numKeys := flag.Int64("numKeys", 1000, "Number of keys in the key value store")
+	requestType := flag.String("requestType", "status", "request type: [status , request]")
+	operationType := flag.Int64("operationType", 1, "Type of operation for a status request: 1 (bootstrap server), 2: print log)")
+
 	flag.Parse()
 
 	cfg, err := configuration.NewInstanceConfig(*configFile)
@@ -30,5 +33,5 @@ func main() {
 		os.Exit(1)
 	}
 
-	cmd.New(*name, cfg, *logFilePath, *batchSize, *batchTime, *defaultReplica, *replicaTimeout, *requestSize, *testDuration, *warmupDuration, *arrivalRate, *benchmark, *numKeys)
+	cmd.New(*name, cfg, *logFilePath, *batchSize, *batchTime, *defaultReplica, *replicaTimeout, *requestSize, *testDuration, *warmupDuration, *arrivalRate, *benchmark, *numKeys, *requestType, *operationType)
 }

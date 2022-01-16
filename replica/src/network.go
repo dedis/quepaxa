@@ -70,7 +70,7 @@ requests from 0, 1 and so on)
 Each replica receives connections from all the clients
 */
 
-func (in *Instance) waitForConnections() {
+func (in *Instance) WaitForConnections() {
 
 	// waits for connections from my self + all the replicas with lower ids + from all the clients
 
@@ -156,7 +156,7 @@ This is the main execution thread
 It listens to incoming messages from the incomingChan, and invoke the appropriate handler depending on the message type
 */
 
-func (in *Instance) run() {
+func (in *Instance) Run() {
 	go func() {
 		for true {
 			in.debug("Checking channel\n")
@@ -252,7 +252,7 @@ func (in *Instance) internalSendMessage(peer int64, rpcPair *RPCPair) {
 A set of threads that manages outgoing messages: write the message to the OS buffers
 */
 
-func (in *Instance) startOutgoingLinks() {
+func (in *Instance) StartOutgoingLinks() {
 	for i := 0; i < numOutgoingThreads; i++ {
 		go func() {
 			for true {

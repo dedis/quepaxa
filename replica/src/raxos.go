@@ -13,10 +13,10 @@ import (
 	"time"
 )
 
-const incomingRequestBufferSize = 2000                                  // size of the buffer that collects incoming client requests
-const numOutgoingThreads = 200                                          // number of wire writers: since the I/O writing is expensive we delegate that task to a thread pool and separate from the criticial path
-const incomingBufferSize = 1000000                                      // the size of the buffer which receives all the incoming messages
-const outgoingBufferSize = int(incomingBufferSize / numOutgoingThreads) // size of the buffer that collects messages to be written to the wire
+const incomingRequestBufferSize = 100000 // size of the buffer that collects incoming client requests
+const numOutgoingThreads = 200           // number of wire writers: since the I/O writing is expensive we delegate that task to a thread pool and separate from the criticial path
+const incomingBufferSize = 1000000       // the size of the buffer which receives all the incoming messages
+const outgoingBufferSize = 1000000       // size of the buffer that collects messages to be written to the wire
 
 type Instance struct {
 	nodeName    int64 // unique node identifier as defined in the configuration.yml
@@ -93,7 +93,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 		nodeName:                name,
 		numReplicas:             int64(len(cfg.Peers)),
 		numClients:              int64(len(cfg.Clients)),
-		replicaAddrList:         getReplicaAddressList(cfg), // from here
+		replicaAddrList:         GetReplicaAddressList(cfg), // from here
 		replicaConnections:      make([]net.Conn, len(cfg.Peers)),
 		incomingReplicaReaders:  make([]*bufio.Reader, len(cfg.Peers)),
 		outgoingReplicaWriters:  make([]*bufio.Writer, len(cfg.Peers)),
@@ -148,5 +148,4 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 	pid := os.Getpid()
 	fmt.Printf("initialized Raxos with process id: %v \n", pid)
 	return &in
-
 }

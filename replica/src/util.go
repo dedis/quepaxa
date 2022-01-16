@@ -225,7 +225,7 @@ func getClientAddressList(cfg *configuration.InstanceConfig) []string {
 extracts replicas ip:port list to an array
 */
 
-func getReplicaAddressList(cfg *configuration.InstanceConfig) []string {
+func GetReplicaAddressList(cfg *configuration.InstanceConfig) []string {
 	var replicas []string
 	for i := 0; i < len(cfg.Peers); i++ {
 		replicas = append(replicas, cfg.Peers[i].Address)

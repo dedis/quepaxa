@@ -6,6 +6,7 @@ import (
 	"os"
 	"raxos/configuration"
 	raxos "raxos/replica/src"
+	"time"
 )
 
 func main() {
@@ -28,5 +29,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	raxos.New(cfg, *name, *logFilePath, *serviceTime, *responseSize, *batchSize, *batchTime, *leaderTimeout, *pipelineLength, *benchmark, *numKeys)
+	in := raxos.New(cfg, *name, *logFilePath, *serviceTime, *responseSize, *batchSize, *batchTime, *leaderTimeout, *pipelineLength, *benchmark, *numKeys)
+
+	go in.WaitForConnections()
+	time.Sleep(2 * time.Second)
+
+	in.StartOutgoingLinks()
+	time.Sleep(2 * time.Second)
+
+	in.Run()
+	time.Sleep(2 * time.Second)
+
+	in.BroadcastBlock()
+	time.Sleep(2 * time.Second)
+
+	/*to avoid exiting the main thread*/
+	for true {
+		time.Sleep(10 * time.Second)
+	}
 }

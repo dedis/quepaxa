@@ -13,7 +13,7 @@ import (
 	common.go implements the methods/functions that are common to both the proposer and the recorder
 */
 
-func (in *Instance) broadcastBlock() {
+func (in *Instance) BroadcastBlock() {
 	/*
 		This is an infinite thread
 		It collects a batch of client requests batches (a 2d array of requests), creates a new block and broadcasts it to all the replicas
@@ -241,22 +241,10 @@ Server bootstrapping
 
 func (in *Instance) startServer() {
 
-	go in.waitForConnections()
-	time.Sleep(2 * time.Second)
-
 	in.connectToReplicas()
 	time.Sleep(2 * time.Second)
 
 	in.startConnectionListners()
-	time.Sleep(2 * time.Second)
-
-	in.startOutgoingLinks()
-	time.Sleep(2 * time.Second)
-
-	in.run()
-	time.Sleep(2 * time.Second)
-
-	in.broadcastBlock()
 	time.Sleep(2 * time.Second)
 
 }
