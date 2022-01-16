@@ -38,7 +38,7 @@ func (in *Instance) BroadcastBlock() {
 			}
 
 			rpcPair := RPCPair{
-				code: in.messageBlockRpc,
+				Code: in.messageBlockRpc,
 				Obj:  &messageBlock,
 			}
 
@@ -93,7 +93,7 @@ func (in *Instance) handleMessageBlock(block *proto.MessageBlock) {
 	}
 
 	rpcPair := RPCPair{
-		code: in.messageBlockAckRpc,
+		Code: in.messageBlockAckRpc,
 		Obj:  &messageBlockAck,
 	}
 
@@ -110,7 +110,7 @@ func (in *Instance) handleMessageBlockRequest(request *proto.MessageBlockRequest
 		// the block exists
 		messageBlock.Receiver = request.Sender
 		rpcPair := RPCPair{
-			code: in.messageBlockRpc,
+			Code: in.messageBlockRpc,
 			Obj:  messageBlock,
 		}
 		in.sendMessage(request.Sender, rpcPair)
@@ -125,7 +125,7 @@ func (in *Instance) sendMessageBlockRequest(hash string) {
 	randomPeer := rand.Intn(int(in.numReplicas))
 	messageBlockRequest := proto.MessageBlockRequest{Hash: hash, Sender: in.nodeName, Receiver: int64(randomPeer)}
 	rpcPair := RPCPair{
-		code: in.messageBlockRequestRpc,
+		Code: in.messageBlockRequestRpc,
 		Obj:  &messageBlockRequest,
 	}
 
@@ -191,7 +191,7 @@ func (in *Instance) sendSampleClientResponse(ack *proto.MessageBlockAck) {
 			Id:        clientRequestBatch.Id,
 		}
 		rpcPair := RPCPair{
-			code: in.clientResponseBatchRpc,
+			Code: in.clientResponseBatchRpc,
 			Obj:  &responseBatch,
 		}
 

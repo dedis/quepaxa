@@ -33,5 +33,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	cmd.New(*name, cfg, *logFilePath, *batchSize, *batchTime, *defaultReplica, *replicaTimeout, *requestSize, *testDuration, *warmupDuration, *arrivalRate, *benchmark, *numKeys, *requestType, *operationType)
+	cl := cmd.New(*name, cfg, *logFilePath, *batchSize, *batchTime, *defaultReplica, *replicaTimeout, *requestSize, *testDuration, *warmupDuration, *arrivalRate, *benchmark, *numKeys, *requestType, *operationType)
+
+	cl.ConnectToReplicas()
+	cl.StartConnectionListners()
+
 }

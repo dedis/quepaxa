@@ -15,7 +15,7 @@ RPC paid assigns a unique id to each type of message defined in the proto files
 */
 
 type RPCPair struct {
-	code uint8
+	Code uint8
 	Obj  proto.Serializable
 }
 
@@ -142,7 +142,7 @@ func (in *Instance) connectionListener(reader *bufio.Reader) {
 				return
 			}
 			in.incomingChan <- &RPCPair{
-				code: msgType,
+				Code: msgType,
 				Obj:  obj,
 			}
 		} else {
@@ -164,7 +164,7 @@ func (in *Instance) Run() {
 			replicaMessage := <-in.incomingChan
 			//in.lock.Lock()
 			in.debug("Received replica message")
-			code := replicaMessage.code
+			code := replicaMessage.Code
 			switch code {
 			case in.clientRequestBatchRpc:
 				clientRequestBatch := replicaMessage.Obj.(*proto.ClientRequestBatch)
@@ -225,7 +225,7 @@ func (in *Instance) Run() {
 */
 
 func (in *Instance) internalSendMessage(peer int64, rpcPair *RPCPair) {
-	code := rpcPair.code
+	code := rpcPair.Code
 	oriMsg := rpcPair.Obj
 	var msg proto.Serializable
 	msg = in.getNewCopyOfMessage(code, oriMsg)

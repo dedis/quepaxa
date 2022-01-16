@@ -2,7 +2,11 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/binary"
+	"fmt"
+	"math/rand"
 	"net"
+	"os"
 	"raxos/configuration"
 	"raxos/proto"
 	raxos "raxos/replica/src"
@@ -107,5 +111,94 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		operationType:           operationType,
 	}
 
+	rand.Seed(time.Now().UTC().UnixNano())
+
+	/**/
+	cl.RegisterRPC(new(proto.ClientRequestBatch), cl.clientRequestBatchRpc)
+	cl.RegisterRPC(new(proto.ClientResponseBatch), cl.clientResponseBatchRpc)
+	cl.RegisterRPC(new(proto.ClientStatusRequest), cl.clientStatusRequestRpc)
+	cl.RegisterRPC(new(proto.ClientStatusResponse), cl.clientStatusResponseRpc)
+
+	pid := os.Getpid()
+	fmt.Printf("initialized cLient with process id: %v \n", pid)
+
 	return &cl
+}
+
+/*Fill the RPC table by assigning a unique id to each message type*/
+
+func (cl *Client) RegisterRPC(msgObj proto.Serializable, code uint8) {
+	cl.rpcTable[code] = &raxos.RPCPair{Code: code, Obj: msgObj}
+}
+
+/*
+Each replica sends connection requests to itself and to all replicas with a higher id
+*/
+
+func (cl *Client) ConnectToReplicas() {
+	var b [1]byte
+	bs := b[:1]
+
+	//connect to replicas
+	for i := int64(0); i < cl.numReplicas; i++ {
+		for true {
+			conn, err := net.Dial("tcp", cl.replicaAddrList[i])
+			if err == nil {
+				cl.replicaConnections[i] = conn
+				cl.outgoingReplicaWriters[i] = bufio.NewWriter(cl.replicaConnections[i])
+				cl.incomingReplicaReaders[i] = bufio.NewReader(cl.replicaConnections[i])
+				binary.LittleEndian.PutUint16(bs, uint16(cl.clientName))
+				_, err := conn.Write(bs)
+				if err != nil {
+					panic(err)
+				}
+				break
+			}
+		}
+	}
+	cl.debug("Established all outgoing connections")
+}
+
+/*
+Listen to all the established tcp connections
+*/
+
+func (cl *Client) StartConnectionListners() {
+	for i := int64(0); i < cl.numReplicas; i++ {
+		go cl.connectionListener(cl.incomingReplicaReaders[i])
+	}
+}
+
+/*
+	listen to a given connection. Upon receiving any message, put it into the central buffer
+*/
+
+func (cl *Client) connectionListener(reader *bufio.Reader) {
+
+	var msgType uint8
+	var err error = nil
+
+	for true {
+		if msgType, err = reader.ReadByte(); err != nil {
+			return
+		}
+		if rpair, present := cl.rpcTable[msgType]; present {
+			obj := rpair.Obj.New()
+			if err = obj.Unmarshal(reader); err != nil {
+				return
+			}
+			cl.incomingChan <- &raxos.RPCPair{
+				Code: msgType,
+				Obj:  obj,
+			}
+		} else {
+			cl.debug("Error: received unknown message type")
+		}
+	}
+}
+
+func (cl *Client) debug(message string) {
+	if cl.debugOn {
+		fmt.Printf("%s\n", message)
+	}
 }
