@@ -37,5 +37,12 @@ func main() {
 
 	cl.ConnectToReplicas()
 	cl.StartConnectionListners()
+	cl.Run()
+
+	if cl.RequestType == "status" {
+		cl.SendStatus(cl.OperationType)
+	} else if cl.RequestType == "request" {
+		cl.SendRequests()
+	}
 
 }

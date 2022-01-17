@@ -24,8 +24,8 @@ Outgoing RPC assigns an rpc to its intended destination peer, the peer can be a 
 */
 
 type OutgoingRPC struct {
-	rpcPair *RPCPair
-	peer    int64
+	RpcPair *RPCPair
+	Peer    int64
 }
 
 /*Fill the RPC table by assigning a unique id to each message type*/
@@ -257,7 +257,7 @@ func (in *Instance) StartOutgoingLinks() {
 		go func() {
 			for true {
 				outgoingMessage := <-in.outgoingMessageChan
-				in.internalSendMessage(outgoingMessage.peer, outgoingMessage.rpcPair)
+				in.internalSendMessage(outgoingMessage.Peer, outgoingMessage.RpcPair)
 			}
 		}()
 	}
@@ -269,7 +269,7 @@ adds a new out going message to the out going channel
 
 func (in *Instance) sendMessage(peer int64, rpcPair RPCPair) {
 	in.outgoingMessageChan <- &OutgoingRPC{
-		rpcPair: &rpcPair,
-		peer:    peer,
+		RpcPair: &rpcPair,
+		Peer:    peer,
 	}
 }

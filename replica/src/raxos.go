@@ -75,7 +75,7 @@ type Instance struct {
 	messageStore MessageStore                   // message store that stores the blocks
 	blockCounter int64                          // local sequence number that is used to generate the hash of a block (unique block hash == nodename.blockcounter)
 
-	leaderTimeout int64       // in milli seconds
+	leaderTimeout int64       // in milliseconds
 	lastSeenTime  []time.Time // time each replica was last seen
 
 	debugOn bool // if turned on, the debugg messages will be print on the console

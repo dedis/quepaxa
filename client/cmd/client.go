@@ -57,11 +57,22 @@ type Client struct {
 	benchmark      int64 // type of the workload: 0 for no-op, 1 for kv store and 2 for redis
 	numKeys        int64 // maximum number of keys for the key value store
 
-	arrivalChan       chan bool // channel to which the poisson process adds new request times
-	requestType       string    // request for sending the client requests, status for sending a status request
-	operationType     int64     // status operation type 1 (bootstrap server), 2: print log
-	sentRequests      []proto.ClientRequestBatch
-	receivedResponses []proto.ClientResponseBatch
+	arrivalTimeChan   chan int64 // channel to which the poisson process adds new request times
+	arrivalChan       chan bool  // channel to which the main process adds new request arrivals, to be consumed by the request generation threads
+	RequestType       string     // request for sending the client requests, status for sending a status request
+	OperationType     int64      // status operation type 1 (bootstrap server), 2: print log
+	sentRequests      [][]sentRequestBatch
+	receivedResponses []receivedResponseBatch
+}
+
+type sentRequestBatch struct {
+	batch proto.ClientRequestBatch
+	time  time.Time
+}
+
+type receivedResponseBatch struct {
+	batch proto.ClientResponseBatch
+	time  time.Time
 }
 
 /*
@@ -106,9 +117,11 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		arrivalRate:             arrivalRate,
 		benchmark:               benchmark,
 		numKeys:                 numKeys,
+		arrivalTimeChan:         make(chan int64, arrivalBufferSize),
 		arrivalChan:             make(chan bool, arrivalBufferSize),
-		requestType:             requestType,
-		operationType:           operationType,
+		RequestType:             requestType,
+		OperationType:           operationType,
+		receivedResponses:       make([]receivedResponseBatch, numRequestGenerationThreads),
 	}
 
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -132,7 +145,7 @@ func (cl *Client) RegisterRPC(msgObj proto.Serializable, code uint8) {
 }
 
 /*
-Each replica sends connection requests to itself and to all replicas with a higher id
+	Each client sends connection requests to all replicas
 */
 
 func (cl *Client) ConnectToReplicas() {
@@ -197,8 +210,95 @@ func (cl *Client) connectionListener(reader *bufio.Reader) {
 	}
 }
 
+/*
+	If turned on, prints the message to console
+*/
+
 func (cl *Client) debug(message string) {
 	if cl.debugOn {
 		fmt.Printf("%s\n", message)
+	}
+}
+
+/*
+	This is the main execution thread
+	It listens to incoming messages from the incomingChan, and invoke the appropriate handler depending on the message type
+*/
+
+func (cl *Client) Run() {
+	go func() {
+		for true {
+			cl.debug("Checking channel\n")
+
+			replicaMessage := <-cl.incomingChan
+			//in.lock.Lock()
+			cl.debug("Received replica message")
+			code := replicaMessage.Code
+			switch code {
+
+			case cl.clientResponseBatchRpc:
+				clientResponseBatch := replicaMessage.Obj.(*proto.ClientResponseBatch)
+				cl.debug("Client response batch " + fmt.Sprintf("%#v", clientResponseBatch))
+				cl.handleClientResponseBatch(clientResponseBatch)
+				break
+
+			case cl.clientStatusResponseRpc:
+				clientStatusResponse := replicaMessage.Obj.(*proto.ClientStatusResponse)
+				cl.debug("Client Status Response " + fmt.Sprintf("%#v", clientStatusResponse))
+				cl.handleClientStatusResponse(clientStatusResponse)
+				break
+
+			}
+			//in.lock.Unlock()
+		}
+	}()
+}
+
+/*
+	Write a message to the wire, first the message type is written and then the actual message
+*/
+
+func (cl *Client) internalSendMessage(peer int64, rpcPair *raxos.RPCPair) {
+	code := rpcPair.Code
+	oriMsg := rpcPair.Obj
+	var msg proto.Serializable
+	msg = oriMsg //
+	var w *bufio.Writer
+
+	w = cl.outgoingReplicaWriters[peer]
+	err := w.WriteByte(code)
+	if err != nil {
+		return
+	}
+	msg.Marshal(w)
+	err = w.Flush()
+	if err != nil {
+		return
+	}
+}
+
+/*
+	A set of threads that manages outgoing messages: write the message to the OS buffers
+*/
+
+func (cl *Client) StartOutgoingLinks() {
+	for i := 0; i < numOutgoingThreads; i++ {
+		go func() {
+			for true {
+				outgoingMessage := <-cl.outgoingMessageChan
+				cl.internalSendMessage(outgoingMessage.Peer, outgoingMessage.RpcPair)
+			}
+		}()
+	}
+}
+
+/*
+adds a new out going message to the out going channel
+*/
+
+func (cl *Client) sendMessage(peer int64, rpcPair raxos.RPCPair) {
+	cl.outgoingMessageChan <- &raxos.OutgoingRPC{
+		RpcPair: &rpcPair,
+		Peer:    peer,
 	}
 }
