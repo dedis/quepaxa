@@ -15,7 +15,7 @@ func main() {
 	batchSize := flag.Int64("batchSize", 50, "client batch size")
 	batchTime := flag.Int64("batchTime", 50, "maximum time to wait for collecting a batch of requests in micro seconds")
 	defaultReplica := flag.Int64("defaultReplica", 0, "default replica to send requests to")
-	replicaTimeout := flag.Int64("replicaTimeout", 50, "Replica timeout in milli seconds")
+	replicaTimeout := flag.Int64("replicaTimeout", 2, "Replica timeout in seconds")
 	requestSize := flag.Int64("requestSize", 8, "request size in bytes")
 	testDuration := flag.Int64("testDuration", 60, "test duration in seconds")
 	warmupDuration := flag.Int64("warmupDuration", 100, "warm up duration in seconds")

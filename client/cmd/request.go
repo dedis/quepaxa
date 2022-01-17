@@ -3,7 +3,10 @@ package cmd
 import (
 	"math"
 	"math/rand"
+	"raxos/benchmark"
 	"raxos/proto"
+	raxos "raxos/replica/src"
+	"strconv"
 	"time"
 )
 
@@ -16,6 +19,7 @@ func (cl *Client) handleClientResponseBatch(batch *proto.ClientResponseBatch) {
 		batch: *batch,
 		time:  time.Now(),
 	})
+	cl.lastSeenTimeReplica = time.Now()
 }
 
 /*
@@ -27,10 +31,15 @@ func (cl *Client) handleClientResponseBatch(batch *proto.ClientResponseBatch) {
 */
 
 func (cl *Client) SendRequests() {
-	go cl.generateArrivalTimes()
-
+	cl.generateArrivalTimes()
+	cl.startRequestGenerators()
+	cl.startFailureDetector()
 	cl.startScheduler() // this is sync, main thread waits for this to finish
 
+	// end of test
+
+	time.Sleep(time.Duration(cl.testDuration) * time.Second) // additional sleep duration to make sure that all the inflight responses are received
+	cl.computeStats()
 }
 
 /*
@@ -38,9 +47,44 @@ func (cl *Client) SendRequests() {
 */
 
 func (cl *Client) startRequestGenerators() {
-	for i := 0; i < numRequestGenerationThreads; i++ {
+	for i := 0; i < numRequestGenerationThreads; i++ { // i is the thread number
+		go func(threadNumber int) {
+			localCounter := 0
+			lastSent := time.Now() // used to get how long to wait
+			for true {             // this runs forever
+				numRequests := int64(0)
+				sampleRequest := benchmark.GetNLengthValue(int(cl.requestSize))
+				var requests []*proto.ClientRequestBatch_SingleClientRequest
+				// this loop collects requests until the minimum batch time is met OR the batch time is timeout
+				for !(numRequests >= cl.batchSize || (time.Now().Sub(lastSent).Microseconds() > cl.batchTime && numRequests > 0)) {
+					_ = <-cl.arrivalChan // keep collecting new requests arrivals
+					requests = append(requests, &proto.ClientRequestBatch_SingleClientRequest{Message: sampleRequest})
+					numRequests++
+				}
 
+				batch := proto.ClientRequestBatch{
+					Sender:   cl.clientName,
+					Receiver: cl.defaultReplica,
+					Requests: requests,
+					Id:       strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter),
+				}
+
+				rpcPair := raxos.RPCPair{
+					Code: cl.clientRequestBatchRpc,
+					Obj:  &batch,
+				}
+
+				cl.sendMessage(cl.defaultReplica, rpcPair)
+				lastSent = time.Now()
+				cl.sentRequests[threadNumber] = append(cl.sentRequests[threadNumber], sentRequestBatch{
+					batch: batch,
+					time:  time.Time{},
+				})
+			}
+
+		}(i)
 	}
+
 }
 
 /*
@@ -67,19 +111,45 @@ func (cl *Client) startScheduler() {
 */
 
 func (cl *Client) generateArrivalTimes() {
-	lambda := float64(cl.arrivalRate) / (1000.0 * 1000.0 * 1000.0) // requests per nano second
-	arrivalTime := 0.0
+	go func() {
+		lambda := float64(cl.arrivalRate) / (1000.0 * 1000.0 * 1000.0) // requests per nano second
+		arrivalTime := 0.0
 
-	for true {
-		// Get the next probability value from Uniform(0,1)
-		p := rand.Float64()
+		for true {
+			// Get the next probability value from Uniform(0,1)
+			p := rand.Float64()
 
-		//Plug it into the inverse of the CDF of Exponential(_lamnbda)
-		interArrivalTime := -1 * (math.Log(1.0-p) / lambda)
+			//Plug it into the inverse of the CDF of Exponential(_lamnbda)
+			interArrivalTime := -1 * (math.Log(1.0-p) / lambda)
 
-		// Add the inter-arrival time to the running sum
-		arrivalTime = arrivalTime + interArrivalTime
+			// Add the inter-arrival time to the running sum
+			arrivalTime = arrivalTime + interArrivalTime
 
-		cl.arrivalTimeChan <- int64(arrivalTime)
-	}
+			cl.arrivalTimeChan <- int64(arrivalTime)
+		}
+	}()
+}
+
+/*
+	Monitors the time the last response was received. If the default replica fails to send a response before a timeout, change the default replica
+	Since the faulure detector is anyone eventually correct, we don't use a Mutex to protect the lastSeenTime and the defaultReplica variables
+*/
+
+func (cl *Client) startFailureDetector() {
+	go func() {
+		cl.debug("Starting failure detector")
+		for true {
+
+			time.Sleep(time.Duration(cl.replicaTimeout) * time.Second)
+			if time.Now().Sub(cl.lastSeenTimeReplica).Seconds() > float64(cl.replicaTimeout) {
+
+				// change the default replica
+
+				cl.defaultReplica = (cl.defaultReplica + 1) % cl.numReplicas
+				cl.lastSeenTimeReplica = time.Now()
+
+			}
+
+		}
+	}()
 }
