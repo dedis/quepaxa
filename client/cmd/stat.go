@@ -44,7 +44,7 @@ func (cl *Client) addValueNToArrayMTimes(list []int64, N int64, M int) []int64 {
 	Maps the request with the response batch
     Compute the time taken for each request
 	Computer the error rate
-	Compute the throughput as successfully committed requests per second (doesn't include failued requests)
+	Compute the throughput as successfully committed requests per second (doesn't include failed requests)
 	Compute the latency by including the timeout requests
 	Prints the basic stats to the stdout
 */
@@ -52,7 +52,7 @@ func (cl *Client) addValueNToArrayMTimes(list []int64, N int64, M int) []int64 {
 func (cl *Client) computeStats() {
 
 	numTotalRequests := cl.getNumberofRequests(cl.sentRequests)
-	var latencyList []int64    // contains the time duration spent for each request
+	var latencyList []int64    // contains the time duration spent for each request in micro seconds (includes failed requests)
 	var throughputList []int64 // contains the time duration spent for successful requests
 	for i := 0; i < numRequestGenerationThreads; i++ {
 		for j := 0; j < len(cl.sentRequests[i]); j++ {
@@ -61,21 +61,21 @@ func (cl *Client) computeStats() {
 			matchingResponseIndex := cl.getMatchingResponseBatch(batchId)
 			if matchingResponseIndex == -1 {
 				// there is no response for this batch of requests, hence they are considered as failed
-				cl.addValueNToArrayMTimes(latencyList, cl.replicaTimeout, len(batch.batch.Requests))
+				cl.addValueNToArrayMTimes(latencyList, cl.replicaTimeout*1000, len(batch.batch.Requests))
 			} else {
 				responseBatch := cl.receivedResponses[matchingResponseIndex]
 				startTime := batch.time
 				endTime := responseBatch.time
-				bacthLatency := endTime.Sub(startTime).Microseconds()
-				cl.addValueNToArrayMTimes(latencyList, bacthLatency, len(batch.batch.Requests))
-				cl.addValueNToArrayMTimes(throughputList, bacthLatency, len(batch.batch.Requests))
+				batchLatency := endTime.Sub(startTime).Microseconds()
+				cl.addValueNToArrayMTimes(latencyList, batchLatency, len(batch.batch.Requests))
+				cl.addValueNToArrayMTimes(throughputList, batchLatency, len(batch.batch.Requests))
 			}
 
 		}
 	}
 
 	medianLatency, _ := stats.Median(cl.getFloat64List(latencyList))
-	percentile99, _ := stats.Percentile(cl.getFloat64List(latencyList), 99.0)
+	percentile99, _ := stats.Percentile(cl.getFloat64List(latencyList), 99.0) // tail latency
 	duration := cl.testDuration
 	errorRate := (numTotalRequests - len(throughputList)) * 100.0 / numTotalRequests
 
@@ -86,6 +86,10 @@ func (cl *Client) computeStats() {
 	fmt.Printf("99 pecentile latency (includes timeout requests) := %v micro seconds per request\n", percentile99)
 	fmt.Printf("Error Rate := %v \n", float64(errorRate))
 }
+
+/*
+	Converts int[] to float64[]
+*/
 
 func (cl *Client) getFloat64List(list []int64) []float64 {
 	var array []float64

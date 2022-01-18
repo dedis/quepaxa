@@ -64,8 +64,7 @@ func Test() error {
 // Build binary executables.
 func Build() error {
 	err := sh.RunV("go", "build", "-v", "-o", "./replica/bin/replica", "./replica/")
-	//err = sh.RunV("go", "build", "-v", "-o", "./client/traffic/bin/traffic", "./client/traffic/")
-	//err = sh.RunV("go", "build", "-v", "-o", "./client/attack/bin/attack", "./client/attack/")
+	err = sh.RunV("go", "build", "-v", "-o", "./client/bin/client", "./client/")
 	if err != nil {
 		return err
 	}

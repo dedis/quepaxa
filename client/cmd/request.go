@@ -11,22 +11,22 @@ import (
 )
 
 /*
-Upon receiving a client response, add the request to the received requests array
+	Upon receiving a client response, add the request to the received requests array
 */
 
 func (cl *Client) handleClientResponseBatch(batch *proto.ClientResponseBatch) {
 	cl.receivedResponses = append(cl.receivedResponses, receivedResponseBatch{
 		batch: *batch,
-		time:  time.Now(),
+		time:  time.Now(), // record the time when the response was received
 	})
-	cl.lastSeenTimeReplica = time.Now()
+	cl.lastSeenTimeReplica = time.Now() // mark the last time a response was received
 }
 
 /*
 	start the poisson arrival process (put arrivals to arrivalTimeChan) in a separate thread
 	start request generation processes  (get arrivals from arrivalTimeChan and generate batches and send them) in separate threads, and send them to the leader proposer, and write the sent batch to the correct array in sentRequests. Runs only for a pre-defined test duration
 	start failure detector that checks the time since the last response was received, and update the default proposer
-	the main thread sleeps for test duration + delta and then starts processing the responses
+	the thread sleeps for test duration + delta and then starts processing the responses
 
 */
 
@@ -53,12 +53,12 @@ func (cl *Client) startRequestGenerators() {
 			lastSent := time.Now() // used to get how long to wait
 			for true {             // this runs forever
 				numRequests := int64(0)
-				sampleRequest := benchmark.GetNLengthValue(int(cl.requestSize))
+				sampleRequest := benchmark.GetNLengthValue(int(cl.requestSize)) //todo this is only for testing purposes
 				var requests []*proto.ClientRequestBatch_SingleClientRequest
-				// this loop collects requests until the minimum batch time is met OR the batch time is timeout
+				// this loop collects requests until the minimum batch size is met OR the batch time is timeout
 				for !(numRequests >= cl.batchSize || (time.Now().Sub(lastSent).Microseconds() > cl.batchTime && numRequests > 0)) {
-					_ = <-cl.arrivalChan // keep collecting new requests arrivals
-					requests = append(requests, &proto.ClientRequestBatch_SingleClientRequest{Message: sampleRequest})
+					_ = <-cl.arrivalChan                                                                               // keep collecting new requests arrivals
+					requests = append(requests, &proto.ClientRequestBatch_SingleClientRequest{Message: sampleRequest}) //todo for actual benchmarks the same request should be replaced with redis op or kvstore op
 					numRequests++
 				}
 
@@ -66,7 +66,7 @@ func (cl *Client) startRequestGenerators() {
 					Sender:   cl.clientName,
 					Receiver: cl.defaultReplica,
 					Requests: requests,
-					Id:       strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter),
+					Id:       strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string
 				}
 
 				rpcPair := raxos.RPCPair{
@@ -95,7 +95,7 @@ func (cl *Client) startRequestGenerators() {
 func (cl *Client) startScheduler() {
 	start := time.Now()
 
-	for time.Now().Sub(start).Nanoseconds() < int64(cl.testDuration*1000*1000*1000) {
+	for time.Now().Sub(start).Nanoseconds() < cl.testDuration*1000*1000*1000 {
 		nextArrivalTime := <-cl.arrivalTimeChan
 
 		for time.Now().Sub(start).Nanoseconds() < nextArrivalTime {
@@ -107,7 +107,7 @@ func (cl *Client) startScheduler() {
 }
 
 /*
- Generates Poisson arrival times
+	Generates Poisson arrival times
 */
 
 func (cl *Client) generateArrivalTimes() {
@@ -132,7 +132,7 @@ func (cl *Client) generateArrivalTimes() {
 
 /*
 	Monitors the time the last response was received. If the default replica fails to send a response before a timeout, change the default replica
-	Since the faulure detector is anyone eventually correct, we don't use a Mutex to protect the lastSeenTime and the defaultReplica variables
+	Since the failure detector is anyway eventually correct, we don't use a Mutex to protect the lastSeenTime and the defaultReplica variables
 */
 
 func (cl *Client) startFailureDetector() {

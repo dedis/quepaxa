@@ -18,7 +18,7 @@ func main() {
 	replicaTimeout := flag.Int64("replicaTimeout", 2, "Replica timeout in seconds")
 	requestSize := flag.Int64("requestSize", 8, "request size in bytes")
 	testDuration := flag.Int64("testDuration", 60, "test duration in seconds")
-	warmupDuration := flag.Int64("warmupDuration", 100, "warm up duration in seconds")
+	warmupDuration := flag.Int64("warmupDuration", 10, "warm up duration in seconds")
 	arrivalRate := flag.Int64("arrivalRate", 1000, "poisson arrival rate in requests per second")
 	benchmark := flag.Int64("benchmark", 0, "Benchmark: 0 for echo service, 1 for KV store and 2 for Redis ")
 	numKeys := flag.Int64("numKeys", 1000, "Number of keys in the key value store")
@@ -36,7 +36,7 @@ func main() {
 	cl := cmd.New(*name, cfg, *logFilePath, *batchSize, *batchTime, *defaultReplica, *replicaTimeout, *requestSize, *testDuration, *warmupDuration, *arrivalRate, *benchmark, *numKeys, *requestType, *operationType)
 
 	cl.ConnectToReplicas()
-	cl.StartConnectionListners()
+	cl.StartConnectionListeners()
 	cl.Run()
 
 	if cl.RequestType == "status" {
