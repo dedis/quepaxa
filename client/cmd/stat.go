@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/montanaflynn/stats"
+	"raxos/proto"
 )
 
 /*
@@ -62,6 +63,7 @@ func (cl *Client) computeStats() {
 			if matchingResponseIndex == -1 {
 				// there is no response for this batch of requests, hence they are considered as failed
 				cl.addValueNToArrayMTimes(latencyList, cl.replicaTimeout*1000, len(batch.batch.Requests))
+				cl.printRequests(batch.batch, batch.time.Sub(cl.startTime).Microseconds(), batch.time.Sub(cl.startTime).Microseconds()+cl.replicaTimeout*1000)
 			} else {
 				responseBatch := cl.receivedResponses[matchingResponseIndex]
 				startTime := batch.time
@@ -69,6 +71,7 @@ func (cl *Client) computeStats() {
 				batchLatency := endTime.Sub(startTime).Microseconds()
 				cl.addValueNToArrayMTimes(latencyList, batchLatency, len(batch.batch.Requests))
 				cl.addValueNToArrayMTimes(throughputList, batchLatency, len(batch.batch.Requests))
+				cl.printRequests(batch.batch, batch.time.Sub(cl.startTime).Microseconds(), endTime.Sub(cl.startTime).Microseconds())
 			}
 
 		}
@@ -97,4 +100,15 @@ func (cl *Client) getFloat64List(list []int64) []float64 {
 		array = append(array, float64(list[i]))
 	}
 	return array
+}
+
+/*
+	Print a client request batch with arrival time and end time
+*/
+
+func (cl *Client) printRequests(messages proto.ClientRequestBatch, startTime int64, endTime int64) {
+	fmt.Print(messages.Id, "\n")
+	for i := 0; i < len(messages.Requests); i++ {
+		fmt.Print(messages.Requests[i].Message, ",", startTime, ",", endTime, "\n")
+	}
 }

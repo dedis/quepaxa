@@ -152,6 +152,8 @@ func (in *Instance) handleClientStatusRequest(request *proto.ClientStatusRequest
 		in.startServer()
 	} else if request.Operation == 2 {
 		in.printLog()
+		// todo remove the message store printing, its only for testing purposes
+		in.messageStore.printStore()
 	}
 }
 

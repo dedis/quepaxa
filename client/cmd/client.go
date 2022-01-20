@@ -68,6 +68,7 @@ type Client struct {
 	OperationType     int64                   // status operation type 1 (bootstrap server), 2: print log
 	sentRequests      [][]sentRequestBatch    // generator i updates sentRequests[i] :this is to avoid concurrent access to the same array
 	receivedResponses []receivedResponseBatch // set of received responses
+	startTime         time.Time               // test start time
 }
 
 /*
@@ -133,6 +134,7 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		RequestType:             requestType,
 		OperationType:           operationType,
 		sentRequests:            make([][]sentRequestBatch, numRequestGenerationThreads),
+		startTime:               time.Now(),
 	}
 
 	rand.Seed(time.Now().UTC().UnixNano())

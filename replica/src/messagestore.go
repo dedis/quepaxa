@@ -101,13 +101,15 @@ func (ms *MessageStore) addAck(id string) {
 func (ms *MessageStore) printStore() {
 	ms.mutex.Lock()
 	for hash, block := range ms.messageBlocks {
-		fmt.Print(hash, ":")
+		fmt.Print(hash, "\n")
 		for i := 0; i < len(block.messageBlock.Requests); i++ {
+			fmt.Print(block.messageBlock.Requests[i].Id, ":")
 			for j := 0; j < len(block.messageBlock.Requests[i].Requests); j++ {
 				fmt.Print(block.messageBlock.Requests[i].Requests[j].Message, ",")
 			}
+			fmt.Print("\n")
 		}
-		fmt.Print("\n")
+
 	}
 	ms.mutex.Unlock()
 }
