@@ -151,10 +151,26 @@ func (in *Instance) handleClientStatusRequest(request *proto.ClientStatusRequest
 	if request.Operation == 1 {
 		in.startServer()
 	} else if request.Operation == 2 {
-		in.printLog()
+		//in.printLog()
 		// todo remove the message store printing, its only for testing purposes
 		in.messageStore.printStore(in.logFilePath, in.nodeName)
 	}
+
+	/*send a status response back to the client*/
+	statusResponse := proto.ClientStatusResponse{
+		Sender:    in.nodeName,
+		Receiver:  request.Sender,
+		Operation: 0,
+		Message:   "Status Response from " + strconv.Itoa(int(in.nodeName)),
+	}
+	rpcPair := RPCPair{
+		Code: in.clientStatusResponseRpc,
+		Obj:  &statusResponse,
+	}
+
+	in.sendMessage(request.Sender, rpcPair)
+	in.debug("Sent status response")
+
 }
 
 /*
@@ -242,12 +258,10 @@ Server bootstrapping
 */
 
 func (in *Instance) startServer() {
-
-	in.connectToReplicas()
-	time.Sleep(2 * time.Second)
-
-	in.startConnectionListners()
-	time.Sleep(2 * time.Second)
+	if !in.serverStarted {
+		in.serverStarted = true
+		in.connectToReplicas()
+	}
 
 }
 

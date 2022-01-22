@@ -78,7 +78,8 @@ type Instance struct {
 	leaderTimeout int64       // in milliseconds
 	lastSeenTime  []time.Time // time each replica was last seen
 
-	debugOn bool // if turned on, the debugg messages will be print on the console
+	debugOn       bool // if turned on, the debugg messages will be print on the console
+	serverStarted bool // true if the first status message with operation type 1 received
 }
 
 /*
@@ -132,6 +133,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 		leaderTimeout:       leaderTimeout,
 		lastSeenTime:        make([]time.Time, len(cfg.Peers)),
 		debugOn:             true,
+		serverStarted:       false,
 	}
 	rand.Seed(time.Now().UTC().UnixNano())
 	in.messageStore.Init()

@@ -15,8 +15,8 @@ func (t *MessageBlockRequest) Marshal(wire io.Writer) {
 		return
 	}
 	lengthWritten := len(data)
-	var b [4]byte
-	bs := b[:4]
+	var b [8]byte
+	bs := b[:8]
 	binary.LittleEndian.PutUint64(bs, uint64(lengthWritten))
 	_, err = wire.Write(bs)
 	if err != nil {
@@ -30,8 +30,8 @@ func (t *MessageBlockRequest) Marshal(wire io.Writer) {
 
 func (t *MessageBlockRequest) Unmarshal(wire io.Reader) error {
 
-	var b [4]byte
-	bs := b[:4]
+	var b [8]byte
+	bs := b[:8]
 
 	_, err := io.ReadFull(wire, bs)
 	if err != nil {
@@ -63,8 +63,8 @@ func (t *MessageBlock) Marshal(wire io.Writer) {
 		return
 	}
 	lengthWritten := len(data)
-	var b [4]byte
-	bs := b[:4]
+	var b [8]byte
+	bs := b[:8]
 	binary.LittleEndian.PutUint64(bs, uint64(lengthWritten))
 	_, err = wire.Write(bs)
 	if err != nil {
@@ -78,8 +78,8 @@ func (t *MessageBlock) Marshal(wire io.Writer) {
 
 func (t *MessageBlock) Unmarshal(wire io.Reader) error {
 
-	var b [4]byte
-	bs := b[:4]
+	var b [8]byte
+	bs := b[:8]
 
 	_, err := io.ReadFull(wire, bs)
 	if err != nil {
@@ -111,8 +111,8 @@ func (t *MessageBlockAck) Marshal(wire io.Writer) {
 		return
 	}
 	lengthWritten := len(data)
-	var b [4]byte
-	bs := b[:4]
+	var b [8]byte
+	bs := b[:8]
 	binary.LittleEndian.PutUint64(bs, uint64(lengthWritten))
 	_, err = wire.Write(bs)
 	if err != nil {
@@ -126,8 +126,8 @@ func (t *MessageBlockAck) Marshal(wire io.Writer) {
 
 func (t *MessageBlockAck) Unmarshal(wire io.Reader) error {
 
-	var b [4]byte
-	bs := b[:4]
+	var b [8]byte
+	bs := b[:8]
 
 	_, err := io.ReadFull(wire, bs)
 	if err != nil {

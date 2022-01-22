@@ -4,6 +4,7 @@ raxos_path="replica/bin/replica"
 ctl_path="client/bin/client"
 output_path="logs/"
 
+rm nohup.out
 rm ${output_path}0.txt
 rm ${output_path}1.txt
 rm ${output_path}2.txt

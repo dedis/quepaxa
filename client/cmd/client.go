@@ -10,6 +10,7 @@ import (
 	"raxos/configuration"
 	"raxos/proto"
 	raxos "raxos/replica/src"
+	"strconv"
 	"time"
 )
 
@@ -89,7 +90,7 @@ type receivedResponseBatch struct {
 	time  time.Time
 }
 
-const statusTimeout = 20                // time to wait for a status timeout in seconds
+const statusTimeout = 5                 // time to wait for a status timeout in seconds
 const numOutgoingThreads = 200          // number of wire writers: since the I/O writing is expensive we delegate that task to a thread pool and separate from the critical path
 const numRequestGenerationThreads = 200 // number of  threads that generate client requests upon receiving an arrival indication
 const incomingBufferSize = 1000000      // the size of the buffer which receives all the incoming messages (client response batch messages and client status response message)
@@ -164,8 +165,11 @@ func (cl *Client) RegisterRPC(msgObj proto.Serializable, code uint8) {
 */
 
 func (cl *Client) ConnectToReplicas() {
-	var b [1]byte
-	bs := b[:1]
+
+	cl.debug("Connecting to " + strconv.Itoa(int(cl.numReplicas)) + " replicas")
+
+	var b [4]byte
+	bs := b[:4]
 
 	//connect to replicas
 	for i := int64(0); i < cl.numReplicas; i++ {
@@ -180,6 +184,7 @@ func (cl *Client) ConnectToReplicas() {
 				if err != nil {
 					panic(err)
 				}
+				cl.debug("Connected to " + strconv.Itoa(int(i)))
 				break
 			}
 		}
@@ -195,6 +200,8 @@ func (cl *Client) StartConnectionListeners() {
 	for i := int64(0); i < cl.numReplicas; i++ {
 		go cl.connectionListener(cl.incomingReplicaReaders[i])
 	}
+
+	cl.debug("Started connection listeners")
 }
 
 /*
@@ -316,4 +323,5 @@ func (cl *Client) sendMessage(peer int64, rpcPair raxos.RPCPair) {
 		RpcPair: &rpcPair,
 		Peer:    peer,
 	}
+	//cl.debug("Added RPC pair to outgoing channel")
 }

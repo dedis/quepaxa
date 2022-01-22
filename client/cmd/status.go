@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"raxos/proto"
 	raxos "raxos/replica/src"
+	"strconv"
 	"time"
 )
 
@@ -20,6 +21,7 @@ func (cl *Client) handleClientStatusResponse(response *proto.ClientStatusRespons
 */
 
 func (cl *Client) SendStatus(operationType int64) {
+	cl.debug("Sending status request")
 	for i := int64(0); i < cl.numReplicas; i++ {
 
 		/*
@@ -39,6 +41,7 @@ func (cl *Client) SendStatus(operationType int64) {
 		}
 
 		cl.sendMessage(i, rpcPair)
+		cl.debug("Sent status to " + strconv.Itoa(int(i)))
 	}
 	time.Sleep(time.Duration(statusTimeout) * time.Second)
 }

@@ -31,17 +31,10 @@ func main() {
 
 	in := raxos.New(cfg, *name, *logFilePath, *serviceTime, *responseSize, *batchSize, *batchTime, *leaderTimeout, *pipelineLength, *benchmark, *numKeys)
 
-	go in.WaitForConnections()
-	time.Sleep(2 * time.Second)
-
-	in.StartOutgoingLinks()
-	time.Sleep(2 * time.Second)
-
 	in.Run()
-	time.Sleep(2 * time.Second)
-
+	in.StartOutgoingLinks()
 	in.BroadcastBlock()
-	time.Sleep(2 * time.Second)
+	go in.WaitForConnections()
 
 	/*to avoid exiting the main thread*/
 	for true {

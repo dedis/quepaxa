@@ -39,8 +39,8 @@ Each replica sends connection requests to itself and to all replicas with a high
 */
 
 func (in *Instance) connectToReplicas() {
-	var b [1]byte
-	bs := b[:1]
+	var b [4]byte
+	bs := b[:4]
 
 	//connect to replicas
 	for i := in.nodeName; i < in.numReplicas; i++ {
@@ -55,6 +55,8 @@ func (in *Instance) connectToReplicas() {
 				if err != nil {
 					panic(err)
 				}
+				go in.connectionListener(in.incomingReplicaReaders[i])
+				in.debug("Started listening to " + strconv.Itoa(int(i)))
 				break
 			}
 		}
@@ -74,12 +76,12 @@ func (in *Instance) WaitForConnections() {
 
 	// waits for connections from my self + all the replicas with lower ids + from all the clients
 
-	var b [1]byte
-	bs := b[:1]
+	var b [4]byte
+	bs := b[:4]
 	in.debug("Listening to messages on " + in.replicaAddrList[in.nodeName])
 	in.Listener, _ = net.Listen("tcp", in.replicaAddrList[in.nodeName])
 
-	for i := int64(0); i < in.nodeName+1+in.numClients; i++ {
+	for true {
 		conn, err := in.Listener.Accept()
 		if err != nil {
 			fmt.Println("Accept error:", err)
@@ -98,29 +100,21 @@ func (in *Instance) WaitForConnections() {
 				in.replicaConnections[id] = conn
 				in.outgoingReplicaWriters[id] = bufio.NewWriter(in.replicaConnections[id])
 				in.incomingReplicaReaders[id] = bufio.NewReader(in.replicaConnections[id])
+				go in.connectionListener(in.incomingReplicaReaders[id])
+				in.debug("Started listening to " + strconv.Itoa(int(id)))
 			}
 		} else if int64(id) < in.numReplicas+in.numClients {
 			// the connection is from a client
 			in.clientConnections[int64(id)-in.numReplicas] = conn
 			in.outgoingClientWriters[int64(id)-in.numReplicas] = bufio.NewWriter(in.clientConnections[int64(id)-in.numReplicas])
 			in.incomingClientReaders[int64(id)-in.numReplicas] = bufio.NewReader(in.clientConnections[int64(id)-in.numReplicas])
+			go in.connectionListener(in.incomingClientReaders[int64(id)-in.numReplicas])
+			in.debug("Started listening to " + strconv.Itoa(int(id)))
+
 		}
 
 	}
 	in.debug("Established connections from all nodes")
-}
-
-/*
-Listen to all the established tcp connections
-*/
-
-func (in *Instance) startConnectionListners() {
-	for i := int64(0); i < in.numReplicas; i++ {
-		go in.connectionListener(in.incomingReplicaReaders[i])
-	}
-	for i := int64(0); i < in.numClients; i++ {
-		go in.connectionListener(in.incomingClientReaders[i])
-	}
 }
 
 /*
@@ -163,7 +157,7 @@ func (in *Instance) Run() {
 
 			replicaMessage := <-in.incomingChan
 			//in.lock.Lock()
-			in.debug("Received replica message")
+			in.debug("Received  message")
 			code := replicaMessage.Code
 			switch code {
 			case in.clientRequestBatchRpc:

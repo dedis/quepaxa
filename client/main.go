@@ -38,6 +38,7 @@ func main() {
 	cl.ConnectToReplicas()
 	cl.StartConnectionListeners()
 	cl.Run()
+	cl.StartOutgoingLinks()
 
 	if cl.RequestType == "status" {
 		cl.SendStatus(cl.OperationType)
