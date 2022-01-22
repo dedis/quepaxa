@@ -1,8 +1,10 @@
 package raxos
 
 import (
-	"fmt"
+	"log"
+	"os"
 	"raxos/proto"
+	"strconv"
 	"sync"
 )
 
@@ -98,16 +100,21 @@ func (ms *MessageStore) addAck(id string) {
 
 /*Print all the blocks*/
 
-func (ms *MessageStore) printStore() {
+func (ms *MessageStore) printStore(logFilePath string, nodeName int64) {
+	f, err := os.Create(logFilePath + strconv.Itoa(int(nodeName)) + ".txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
 	ms.mutex.Lock()
 	for hash, block := range ms.messageBlocks {
-		fmt.Print(hash, "\n")
+		_, _ = f.WriteString(hash + "\n")
 		for i := 0; i < len(block.messageBlock.Requests); i++ {
-			fmt.Print(block.messageBlock.Requests[i].Id, ":")
+			_, _ = f.WriteString(block.messageBlock.Requests[i].Id + ":")
 			for j := 0; j < len(block.messageBlock.Requests[i].Requests); j++ {
-				fmt.Print(block.messageBlock.Requests[i].Requests[j].Message, ",")
+				_, _ = f.WriteString(block.messageBlock.Requests[i].Requests[j].Message + ",")
 			}
-			fmt.Print("\n")
+			_, _ = f.WriteString("\n")
 		}
 
 	}

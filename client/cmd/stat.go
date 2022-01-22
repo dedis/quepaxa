@@ -3,7 +3,10 @@ package cmd
 import (
 	"fmt"
 	"github.com/montanaflynn/stats"
+	"log"
+	"os"
 	"raxos/proto"
+	"strconv"
 )
 
 /*
@@ -52,6 +55,12 @@ func (cl *Client) addValueNToArrayMTimes(list []int64, N int64, M int) []int64 {
 
 func (cl *Client) computeStats() {
 
+	f, err := os.Create(cl.logFilePath + strconv.Itoa(int(cl.clientName)) + ".txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
 	numTotalRequests := cl.getNumberofRequests(cl.sentRequests)
 	var latencyList []int64    // contains the time duration spent for each request in micro seconds (includes failed requests)
 	var throughputList []int64 // contains the time duration spent for successful requests
@@ -63,7 +72,7 @@ func (cl *Client) computeStats() {
 			if matchingResponseIndex == -1 {
 				// there is no response for this batch of requests, hence they are considered as failed
 				cl.addValueNToArrayMTimes(latencyList, cl.replicaTimeout*1000, len(batch.batch.Requests))
-				cl.printRequests(batch.batch, batch.time.Sub(cl.startTime).Microseconds(), batch.time.Sub(cl.startTime).Microseconds()+cl.replicaTimeout*1000)
+				cl.printRequests(batch.batch, batch.time.Sub(cl.startTime).Microseconds(), batch.time.Sub(cl.startTime).Microseconds()+cl.replicaTimeout*1000, f)
 			} else {
 				responseBatch := cl.receivedResponses[matchingResponseIndex]
 				startTime := batch.time
@@ -71,7 +80,7 @@ func (cl *Client) computeStats() {
 				batchLatency := endTime.Sub(startTime).Microseconds()
 				cl.addValueNToArrayMTimes(latencyList, batchLatency, len(batch.batch.Requests))
 				cl.addValueNToArrayMTimes(throughputList, batchLatency, len(batch.batch.Requests))
-				cl.printRequests(batch.batch, batch.time.Sub(cl.startTime).Microseconds(), endTime.Sub(cl.startTime).Microseconds())
+				cl.printRequests(batch.batch, batch.time.Sub(cl.startTime).Microseconds(), endTime.Sub(cl.startTime).Microseconds(), f)
 			}
 
 		}
@@ -106,9 +115,9 @@ func (cl *Client) getFloat64List(list []int64) []float64 {
 	Print a client request batch with arrival time and end time
 */
 
-func (cl *Client) printRequests(messages proto.ClientRequestBatch, startTime int64, endTime int64) {
-	fmt.Print(messages.Id, "\n")
+func (cl *Client) printRequests(messages proto.ClientRequestBatch, startTime int64, endTime int64, f *os.File) {
+	_, _ = f.WriteString(messages.Id + "\n")
 	for i := 0; i < len(messages.Requests); i++ {
-		fmt.Print(messages.Requests[i].Message, ",", startTime, ",", endTime, "\n")
+		_, _ = f.WriteString(messages.Requests[i].Message + "," + strconv.Itoa(int(startTime)) + "," + strconv.Itoa(int(endTime)) + "\n")
 	}
 }

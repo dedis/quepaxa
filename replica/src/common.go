@@ -153,7 +153,7 @@ func (in *Instance) handleClientStatusRequest(request *proto.ClientStatusRequest
 	} else if request.Operation == 2 {
 		in.printLog()
 		// todo remove the message store printing, its only for testing purposes
-		in.messageStore.printStore()
+		in.messageStore.printStore(in.logFilePath, in.nodeName)
 	}
 }
 
@@ -282,6 +282,9 @@ func (in *Instance) printLog() {
 			}
 
 		} else {
+
+			// in theory this execution path should not execute
+
 			_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(0) + ":")
 			_, _ = f.WriteString("no-op" + ",")
 		}
