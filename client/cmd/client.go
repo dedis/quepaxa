@@ -122,7 +122,7 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		defaultReplica:          defaultReplica,
 		replicaTimeout:          replicaTimeout,
 		lastSeenTimeReplica:     time.Time{},
-		debugOn:                 false, // manually set this if debugging needs to be turned on
+		debugOn:                 true, // manually set this if debugging needs to be turned on
 		requestSize:             requestSize,
 		testDuration:            testDuration,
 		warmupDuration:          warmupDuration,
@@ -148,7 +148,7 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 	cl.RegisterRPC(new(proto.ClientStatusResponse), cl.clientStatusResponseRpc)
 
 	pid := os.Getpid()
-	fmt.Printf("initialized cLient with process id: %v \n", pid)
+	fmt.Printf("initialized client with process id: %v \n", pid)
 
 	return &cl
 }
