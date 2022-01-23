@@ -148,19 +148,19 @@ func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) prot
 }
 
 func (in *Instance) convertClientRequest(request *proto.ClientRequestBatch_SingleClientRequest) *proto.MessageBlock_SingleClientRequest {
-	var returnClientRequest *proto.MessageBlock_SingleClientRequest
+	var returnClientRequest proto.MessageBlock_SingleClientRequest
 	returnClientRequest.Message = request.Message
-	return returnClientRequest
+	return &returnClientRequest
 }
 
 func (in *Instance) convertToClientRequestBatch(batch *proto.ClientRequestBatch) *proto.MessageBlock_ClientRequestBatch {
-	var returnBatch *proto.MessageBlock_ClientRequestBatch
+	var returnBatch proto.MessageBlock_ClientRequestBatch
 	returnBatch.Id = batch.Id
 	returnBatch.Sender = batch.Sender
 	for i := 0; i < len(batch.Requests); i++ {
 		returnBatch.Requests = append(returnBatch.Requests, in.convertClientRequest(batch.Requests[i]))
 	}
-	return returnBatch
+	return &returnBatch
 }
 
 func (in *Instance) convertToMessageBlockRequests(requests []*proto.ClientRequestBatch) []*proto.MessageBlock_ClientRequestBatch {

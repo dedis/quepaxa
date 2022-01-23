@@ -37,6 +37,8 @@ func (in *Instance) BroadcastBlock() {
 				Requests: in.convertToMessageBlockRequests(requests),
 			}
 
+			in.blockCounter++
+
 			rpcPair := RPCPair{
 				Code: in.messageBlockRpc,
 				Obj:  &messageBlock,
@@ -228,6 +230,7 @@ func (in *Instance) handleMessageBlockAck(ack *proto.MessageBlockAck) {
 	in.messageStore.addAck(ack.Hash)
 	acks := in.messageStore.getAcks(ack.Hash)
 	if acks != nil && int64(len(acks)) == in.numReplicas/2+1 {
+		in.debug("-----Received majority block acks---")
 		// note that this block is guaranteed to be present in f+1 replicas, so its persistent
 		// todo remove the following invocation is only for testing purposes of the overlay
 		in.sendSampleClientResponse(ack)

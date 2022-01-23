@@ -3,7 +3,6 @@ package cmd
 import (
 	"math"
 	"math/rand"
-	"raxos/benchmark"
 	"raxos/proto"
 	raxos "raxos/replica/src"
 	"strconv"
@@ -20,6 +19,7 @@ func (cl *Client) handleClientResponseBatch(batch *proto.ClientResponseBatch) {
 		time:  time.Now(), // record the time when the response was received
 	})
 	cl.lastSeenTimeReplica = time.Now() // mark the last time a response was received
+	cl.debug("Received Response Batch")
 }
 
 /*
@@ -53,7 +53,7 @@ func (cl *Client) startRequestGenerators() {
 			lastSent := time.Now() // used to get how long to wait
 			for true {             // this runs forever
 				numRequests := int64(0)
-				sampleRequest := benchmark.GetNLengthValue(int(cl.requestSize)) //todo this is only for testing purposes
+				sampleRequest := "Request" //todo this is only for testing purposes
 				var requests []*proto.ClientRequestBatch_SingleClientRequest
 				// this loop collects requests until the minimum batch size is met OR the batch time is timeout
 				for !(numRequests >= cl.batchSize || (time.Now().Sub(lastSent).Microseconds() > cl.batchTime && numRequests > 0)) {
@@ -69,6 +69,8 @@ func (cl *Client) startRequestGenerators() {
 					Id:       strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string
 				}
 
+				localCounter++
+
 				rpcPair := raxos.RPCPair{
 					Code: cl.clientRequestBatchRpc,
 					Obj:  &batch,
@@ -78,7 +80,7 @@ func (cl *Client) startRequestGenerators() {
 				lastSent = time.Now()
 				cl.sentRequests[threadNumber] = append(cl.sentRequests[threadNumber], sentRequestBatch{
 					batch: batch,
-					time:  time.Time{},
+					time:  time.Now(),
 				})
 			}
 
