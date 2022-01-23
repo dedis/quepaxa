@@ -69,6 +69,8 @@ func (cl *Client) startRequestGenerators() {
 					Id:       strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string
 				}
 
+				//cl.debug("Sent " + strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter) + " batch size " + strconv.Itoa(len(requests)))
+
 				localCounter++
 
 				rpcPair := raxos.RPCPair{
@@ -146,7 +148,7 @@ func (cl *Client) startFailureDetector() {
 			if time.Now().Sub(cl.lastSeenTimeReplica).Seconds() > float64(cl.replicaTimeout) {
 
 				// change the default replica
-
+				cl.debug("Changing the default replica")
 				cl.defaultReplica = (cl.defaultReplica + 1) % cl.numReplicas
 				cl.lastSeenTimeReplica = time.Now()
 

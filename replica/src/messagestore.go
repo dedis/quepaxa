@@ -26,7 +26,7 @@ Message store object will be accessed by the main thread and the updateStateMach
 
 type MessageStore struct {
 	messageBlocks map[string]Block
-	mutex         sync.Mutex
+	mutex         sync.RWMutex
 }
 
 func (ms *MessageStore) Init() {
@@ -39,33 +39,35 @@ Adds a new block to the store if its not already there
 */
 
 func (ms *MessageStore) Add(block *proto.MessageBlock) {
-	ms.mutex.Lock()
+	ms.mutex.RLock()
 	_, ok := ms.messageBlocks[block.Hash]
+	ms.mutex.RUnlock()
 	if !ok {
+		ms.mutex.Lock()
 		ms.messageBlocks[block.Hash] = Block{
 			messageBlock: block,
 		}
+		ms.mutex.Unlock()
 	}
-	ms.mutex.Unlock()
 }
 
 /*return an existing block*/
 
 func (ms *MessageStore) Get(id string) (*proto.MessageBlock, bool) {
-	ms.mutex.Lock()
+	ms.mutex.RLock()
 	i, ok := ms.messageBlocks[id]
-	ms.mutex.Unlock()
+	ms.mutex.RUnlock()
 	return i.messageBlock, ok
 }
 
 /*return the set of acks for a given block*/
 
 func (ms *MessageStore) getAcks(id string) []int64 {
-	ms.mutex.Lock()
-	_, ok := ms.messageBlocks[id]
-	ms.mutex.Unlock()
+	ms.mutex.RLock()
+	block, ok := ms.messageBlocks[id]
+	ms.mutex.RUnlock()
 	if ok {
-		return ms.messageBlocks[id].acks
+		return block.acks
 	}
 	return nil
 
@@ -82,9 +84,9 @@ func (ms *MessageStore) Remove(id string) {
 /*add a new ack to the ack list of a block*/
 
 func (ms *MessageStore) addAck(id string) {
-	ms.mutex.Lock()
+	ms.mutex.RLock()
 	_, ok := ms.messageBlocks[id]
-	ms.mutex.Unlock()
+	ms.mutex.RUnlock()
 	if ok {
 		ms.mutex.Lock()
 		tempAcks := ms.messageBlocks[id].acks

@@ -10,6 +10,7 @@ import (
 	"raxos/configuration"
 	"raxos/proto"
 	_ "raxos/proto"
+	"sync"
 	"time"
 )
 
@@ -34,6 +35,8 @@ type Instance struct {
 	clientConnections     []net.Conn // cache of client connections to all other clients
 	incomingClientReaders []*bufio.Reader
 	outgoingClientWriters []*bufio.Writer
+
+	buffioWriterMutexes []sync.Mutex // to provide mutual exclusion for writes to the same socket connection
 
 	Listener net.Listener // tcp listener for replicas and clients
 
@@ -102,17 +105,18 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 		clientConnections:       make([]net.Conn, len(cfg.Clients)),
 		incomingClientReaders:   make([]*bufio.Reader, len(cfg.Clients)),
 		outgoingClientWriters:   make([]*bufio.Writer, len(cfg.Clients)),
+		buffioWriterMutexes:     make([]sync.Mutex, len(cfg.Peers)+len(cfg.Clients)),
 		Listener:                nil,
 		rpcTable:                make(map[uint8]*RPCPair),
 		incomingChan:            make(chan *RPCPair, incomingBufferSize),
-		clientRequestBatchRpc:   0,
-		clientResponseBatchRpc:  1,
-		genericConsensusRpc:     2,
-		messageBlockRpc:         3,
-		messageBlockRequestRpc:  4,
-		clientStatusRequestRpc:  5,
-		clientStatusResponseRpc: 6,
-		messageBlockAckRpc:      7,
+		clientRequestBatchRpc:   1,
+		clientResponseBatchRpc:  2,
+		genericConsensusRpc:     3,
+		messageBlockRpc:         4,
+		messageBlockRequestRpc:  5,
+		clientStatusRequestRpc:  6,
+		clientStatusResponseRpc: 7,
+		messageBlockAckRpc:      8,
 		//replicatedLog:           nil,
 		stateMachine:   benchmark.InitApp(benchmarkNumber, serviceTime, numKeys),
 		committedIndex: -1,
@@ -135,6 +139,11 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 		debugOn:             true,
 		serverStarted:       false,
 	}
+
+	for i := 0; i < len(cfg.Peers)+len(cfg.Clients); i++ {
+		in.buffioWriterMutexes[i] = sync.Mutex{}
+	}
+
 	rand.Seed(time.Now().UTC().UnixNano())
 	in.messageStore.Init()
 	/**/

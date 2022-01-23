@@ -11,6 +11,7 @@ import (
 	"raxos/proto"
 	raxos "raxos/replica/src"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -30,6 +31,7 @@ type Client struct {
 	replicaConnections     []net.Conn      // cache of replica connections to all others replicas
 	incomingReplicaReaders []*bufio.Reader // socket readers for each replica
 	outgoingReplicaWriters []*bufio.Writer // socket writer for each replica
+	socketMutexs           []sync.Mutex    // for mutual exclusion for each buffio.writer
 
 	rpcTable     map[uint8]*raxos.RPCPair // map each RPC type (message type) to its unique number
 	incomingChan chan *raxos.RPCPair      // used to collect ClientResponseBatch messages and ClientStatusResponse messages (basically all the incoming messages)
@@ -90,12 +92,12 @@ type receivedResponseBatch struct {
 	time  time.Time
 }
 
-const statusTimeout = 5                 // time to wait for a status timeout in seconds
-const numOutgoingThreads = 200          // number of wire writers: since the I/O writing is expensive we delegate that task to a thread pool and separate from the critical path
-const numRequestGenerationThreads = 200 // number of  threads that generate client requests upon receiving an arrival indication
-const incomingBufferSize = 1000000      // the size of the buffer which receives all the incoming messages (client response batch messages and client status response message)
-const outgoingBufferSize = 1000000      // size of the buffer that collects messages to be written to the wire
-const arrivalBufferSize = 1000000       // size of the buffer that collects new request arrivals
+const statusTimeout = 5               // time to wait for a status timeout in seconds
+const numOutgoingThreads = 200        // number of wire writers: since the I/O writing is expensive we delegate that task to a thread pool and separate from the critical path
+const numRequestGenerationThreads = 4 // number of  threads that generate client requests upon receiving an arrival indication
+const incomingBufferSize = 1000000    // the size of the buffer which receives all the incoming messages (client response batch messages and client status response message)
+const outgoingBufferSize = 1000000    // size of the buffer that collects messages to be written to the wire
+const arrivalBufferSize = 1000000     // size of the buffer that collects new request arrivals
 
 /*
 	Instantiate a new Client object, allocates the buffers
@@ -110,19 +112,20 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		replicaConnections:      make([]net.Conn, len(cfg.Peers)),
 		incomingReplicaReaders:  make([]*bufio.Reader, len(cfg.Peers)),
 		outgoingReplicaWriters:  make([]*bufio.Writer, len(cfg.Peers)),
+		socketMutexs:            make([]sync.Mutex, len(cfg.Peers)),
 		rpcTable:                make(map[uint8]*raxos.RPCPair),
 		incomingChan:            make(chan *raxos.RPCPair, incomingBufferSize),
-		clientRequestBatchRpc:   0,
-		clientResponseBatchRpc:  1,
-		clientStatusRequestRpc:  5,
-		clientStatusResponseRpc: 6,
+		clientRequestBatchRpc:   1,
+		clientResponseBatchRpc:  2,
+		clientStatusRequestRpc:  6,
+		clientStatusResponseRpc: 7,
 		logFilePath:             logFilePath,
 		batchSize:               batchSize,
 		batchTime:               batchTime,
 		outgoingMessageChan:     make(chan *raxos.OutgoingRPC, outgoingBufferSize),
 		defaultReplica:          defaultReplica,
 		replicaTimeout:          replicaTimeout,
-		lastSeenTimeReplica:     time.Time{},
+		lastSeenTimeReplica:     time.Now(),
 		debugOn:                 true, // manually set this if debugging needs to be turned on
 		requestSize:             requestSize,
 		testDuration:            testDuration,
@@ -136,6 +139,10 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		OperationType:           operationType,
 		sentRequests:            make([][]sentRequestBatch, numRequestGenerationThreads),
 		startTime:               time.Now(),
+	}
+
+	for i := 0; i < len(cfg.Peers); i++ {
+		cl.socketMutexs[i] = sync.Mutex{}
 	}
 
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -215,11 +222,13 @@ func (cl *Client) connectionListener(reader *bufio.Reader) {
 
 	for true {
 		if msgType, err = reader.ReadByte(); err != nil {
+			cl.debug("Error while reading message code")
 			return
 		}
 		if rpair, present := cl.rpcTable[msgType]; present {
 			obj := rpair.Obj.New()
 			if err = obj.Unmarshal(reader); err != nil {
+				cl.debug("Error while unmarshalling")
 				return
 			}
 			cl.incomingChan <- &raxos.RPCPair{
@@ -288,15 +297,24 @@ func (cl *Client) internalSendMessage(peer int64, rpcPair *raxos.RPCPair) {
 	var w *bufio.Writer
 
 	w = cl.outgoingReplicaWriters[peer]
+	cl.socketMutexs[peer].Lock()
 	err := w.WriteByte(code)
 	if err != nil {
+		cl.debug("Error writing message code byte:" + err.Error())
 		return
 	}
-	msg.Marshal(w)
+	err = msg.Marshal(w)
+	if err != nil {
+		cl.debug("Error while marshalling:" + err.Error())
+		return
+	}
 	err = w.Flush()
 	if err != nil {
+		cl.debug("Error writing the message block:" + err.Error())
 		return
 	}
+	cl.socketMutexs[peer].Unlock()
+	cl.debug("Sent message to " + strconv.Itoa(int(peer)))
 }
 
 /*
@@ -309,6 +327,7 @@ func (cl *Client) StartOutgoingLinks() {
 			for true {
 				outgoingMessage := <-cl.outgoingMessageChan
 				cl.internalSendMessage(outgoingMessage.Peer, outgoingMessage.RpcPair)
+				//cl.debug("Internal sent to " + strconv.Itoa(int(outgoingMessage.Peer)))
 			}
 		}()
 	}
@@ -323,5 +342,5 @@ func (cl *Client) sendMessage(peer int64, rpcPair raxos.RPCPair) {
 		RpcPair: &rpcPair,
 		Peer:    peer,
 	}
-	//cl.debug("Added RPC pair to outgoing channel")
+	//cl.debug("Added RPC pair to outgoing channel to peer " + strconv.Itoa(int(peer)))
 }

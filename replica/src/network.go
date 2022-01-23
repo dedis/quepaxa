@@ -128,11 +128,13 @@ func (in *Instance) connectionListener(reader *bufio.Reader) {
 
 	for true {
 		if msgType, err = reader.ReadByte(); err != nil {
+			in.debug("Error while reading code byte")
 			return
 		}
 		if rpair, present := in.rpcTable[msgType]; present {
 			obj := rpair.Obj.New()
 			if err = obj.Unmarshal(reader); err != nil {
+				in.debug("Error while unmarshalling")
 				return
 			}
 			in.incomingChan <- &RPCPair{
@@ -153,16 +155,16 @@ It listens to incoming messages from the incomingChan, and invoke the appropriat
 func (in *Instance) Run() {
 	go func() {
 		for true {
-			//in.debug("Checking channel\n")
+			in.debug("Checking channel\n")
 
 			replicaMessage := <-in.incomingChan
 			//in.lock.Lock()
-			//in.debug("Received  message")
+			in.debug("Received  message")
 			code := replicaMessage.Code
 			switch code {
 			case in.clientRequestBatchRpc:
 				clientRequestBatch := replicaMessage.Obj.(*proto.ClientRequestBatch)
-				//in.debug("Client request batch" + fmt.Sprintf("%#v", clientRequestBatch.Id))
+				in.debug("Client request batch" + fmt.Sprintf("%#v", clientRequestBatch.Id))
 				in.handleClientRequestBatch(clientRequestBatch)
 				break
 
@@ -231,15 +233,24 @@ func (in *Instance) internalSendMessage(peer int64, rpcPair *RPCPair) {
 		w = in.outgoingClientWriters[peer-in.numReplicas]
 	}
 
+	in.buffioWriterMutexes[peer].Lock()
+
 	err := w.WriteByte(code)
 	if err != nil {
+		in.debug("Error while writing byte")
 		return
 	}
-	msg.Marshal(w)
+	err = msg.Marshal(w)
+	if err != nil {
+		in.debug("Error while marshalling")
+		return
+	}
 	err = w.Flush()
 	if err != nil {
+		in.debug("Error while flushing")
 		return
 	}
+	in.buffioWriterMutexes[peer].Unlock()
 }
 
 /*

@@ -11,7 +11,7 @@ If a new message type needs to be added: first define it in the a proto file, ge
 */
 
 type Serializable interface {
-	Marshal(io.Writer)
+	Marshal(io.Writer) error
 	Unmarshal(io.Reader) error
 	New() Serializable
 }

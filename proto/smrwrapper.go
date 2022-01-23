@@ -8,24 +8,27 @@ import (
 
 // MessageBlockRequest
 
-func (t *MessageBlockRequest) Marshal(wire io.Writer) {
+func (t *MessageBlockRequest) Marshal(wire io.Writer) error {
 
 	data, err := proto.Marshal(t)
 	if err != nil {
-		return
+		return err
 	}
 	lengthWritten := len(data)
 	var b [8]byte
 	bs := b[:8]
 	binary.LittleEndian.PutUint64(bs, uint64(lengthWritten))
 	_, err = wire.Write(bs)
+
 	if err != nil {
-		return
+		return err
 	}
 	_, err = wire.Write(data)
 	if err != nil {
-		return
+		return err
 	}
+
+	return nil
 }
 
 func (t *MessageBlockRequest) Unmarshal(wire io.Reader) error {
@@ -56,24 +59,27 @@ func (t *MessageBlockRequest) New() Serializable {
 
 // MessageBlock
 
-func (t *MessageBlock) Marshal(wire io.Writer) {
+func (t *MessageBlock) Marshal(wire io.Writer) error {
 
 	data, err := proto.Marshal(t)
 	if err != nil {
-		return
+		return err
 	}
 	lengthWritten := len(data)
 	var b [8]byte
 	bs := b[:8]
 	binary.LittleEndian.PutUint64(bs, uint64(lengthWritten))
 	_, err = wire.Write(bs)
+
 	if err != nil {
-		return
+		return err
 	}
 	_, err = wire.Write(data)
 	if err != nil {
-		return
+		return err
 	}
+
+	return nil
 }
 
 func (t *MessageBlock) Unmarshal(wire io.Reader) error {
@@ -104,24 +110,27 @@ func (t *MessageBlock) New() Serializable {
 
 // MessageBlockAck
 
-func (t *MessageBlockAck) Marshal(wire io.Writer) {
+func (t *MessageBlockAck) Marshal(wire io.Writer) error {
 
 	data, err := proto.Marshal(t)
 	if err != nil {
-		return
+		return err
 	}
 	lengthWritten := len(data)
 	var b [8]byte
 	bs := b[:8]
 	binary.LittleEndian.PutUint64(bs, uint64(lengthWritten))
 	_, err = wire.Write(bs)
+
 	if err != nil {
-		return
+		return err
 	}
 	_, err = wire.Write(data)
 	if err != nil {
-		return
+		return err
 	}
+
+	return nil
 }
 
 func (t *MessageBlockAck) Unmarshal(wire io.Reader) error {

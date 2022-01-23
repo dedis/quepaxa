@@ -8,24 +8,27 @@ import (
 
 // GenericConsensus
 
-func (t *GenericConsensus) Marshal(wire io.Writer) {
+func (t *GenericConsensus) Marshal(wire io.Writer) error {
 
 	data, err := proto.Marshal(t)
 	if err != nil {
-		return
+		return err
 	}
 	lengthWritten := len(data)
 	var b [8]byte
 	bs := b[:8]
 	binary.LittleEndian.PutUint64(bs, uint64(lengthWritten))
 	_, err = wire.Write(bs)
+
 	if err != nil {
-		return
+		return err
 	}
 	_, err = wire.Write(data)
 	if err != nil {
-		return
+		return err
 	}
+
+	return nil
 }
 
 func (t *GenericConsensus) Unmarshal(wire io.Reader) error {

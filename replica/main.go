@@ -16,7 +16,7 @@ func main() {
 	serviceTime := flag.Int64("serviceTime", 1, "service time in micro seconds")
 	responseSize := flag.Int64("responseSize", 8, "response size in bytes")
 	batchSize := flag.Int64("batchSize", 50, "replica batch size")
-	batchTime := flag.Int64("batchTime", 50, "maximum time to wait for collecting a batch of requests in micro seconds")
+	batchTime := flag.Int64("batchTime", 500, "maximum time to wait for collecting a batch of requests in micro seconds")
 	leaderTimeout := flag.Int64("leaderTimeout", 50, "leader timeout in milli seconds")
 	pipelineLength := flag.Int64("pipelineLength", 50, "pipeline length maximum number of outstanding proposals")
 	benchmark := flag.Int64("benchmark", 0, "Benchmark: 0 for echo service, 1 for KV store and 2 for Redis ")

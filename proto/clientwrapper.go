@@ -8,24 +8,27 @@ import (
 
 // ClientRequest
 
-func (t *ClientRequestBatch) Marshal(wire io.Writer) {
+func (t *ClientRequestBatch) Marshal(wire io.Writer) error {
 
 	data, err := proto.Marshal(t)
 	if err != nil {
-		return
+		return err
 	}
 	lengthWritten := len(data)
 	var b [8]byte
 	bs := b[:8]
 	binary.LittleEndian.PutUint64(bs, uint64(lengthWritten))
 	_, err = wire.Write(bs)
+
 	if err != nil {
-		return
+		return err
 	}
 	_, err = wire.Write(data)
 	if err != nil {
-		return
+		return err
 	}
+
+	return nil
 }
 
 func (t *ClientRequestBatch) Unmarshal(wire io.Reader) error {
@@ -56,24 +59,27 @@ func (t *ClientRequestBatch) New() Serializable {
 
 // ClientResponse
 
-func (t *ClientResponseBatch) Marshal(wire io.Writer) {
+func (t *ClientResponseBatch) Marshal(wire io.Writer) error {
 
 	data, err := proto.Marshal(t)
 	if err != nil {
-		return
+		return err
 	}
 	lengthWritten := len(data)
 	var b [8]byte
 	bs := b[:8]
 	binary.LittleEndian.PutUint64(bs, uint64(lengthWritten))
 	_, err = wire.Write(bs)
+
 	if err != nil {
-		return
+		return err
 	}
 	_, err = wire.Write(data)
 	if err != nil {
-		return
+		return err
 	}
+
+	return nil
 }
 
 func (t *ClientResponseBatch) Unmarshal(wire io.Reader) error {
@@ -104,24 +110,27 @@ func (t *ClientResponseBatch) New() Serializable {
 
 // Client Status Request
 
-func (t *ClientStatusRequest) Marshal(wire io.Writer) {
+func (t *ClientStatusRequest) Marshal(wire io.Writer) error {
 
 	data, err := proto.Marshal(t)
 	if err != nil {
-		return
+		return err
 	}
 	lengthWritten := len(data)
 	var b [8]byte
 	bs := b[:8]
 	binary.LittleEndian.PutUint64(bs, uint64(lengthWritten))
 	_, err = wire.Write(bs)
+
 	if err != nil {
-		return
+		return err
 	}
 	_, err = wire.Write(data)
 	if err != nil {
-		return
+		return err
 	}
+
+	return nil
 }
 
 func (t *ClientStatusRequest) Unmarshal(wire io.Reader) error {
@@ -152,24 +161,27 @@ func (t *ClientStatusRequest) New() Serializable {
 
 // Client Status Response
 
-func (t *ClientStatusResponse) Marshal(wire io.Writer) {
+func (t *ClientStatusResponse) Marshal(wire io.Writer) error {
 
 	data, err := proto.Marshal(t)
 	if err != nil {
-		return
+		return err
 	}
 	lengthWritten := len(data)
 	var b [8]byte
 	bs := b[:8]
 	binary.LittleEndian.PutUint64(bs, uint64(lengthWritten))
 	_, err = wire.Write(bs)
+
 	if err != nil {
-		return
+		return err
 	}
 	_, err = wire.Write(data)
 	if err != nil {
-		return
+		return err
 	}
+
+	return nil
 }
 
 func (t *ClientStatusResponse) Unmarshal(wire io.Reader) error {
