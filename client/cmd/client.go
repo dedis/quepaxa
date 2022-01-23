@@ -314,7 +314,7 @@ func (cl *Client) internalSendMessage(peer int64, rpcPair *raxos.RPCPair) {
 		return
 	}
 	cl.socketMutexs[peer].Unlock()
-	cl.debug("Sent message to " + strconv.Itoa(int(peer)))
+	//cl.debug("Sent message to " + strconv.Itoa(int(peer)))
 }
 
 /*

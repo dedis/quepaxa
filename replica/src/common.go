@@ -37,7 +37,7 @@ func (in *Instance) BroadcastBlock() {
 				Requests: in.convertToMessageBlockRequests(requests),
 			}
 
-			in.debug("Sent " + strconv.Itoa(int(in.nodeName)) + "." + strconv.Itoa(int(in.blockCounter)) + " batch size " + strconv.Itoa(len(requests)))
+			//in.debug("Sent " + strconv.Itoa(int(in.nodeName)) + "." + strconv.Itoa(int(in.blockCounter)) + " batch size " + strconv.Itoa(len(requests)))
 
 			in.blockCounter++
 
@@ -68,7 +68,7 @@ func (in *Instance) handleClientRequestBatch(batch *proto.ClientRequestBatch) {
 	select {
 	case in.requestsIn <- batch:
 		// Success: the server side buffers are not full
-		in.debug("Successful pushing into server batching")
+		//in.debug("Successful pushing into server batching")
 	default:
 		//Unsuccessful
 		// if the buffer is full, then this request will be dropped (failed request)

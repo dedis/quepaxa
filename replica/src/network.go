@@ -155,28 +155,28 @@ It listens to incoming messages from the incomingChan, and invoke the appropriat
 func (in *Instance) Run() {
 	go func() {
 		for true {
-			in.debug("Checking channel\n")
+			//in.debug("Checking channel\n")
 
 			replicaMessage := <-in.incomingChan
 			//in.lock.Lock()
-			in.debug("Received  message")
+			//in.debug("Received  message")
 			code := replicaMessage.Code
 			switch code {
 			case in.clientRequestBatchRpc:
 				clientRequestBatch := replicaMessage.Obj.(*proto.ClientRequestBatch)
-				in.debug("Client request batch" + fmt.Sprintf("%#v", clientRequestBatch.Id))
+				//in.debug("Client request batch" + fmt.Sprintf("%#v", clientRequestBatch.Id))
 				in.handleClientRequestBatch(clientRequestBatch)
 				break
 
 			case in.clientResponseBatchRpc:
 				clientResponseBatch := replicaMessage.Obj.(*proto.ClientResponseBatch)
-				//in.debug("Client response batch " + fmt.Sprintf("%#v", clientResponseBatch.Id))
+				in.debug("Client response batch " + fmt.Sprintf("%#v", clientResponseBatch.Id))
 				in.handleClientResponseBatch(clientResponseBatch)
 				break
 
 			case in.genericConsensusRpc:
 				genericConsensus := replicaMessage.Obj.(*proto.GenericConsensus)
-				//in.debug("Generic Consensus  " + fmt.Sprintf("%#v", genericConsensus))
+				in.debug("Generic Consensus  " + fmt.Sprintf("%#v", genericConsensus))
 				in.handleGenericConsensus(genericConsensus)
 				break
 
@@ -188,25 +188,25 @@ func (in *Instance) Run() {
 
 			case in.messageBlockRequestRpc:
 				messageBlockRequest := replicaMessage.Obj.(*proto.MessageBlockRequest)
-				//in.debug("Message Block Request " + fmt.Sprintf("%#v", messageBlockRequest.Hash))
+				in.debug("Message Block Request " + fmt.Sprintf("%#v", messageBlockRequest.Hash))
 				in.handleMessageBlockRequest(messageBlockRequest)
 				break
 
 			case in.clientStatusRequestRpc:
 				clientStatusRequest := replicaMessage.Obj.(*proto.ClientStatusRequest)
-				//in.debug("Client Status Request " + fmt.Sprintf("%#v", clientStatusRequest.Sender))
+				in.debug("Client Status Request " + fmt.Sprintf("%#v", clientStatusRequest.Sender))
 				in.handleClientStatusRequest(clientStatusRequest)
 				break
 
 			case in.clientStatusResponseRpc:
 				clientStatusResponse := replicaMessage.Obj.(*proto.ClientStatusResponse)
-				//in.debug("Client Status Response " + fmt.Sprintf("%#v", clientStatusResponse.Sender))
+				in.debug("Client Status Response " + fmt.Sprintf("%#v", clientStatusResponse.Sender))
 				in.handleClientStatusResponse(clientStatusResponse)
 				break
 
 			case in.messageBlockAckRpc:
 				messageBlockAck := replicaMessage.Obj.(*proto.MessageBlockAck)
-				//in.debug("Message Block Ack " + fmt.Sprintf("%#v", messageBlockAck.Hash))
+				in.debug("Message Block Ack " + fmt.Sprintf("%#v", messageBlockAck.Hash))
 				in.handleMessageBlockAck(messageBlockAck)
 				break
 
