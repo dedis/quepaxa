@@ -69,7 +69,7 @@ func (cl *Client) startRequestGenerators() {
 					Id:       strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string
 				}
 
-				//cl.debug("Sent " + strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter) + " batch size " + strconv.Itoa(len(requests)))
+				cl.debug("Sent " + strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter) + " batch size " + strconv.Itoa(len(requests)))
 
 				localCounter++
 

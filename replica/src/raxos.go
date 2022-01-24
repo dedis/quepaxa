@@ -2,6 +2,7 @@ package raxos
 
 import (
 	"bufio"
+	"encoding/binary"
 	"fmt"
 	"math/rand"
 	"net"
@@ -10,6 +11,7 @@ import (
 	"raxos/configuration"
 	"raxos/proto"
 	_ "raxos/proto"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -26,13 +28,13 @@ type Instance struct {
 
 	//lock sync.Mutex // todo for the moment we don't need this because the shared state is accessed only by the single main thread, but have to verify this
 
-	replicaAddrList        []string   // array with the IP:port address of every replica
-	replicaConnections     []net.Conn // cache of replica connections to all other replicas
+	replicaAddrList []string // array with the IP:port address of every replica
+	//replicaConnections     []net.Conn // cache of replica connections to all other replicas
 	incomingReplicaReaders []*bufio.Reader
 	outgoingReplicaWriters []*bufio.Writer
 
-	clientAddrList        []string   // array with the IP:port address of every client
-	clientConnections     []net.Conn // cache of client connections to all other clients
+	clientAddrList []string // array with the IP:port address of every client
+	//clientConnections     []net.Conn // cache of client connections to all other clients
 	incomingClientReaders []*bufio.Reader
 	outgoingClientWriters []*bufio.Writer
 
@@ -85,6 +87,27 @@ type Instance struct {
 	serverStarted bool // true if the first status message with operation type 1 received
 }
 
+func (in *Instance) connectToClient(id int32) {
+	var b [4]byte
+	bs := b[:4]
+	for true {
+		conn, err := net.Dial("tcp", in.clientAddrList[int(id)-int(in.numReplicas)])
+		if err == nil {
+			//in.replicaConnections[i] = conn
+			in.outgoingClientWriters[int64(id)-in.numReplicas] = bufio.NewWriter(conn)
+			//in.incomingReplicaReaders[i] = bufio.NewReader(in.replicaConnections[i])
+			binary.LittleEndian.PutUint16(bs, uint16(in.nodeName))
+			_, err := conn.Write(bs)
+			if err != nil {
+				panic(err)
+			}
+			in.debug("Started outgoing connection to " + strconv.Itoa(int(id)))
+			break
+		}
+	}
+
+}
+
 /*
 
 Instantiate a new Instance object, allocates the buffers
@@ -94,15 +117,15 @@ Initializes the message store
 
 func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serviceTime int64, responseSize int64, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmarkNumber int64, numKeys int64) *Instance {
 	in := Instance{
-		nodeName:                name,
-		numReplicas:             int64(len(cfg.Peers)),
-		numClients:              int64(len(cfg.Clients)),
-		replicaAddrList:         GetReplicaAddressList(cfg), // from here
-		replicaConnections:      make([]net.Conn, len(cfg.Peers)),
-		incomingReplicaReaders:  make([]*bufio.Reader, len(cfg.Peers)),
-		outgoingReplicaWriters:  make([]*bufio.Writer, len(cfg.Peers)),
-		clientAddrList:          getClientAddressList(cfg),
-		clientConnections:       make([]net.Conn, len(cfg.Clients)),
+		nodeName:        name,
+		numReplicas:     int64(len(cfg.Peers)),
+		numClients:      int64(len(cfg.Clients)),
+		replicaAddrList: GetReplicaAddressList(cfg), // from here
+		//replicaConnections:      make([]net.Conn, len(cfg.Peers)),
+		incomingReplicaReaders: make([]*bufio.Reader, len(cfg.Peers)),
+		outgoingReplicaWriters: make([]*bufio.Writer, len(cfg.Peers)),
+		clientAddrList:         getClientAddressList(cfg),
+		//clientConnections:       make([]net.Conn, len(cfg.Clients)),
 		incomingClientReaders:   make([]*bufio.Reader, len(cfg.Clients)),
 		outgoingClientWriters:   make([]*bufio.Writer, len(cfg.Clients)),
 		buffioWriterMutexes:     make([]sync.Mutex, len(cfg.Peers)+len(cfg.Clients)),

@@ -6,6 +6,7 @@ import (
 	"os"
 	"raxos/client/cmd"
 	"raxos/configuration"
+	"time"
 )
 
 func main() {
@@ -35,11 +36,12 @@ func main() {
 
 	cl := cmd.New(*name, cfg, *logFilePath, *batchSize, *batchTime, *defaultReplica, *replicaTimeout, *requestSize, *testDuration, *warmupDuration, *arrivalRate, *benchmark, *numKeys, *requestType, *operationType)
 
-	cl.ConnectToReplicas()
-	cl.StartConnectionListeners()
+	go cl.WaitForConnections()
 	cl.Run()
 	cl.StartOutgoingLinks()
+	cl.ConnectToReplicas()
 
+	time.Sleep(5 * time.Second)
 	if cl.RequestType == "status" {
 		cl.SendStatus(cl.OperationType)
 	} else if cl.RequestType == "request" {

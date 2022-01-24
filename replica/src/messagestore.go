@@ -1,6 +1,7 @@
 package raxos
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"raxos/proto"
@@ -25,12 +26,12 @@ Message store object will be accessed by the main thread and the updateStateMach
 */
 
 type MessageStore struct {
-	messageBlocks map[string]Block
-	mutex         sync.RWMutex
+	messageBlocks sync.Map
+	//mutex         sync.RWMutex
 }
 
 func (ms *MessageStore) Init() {
-	ms.messageBlocks = make(map[string]Block)
+	//ms.messageBlocks = make(map[string]Block)
 }
 
 /*
@@ -39,35 +40,35 @@ Adds a new block to the store if its not already there
 */
 
 func (ms *MessageStore) Add(block *proto.MessageBlock) {
-	ms.mutex.RLock()
-	_, ok := ms.messageBlocks[block.Hash]
-	ms.mutex.RUnlock()
+	//ms.mutex.RLock()
+	_, ok := ms.messageBlocks.Load(block.Hash)
+	//ms.mutex.RUnlock()
 	if !ok {
-		ms.mutex.Lock()
-		ms.messageBlocks[block.Hash] = Block{
+		//ms.mutex.Lock()
+		ms.messageBlocks.Store(block.Hash, Block{
 			messageBlock: block,
-		}
-		ms.mutex.Unlock()
+		})
+		//ms.mutex.Unlock()
 	}
 }
 
 /*return an existing block*/
 
 func (ms *MessageStore) Get(id string) (*proto.MessageBlock, bool) {
-	ms.mutex.RLock()
-	i, ok := ms.messageBlocks[id]
-	ms.mutex.RUnlock()
-	return i.messageBlock, ok
+	//ms.mutex.RLock()
+	i, ok := ms.messageBlocks.Load(id)
+	//ms.mutex.RUnlock()
+	return i.(Block).messageBlock, ok
 }
 
 /*return the set of acks for a given block*/
 
 func (ms *MessageStore) getAcks(id string) []int64 {
-	ms.mutex.RLock()
-	block, ok := ms.messageBlocks[id]
-	ms.mutex.RUnlock()
+	//ms.mutex.RLock()
+	block, ok := ms.messageBlocks.Load(id)
+	//ms.mutex.RUnlock()
 	if ok {
-		return block.acks
+		return block.(Block).acks
 	}
 	return nil
 
@@ -76,27 +77,29 @@ func (ms *MessageStore) getAcks(id string) []int64 {
 /* Remove an element from the map*/
 
 func (ms *MessageStore) Remove(id string) {
-	ms.mutex.Lock()
-	delete(ms.messageBlocks, id)
-	ms.mutex.Unlock()
+	//ms.mutex.Lock()
+	//delete(ms.messageBlocks, id)
+	//ms.mutex.Unlock()
+	ms.messageBlocks.Delete(id)
 }
 
 /*add a new ack to the ack list of a block*/
 
 func (ms *MessageStore) addAck(id string) {
-	ms.mutex.RLock()
-	_, ok := ms.messageBlocks[id]
-	ms.mutex.RUnlock()
+	//ms.mutex.RLock()
+	block, ok := ms.messageBlocks.Load(id)
+	//ms.mutex.RUnlock()
 	if ok {
-		ms.mutex.Lock()
-		tempAcks := ms.messageBlocks[id].acks
-		tempBlock := ms.messageBlocks[id].messageBlock
+		//ms.mutex.Lock()
+		tempAcks := block.(Block).acks
+		tempBlock := block.(Block).messageBlock
 		tempAcks = append(tempAcks, 1)
-		ms.messageBlocks[id] = Block{
+		ms.messageBlocks.Delete(id)
+		ms.messageBlocks.Store(id, Block{
 			messageBlock: tempBlock,
 			acks:         tempAcks,
-		}
-		ms.mutex.Unlock()
+		})
+		//ms.mutex.Unlock()
 	}
 }
 
@@ -108,8 +111,11 @@ func (ms *MessageStore) printStore(logFilePath string, nodeName int64) {
 		log.Fatal(err)
 	}
 	defer f.Close()
-	ms.mutex.Lock()
-	for hash, block := range ms.messageBlocks {
+	//ms.mutex.Lock()
+
+	messageBlocks := ms.convertToRegularMap(ms.messageBlocks)
+
+	for hash, block := range messageBlocks {
 		_, _ = f.WriteString(hash + ": Num Acks: " + strconv.Itoa(len(block.acks)) + "\n")
 		for i := 0; i < len(block.messageBlock.Requests); i++ {
 			_, _ = f.WriteString(block.messageBlock.Requests[i].Id + ":")
@@ -120,5 +126,20 @@ func (ms *MessageStore) printStore(logFilePath string, nodeName int64) {
 		}
 
 	}
-	ms.mutex.Unlock()
+	//ms.mutex.Unlock()
+}
+
+/*
+
+	Convert a sync map to regular map
+*/
+
+func (ms *MessageStore) convertToRegularMap(blocks sync.Map) map[string]Block {
+	var m map[string]Block
+	m = make(map[string]Block)
+	blocks.Range(func(key, value interface{}) bool {
+		m[fmt.Sprint(key)] = value.(Block)
+		return true
+	})
+	return m
 }

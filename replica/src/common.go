@@ -46,6 +46,8 @@ func (in *Instance) BroadcastBlock() {
 				Obj:  &messageBlock,
 			}
 
+			in.messageStore.Add(&messageBlock)
+
 			for i := int64(0); i < in.numReplicas; i++ {
 				in.sendMessage(i, rpcPair)
 			}
@@ -92,6 +94,7 @@ func (in *Instance) handleClientResponseBatch(batch *proto.ClientResponseBatch) 
 func (in *Instance) handleMessageBlock(block *proto.MessageBlock) {
 	// add this block to the MessageStore
 	in.messageStore.Add(block)
+	in.debug("Added a message block from " + strconv.Itoa(int(block.Sender)))
 	messageBlockAck := proto.MessageBlockAck{
 		Sender:   in.nodeName,
 		Receiver: block.Sender,
@@ -104,6 +107,7 @@ func (in *Instance) handleMessageBlock(block *proto.MessageBlock) {
 	}
 
 	in.sendMessage(block.Sender, rpcPair)
+	in.debug("Send ack to " + strconv.Itoa(int(block.Sender)))
 }
 
 /*
@@ -114,6 +118,7 @@ func (in *Instance) handleMessageBlockRequest(request *proto.MessageBlockRequest
 	messageBlock, ok := in.messageStore.Get(request.Hash)
 	if ok {
 		// the block exists
+		in.debug("Sending the requested block to " + strconv.Itoa(int(request.Sender)))
 		messageBlock.Receiver = request.Sender
 		rpcPair := RPCPair{
 			Code: in.messageBlockRpc,
@@ -134,6 +139,7 @@ func (in *Instance) sendMessageBlockRequest(hash string) {
 		Code: in.messageBlockRequestRpc,
 		Obj:  &messageBlockRequest,
 	}
+	in.debug("sending a message block request to " + strconv.Itoa(int(randomPeer)))
 
 	in.sendMessage(int64(randomPeer), rpcPair)
 
@@ -219,6 +225,7 @@ func (in *Instance) sendSampleClientResponse(ack *proto.MessageBlockAck) {
 			Obj:  &responseBatch,
 		}
 
+		in.debug("Send client reponse batch to " + strconv.Itoa(int(clientRequestBatch.Sender)))
 		in.sendMessage(clientRequestBatch.Sender, rpcPair)
 
 	}

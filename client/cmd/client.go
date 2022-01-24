@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"math/rand"
 	"net"
 	"os"
@@ -27,8 +28,8 @@ type Client struct {
 
 	//lock sync.Mutex // todo for the moment we don't need this because the shared state is accessed only by the single main thread, but have to verify this
 
-	replicaAddrList        []string        // array with the IP:port address of every replica
-	replicaConnections     []net.Conn      // cache of replica connections to all others replicas
+	replicaAddrList []string // array with the IP:port address of every replica
+	//replicaConnections     []net.Conn      // cache of replica connections to all others replicas
 	incomingReplicaReaders []*bufio.Reader // socket readers for each replica
 	outgoingReplicaWriters []*bufio.Writer // socket writer for each replica
 	socketMutexs           []sync.Mutex    // for mutual exclusion for each buffio.writer
@@ -65,13 +66,14 @@ type Client struct {
 	benchmark      int64 // type of the workload: 0 for no-op, 1 for kv store and 2 for redis
 	numKeys        int64 // maximum number of keys for the key value store
 
-	arrivalTimeChan   chan int64              // channel to which the poisson process adds new request arrival times
-	arrivalChan       chan bool               // channel to which the main process adds new request arrivals, to be consumed by the request generation threads
-	RequestType       string                  // request for sending the client requests, status for sending a status request
-	OperationType     int64                   // status operation type 1 (bootstrap server), 2: print log
-	sentRequests      [][]sentRequestBatch    // generator i updates sentRequests[i] :this is to avoid concurrent access to the same array
-	receivedResponses []receivedResponseBatch // set of received responses
-	startTime         time.Time               // test start time
+	arrivalTimeChan     chan int64              // channel to which the poisson process adds new request arrival times
+	arrivalChan         chan bool               // channel to which the main process adds new request arrivals, to be consumed by the request generation threads
+	RequestType         string                  // request for sending the client requests, status for sending a status request
+	OperationType       int64                   // status operation type 1 (bootstrap server), 2: print log
+	sentRequests        [][]sentRequestBatch    // generator i updates sentRequests[i] :this is to avoid concurrent access to the same array
+	receivedResponses   []receivedResponseBatch // set of received responses
+	startTime           time.Time               // test start time
+	clientListenAddress string                  // TCP addresses to which the client listens to new connections
 }
 
 /*
@@ -105,11 +107,11 @@ const arrivalBufferSize = 1000000     // size of the buffer that collects new re
 
 func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batchSize int64, batchTime int64, defaultReplica int64, replicaTimeout int64, requestSize int64, testDuration int64, warmupDuration int64, arrivalRate int64, benchmark int64, numKeys int64, requestType string, operationType int64) *Client {
 	cl := Client{
-		clientName:              name,
-		numReplicas:             int64(len(cfg.Peers)),
-		numClients:              int64(len(cfg.Clients)),
-		replicaAddrList:         raxos.GetReplicaAddressList(cfg),
-		replicaConnections:      make([]net.Conn, len(cfg.Peers)),
+		clientName:      name,
+		numReplicas:     int64(len(cfg.Peers)),
+		numClients:      int64(len(cfg.Clients)),
+		replicaAddrList: raxos.GetReplicaAddressList(cfg),
+		//replicaConnections:      make([]net.Conn, len(cfg.Peers)),
 		incomingReplicaReaders:  make([]*bufio.Reader, len(cfg.Peers)),
 		outgoingReplicaWriters:  make([]*bufio.Writer, len(cfg.Peers)),
 		socketMutexs:            make([]sync.Mutex, len(cfg.Peers)),
@@ -139,6 +141,7 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		OperationType:           operationType,
 		sentRequests:            make([][]sentRequestBatch, numRequestGenerationThreads),
 		startTime:               time.Now(),
+		clientListenAddress:     cfg.Clients[int(name)-len(cfg.Peers)].Address,
 	}
 
 	for i := 0; i < len(cfg.Peers); i++ {
@@ -183,32 +186,54 @@ func (cl *Client) ConnectToReplicas() {
 		for true {
 			conn, err := net.Dial("tcp", cl.replicaAddrList[i])
 			if err == nil {
-				cl.replicaConnections[i] = conn
-				cl.outgoingReplicaWriters[i] = bufio.NewWriter(cl.replicaConnections[i])
-				cl.incomingReplicaReaders[i] = bufio.NewReader(cl.replicaConnections[i])
+				//cl.replicaConnections[i] = conn
+				cl.outgoingReplicaWriters[i] = bufio.NewWriter(conn)
+				//cl.incomingReplicaReaders[i] = bufio.NewReader(cl.replicaConnections[i])
 				binary.LittleEndian.PutUint16(bs, uint16(cl.clientName))
 				_, err := conn.Write(bs)
 				if err != nil {
 					panic(err)
 				}
-				cl.debug("Connected to " + strconv.Itoa(int(i)))
+				cl.debug("Established outgoing connection to " + strconv.Itoa(int(i)))
 				break
 			}
 		}
 	}
-	cl.debug("Established all outgoing connections")
+	cl.debug("Established all outgoing connections to replicas")
 }
 
 /*
-Listen to all the established tcp connections
+	Listen on the server port for new connections
+	Whenever a server receives a new client connection, it dials the client
 */
 
-func (cl *Client) StartConnectionListeners() {
-	for i := int64(0); i < cl.numReplicas; i++ {
-		go cl.connectionListener(cl.incomingReplicaReaders[i])
-	}
+func (cl *Client) WaitForConnections() {
 
-	cl.debug("Started connection listeners")
+	// waits for connections from my self + all the replicas with lower ids + from all the clients
+
+	var b [4]byte
+	bs := b[:4]
+	Listener, _ := net.Listen("tcp", cl.clientListenAddress)
+	cl.debug("Listening to incoming connections on " + cl.clientListenAddress)
+
+	for true {
+		conn, err := Listener.Accept()
+		if err != nil {
+			fmt.Println("Accept error:", err)
+			panic(err)
+		}
+		if _, err := io.ReadFull(conn, bs); err != nil {
+			fmt.Println("Connection establish error:", err)
+			panic(err)
+		}
+		id := int32(binary.LittleEndian.Uint16(bs))
+		cl.debug("Received incoming tcp connection from " + strconv.Itoa(int(id)))
+
+		cl.incomingReplicaReaders[id] = bufio.NewReader(conn)
+		go cl.connectionListener(cl.incomingReplicaReaders[id])
+		cl.debug("Started listening to " + strconv.Itoa(int(id)))
+
+	}
 }
 
 /*
@@ -222,7 +247,7 @@ func (cl *Client) connectionListener(reader *bufio.Reader) {
 
 	for true {
 		if msgType, err = reader.ReadByte(); err != nil {
-			cl.debug("Error while reading message code")
+			cl.debug("Error while reading message code: connection broken")
 			return
 		}
 		if rpair, present := cl.rpcTable[msgType]; present {
@@ -259,7 +284,7 @@ func (cl *Client) debug(message string) {
 func (cl *Client) Run() {
 	go func() {
 		for true {
-			cl.debug("Checking channel\n")
+			//cl.debug("Checking channel\n")
 
 			replicaMessage := <-cl.incomingChan
 			//in.lock.Lock()

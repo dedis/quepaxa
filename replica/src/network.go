@@ -43,20 +43,20 @@ func (in *Instance) connectToReplicas() {
 	bs := b[:4]
 
 	//connect to replicas
-	for i := in.nodeName; i < in.numReplicas; i++ {
+	for i := int64(0); i < in.numReplicas; i++ {
 		for true {
 			conn, err := net.Dial("tcp", in.replicaAddrList[i])
 			if err == nil {
-				in.replicaConnections[i] = conn
-				in.outgoingReplicaWriters[i] = bufio.NewWriter(in.replicaConnections[i])
-				in.incomingReplicaReaders[i] = bufio.NewReader(in.replicaConnections[i])
+				//in.replicaConnections[i] = conn
+				in.outgoingReplicaWriters[i] = bufio.NewWriter(conn)
+				//in.incomingReplicaReaders[i] = bufio.NewReader(in.replicaConnections[i])
 				binary.LittleEndian.PutUint16(bs, uint16(in.nodeName))
 				_, err := conn.Write(bs)
 				if err != nil {
 					panic(err)
 				}
-				go in.connectionListener(in.incomingReplicaReaders[i])
-				in.debug("Started listening to " + strconv.Itoa(int(i)))
+				//go in.connectionListener(in.incomingReplicaReaders[i])
+				in.debug("Made outgoing connection to replica " + strconv.Itoa(int(i)))
 				break
 			}
 		}
@@ -96,20 +96,20 @@ func (in *Instance) WaitForConnections() {
 
 		if int64(id) < in.numReplicas {
 			// the connection is from a replica
-			if int64(id) != in.nodeName { // connection from myself is already registered when the connection was made
-				in.replicaConnections[id] = conn
-				in.outgoingReplicaWriters[id] = bufio.NewWriter(in.replicaConnections[id])
-				in.incomingReplicaReaders[id] = bufio.NewReader(in.replicaConnections[id])
-				go in.connectionListener(in.incomingReplicaReaders[id])
-				in.debug("Started listening to " + strconv.Itoa(int(id)))
-			}
+			//in.replicaConnections[id] = conn
+			//in.outgoingReplicaWriters[id] = bufio.NewWriter(in.replicaConnections[id])
+			in.incomingReplicaReaders[id] = bufio.NewReader(conn)
+			go in.connectionListener(in.incomingReplicaReaders[id])
+			in.debug("Started listening to " + strconv.Itoa(int(id)))
+
 		} else if int64(id) < in.numReplicas+in.numClients {
 			// the connection is from a client
-			in.clientConnections[int64(id)-in.numReplicas] = conn
-			in.outgoingClientWriters[int64(id)-in.numReplicas] = bufio.NewWriter(in.clientConnections[int64(id)-in.numReplicas])
-			in.incomingClientReaders[int64(id)-in.numReplicas] = bufio.NewReader(in.clientConnections[int64(id)-in.numReplicas])
+			//in.clientConnections[int64(id)-in.numReplicas] = conn
+			//in.outgoingClientWriters[int64(id)-in.numReplicas] = bufio.NewWriter(in.clientConnections[int64(id)-in.numReplicas])
+			in.incomingClientReaders[int64(id)-in.numReplicas] = bufio.NewReader(conn)
 			go in.connectionListener(in.incomingClientReaders[int64(id)-in.numReplicas])
 			in.debug("Started listening to " + strconv.Itoa(int(id)))
+			in.connectToClient(id) // make a TCP connection with client
 
 		}
 
