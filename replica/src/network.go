@@ -128,7 +128,7 @@ func (in *Instance) connectionListener(reader *bufio.Reader) {
 
 	for true {
 		if msgType, err = reader.ReadByte(); err != nil {
-			in.debug("Error while reading code byte")
+			in.debug("Error while reading code byte: perhaps the TCP connection was broken")
 			return
 		}
 		if rpair, present := in.rpcTable[msgType]; present {

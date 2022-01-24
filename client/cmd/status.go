@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"raxos/proto"
 	raxos "raxos/replica/src"
 	"strconv"
@@ -13,7 +12,7 @@ import (
 */
 
 func (cl *Client) handleClientStatusResponse(response *proto.ClientStatusResponse) {
-	fmt.Printf("Status response from %d, with message %s\n", response.Sender, response.Message)
+	cl.debug("Status response from " + strconv.Itoa(int(response.Sender)))
 }
 
 /*
