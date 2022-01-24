@@ -116,9 +116,9 @@ func (ms *MessageStore) printStore(logFilePath string, nodeName int64) {
 	messageBlocks := ms.convertToRegularMap(ms.messageBlocks)
 
 	for hash, block := range messageBlocks {
-		_, _ = f.WriteString(hash + ": Num Acks: " + strconv.Itoa(len(block.acks)) + "\n")
+		//_, _ = f.WriteString(hash + ": Num Acks: " + strconv.Itoa(len(block.acks)) + "\n")
 		for i := 0; i < len(block.messageBlock.Requests); i++ {
-			_, _ = f.WriteString(block.messageBlock.Requests[i].Id + ":")
+			_, _ = f.WriteString(hash + "-" + block.messageBlock.Requests[i].Id + ":")
 			for j := 0; j < len(block.messageBlock.Requests[i].Requests); j++ {
 				_, _ = f.WriteString(block.messageBlock.Requests[i].Requests[j].Message + ",")
 			}
