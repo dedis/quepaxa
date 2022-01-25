@@ -1,10 +1,10 @@
 # A local test that
-#   1. Build the project
-#   2. Spawn 5 replicas
-#   3. Boot stap servers
-#   4. Spawn 5 clients
-#   5. Compare the logs
-#   6. Kill instances and clients
+#     1. Build the project
+#     2. Spawn 5 replicas
+#     3. Boot stap servers
+#     4. Spawn 5 clients
+#     5. Compare the logs
+#     6. Kill instances and clients
 
 mage generate && mage build
 
