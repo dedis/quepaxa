@@ -11,7 +11,7 @@ import (
 )
 
 /*
-RPC paid assigns a unique id to each type of message defined in the proto files
+	RPC pair assigns a unique id to each type of message defined in the proto files
 */
 
 type RPCPair struct {
@@ -20,7 +20,7 @@ type RPCPair struct {
 }
 
 /*
-Outgoing RPC assigns an rpc to its intended destination peer, the peer can be a replica or a client
+	Outgoing RPC assigns a rpc to its intended destination peer, the peer can be a replica or a client
 */
 
 type OutgoingRPC struct {
@@ -28,14 +28,16 @@ type OutgoingRPC struct {
 	Peer    int64
 }
 
-/*Fill the RPC table by assigning a unique id to each message type*/
+/*
+	Fill the RPC table by assigning a unique id to each message type
+*/
 
 func (in *Instance) RegisterRPC(msgObj proto.Serializable, code uint8) {
 	in.rpcTable[code] = &RPCPair{code, msgObj}
 }
 
 /*
-Each replica sends connection requests to itself and to all replicas with a higher id
+	Each replica sends connection requests to all replicas
 */
 
 func (in *Instance) connectToReplicas() {
@@ -47,15 +49,13 @@ func (in *Instance) connectToReplicas() {
 		for true {
 			conn, err := net.Dial("tcp", in.replicaAddrList[i])
 			if err == nil {
-				//in.replicaConnections[i] = conn
 				in.outgoingReplicaWriters[i] = bufio.NewWriter(conn)
-				//in.incomingReplicaReaders[i] = bufio.NewReader(in.replicaConnections[i])
 				binary.LittleEndian.PutUint16(bs, uint16(in.nodeName))
 				_, err := conn.Write(bs)
 				if err != nil {
+					in.debug("Error making a connection to " + strconv.Itoa(int(i)))
 					panic(err)
 				}
-				//go in.connectionListener(in.incomingReplicaReaders[i])
 				in.debug("Made outgoing connection to replica " + strconv.Itoa(int(i)))
 				break
 			}
@@ -65,16 +65,11 @@ func (in *Instance) connectToReplicas() {
 }
 
 /*
-
-Listen on the server port for new connections
-Each replica receives connection from itself, and from all the replicas with lower id (replica 0 receives a connection from itself, replica 1 receives connection
-requests from 0, 1 and so on)
-Each replica receives connections from all the clients
+	Listen on the server port for new connections
+	Each replica receives connection from all replicas and from all clients
 */
 
 func (in *Instance) WaitForConnections() {
-
-	// waits for connections from my self + all the replicas with lower ids + from all the clients
 
 	var b [4]byte
 	bs := b[:4]
@@ -88,7 +83,7 @@ func (in *Instance) WaitForConnections() {
 			panic(err)
 		}
 		if _, err := io.ReadFull(conn, bs); err != nil {
-			fmt.Println("Connection establish error:", err)
+			fmt.Println("Connection id reading error:", err)
 			panic(err)
 		}
 		id := int32(binary.LittleEndian.Uint16(bs))
@@ -96,39 +91,32 @@ func (in *Instance) WaitForConnections() {
 
 		if int64(id) < in.numReplicas {
 			// the connection is from a replica
-			//in.replicaConnections[id] = conn
-			//in.outgoingReplicaWriters[id] = bufio.NewWriter(in.replicaConnections[id])
 			in.incomingReplicaReaders[id] = bufio.NewReader(conn)
-			go in.connectionListener(in.incomingReplicaReaders[id])
+			go in.connectionListener(in.incomingReplicaReaders[id], id)
 			in.debug("Started listening to " + strconv.Itoa(int(id)))
 
 		} else if int64(id) < in.numReplicas+in.numClients {
 			// the connection is from a client
-			//in.clientConnections[int64(id)-in.numReplicas] = conn
-			//in.outgoingClientWriters[int64(id)-in.numReplicas] = bufio.NewWriter(in.clientConnections[int64(id)-in.numReplicas])
 			in.incomingClientReaders[int64(id)-in.numReplicas] = bufio.NewReader(conn)
-			go in.connectionListener(in.incomingClientReaders[int64(id)-in.numReplicas])
+			go in.connectionListener(in.incomingClientReaders[int64(id)-in.numReplicas], id)
 			in.debug("Started listening to " + strconv.Itoa(int(id)))
-			in.connectToClient(id) // make a TCP connection with client
-
+			in.connectToClient(id) // make a TCP connection with client id
 		}
-
 	}
-	in.debug("Established connections from all nodes")
 }
 
 /*
 	listen to a given connection. Upon receiving any message, put it into the central buffer
 */
 
-func (in *Instance) connectionListener(reader *bufio.Reader) {
+func (in *Instance) connectionListener(reader *bufio.Reader, id int32) {
 
 	var msgType uint8
 	var err error = nil
 
 	for true {
 		if msgType, err = reader.ReadByte(); err != nil {
-			in.debug("Error while reading code byte: perhaps the TCP connection was broken")
+			in.debug("Error while reading code byte: the TCP connection was broken for " + strconv.Itoa(int(id)))
 			return
 		}
 		if rpair, present := in.rpcTable[msgType]; present {
@@ -148,30 +136,23 @@ func (in *Instance) connectionListener(reader *bufio.Reader) {
 }
 
 /*
-This is the main execution thread
-It listens to incoming messages from the incomingChan, and invoke the appropriate handler depending on the message type
+	This is the main execution thread
+	It listens to incoming messages from the incomingChan, and invoke the appropriate handler depending on the message type
 */
 
 func (in *Instance) Run() {
 	go func() {
 		for true {
-			//in.debug("Checking channel\n")
-
 			replicaMessage := <-in.incomingChan
 			//in.lock.Lock()
-			//in.debug("Received  message")
+			in.debug("Received  message")
 			code := replicaMessage.Code
 			switch code {
+
 			case in.clientRequestBatchRpc:
 				clientRequestBatch := replicaMessage.Obj.(*proto.ClientRequestBatch)
-				//in.debug("Client request batch" + fmt.Sprintf("%#v", clientRequestBatch.Id))
+				in.debug("Client request batch with id " + fmt.Sprintf("%#v", clientRequestBatch.Id))
 				in.handleClientRequestBatch(clientRequestBatch)
-				break
-
-			case in.clientResponseBatchRpc:
-				clientResponseBatch := replicaMessage.Obj.(*proto.ClientResponseBatch)
-				in.debug("Client response batch " + fmt.Sprintf("%#v", clientResponseBatch.Id))
-				in.handleClientResponseBatch(clientResponseBatch)
 				break
 
 			case in.genericConsensusRpc:
@@ -182,26 +163,20 @@ func (in *Instance) Run() {
 
 			case in.messageBlockRpc:
 				messageBlock := replicaMessage.Obj.(*proto.MessageBlock)
-				//in.debug("Message Block  " + fmt.Sprintf("%#v", messageBlock.Hash))
+				in.debug("Message Block hash  " + fmt.Sprintf("%#v", messageBlock.Hash))
 				in.handleMessageBlock(messageBlock)
 				break
 
 			case in.messageBlockRequestRpc:
 				messageBlockRequest := replicaMessage.Obj.(*proto.MessageBlockRequest)
-				in.debug("Message Block Request " + fmt.Sprintf("%#v", messageBlockRequest.Hash))
+				in.debug("Message Block Request from " + fmt.Sprintf("%#v", messageBlockRequest.Sender))
 				in.handleMessageBlockRequest(messageBlockRequest)
 				break
 
 			case in.clientStatusRequestRpc:
 				clientStatusRequest := replicaMessage.Obj.(*proto.ClientStatusRequest)
-				in.debug("Client Status Request " + fmt.Sprintf("%#v", clientStatusRequest.Sender))
+				in.debug("Client Status Request from" + fmt.Sprintf("%#v", clientStatusRequest.Sender))
 				in.handleClientStatusRequest(clientStatusRequest)
-				break
-
-			case in.clientStatusResponseRpc:
-				clientStatusResponse := replicaMessage.Obj.(*proto.ClientStatusResponse)
-				in.debug("Client Status Response " + fmt.Sprintf("%#v", clientStatusResponse.Sender))
-				in.handleClientStatusResponse(clientStatusResponse)
 				break
 
 			case in.messageBlockAckRpc:
@@ -254,7 +229,7 @@ func (in *Instance) internalSendMessage(peer int64, rpcPair *RPCPair) {
 }
 
 /*
-A set of threads that manages outgoing messages: write the message to the OS buffers
+	A set of threads that manages outgoing messages: write the message to the OS buffers
 */
 
 func (in *Instance) StartOutgoingLinks() {
@@ -269,7 +244,7 @@ func (in *Instance) StartOutgoingLinks() {
 }
 
 /*
-adds a new out going message to the out going channel
+	adds a new out going message to the out going channel
 */
 
 func (in *Instance) sendMessage(peer int64, rpcPair RPCPair) {
