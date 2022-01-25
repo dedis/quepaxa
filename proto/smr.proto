@@ -19,7 +19,7 @@ message MessageBlock{
   message  ClientRequestBatch{
     int64 sender = 1;
     repeated SingleClientRequest requests = 2;
-    string id = 3; // unique identifier specified by client for the client batch
+    string id = 3; // unique identifier specified by client for the client request batch
   }
 
   string hash = 3; // unique identifier specified by proposer for the block

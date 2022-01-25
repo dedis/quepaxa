@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-// ClientRequest
+// ClientRequestBatch
 
 func (t *ClientRequestBatch) Marshal(wire io.Writer) error {
 
@@ -57,7 +57,7 @@ func (t *ClientRequestBatch) New() Serializable {
 	return new(ClientRequestBatch)
 }
 
-// ClientResponse
+// ClientResponseBatch
 
 func (t *ClientResponseBatch) Marshal(wire io.Writer) error {
 

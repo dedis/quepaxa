@@ -271,7 +271,7 @@ type MessageBlock_ClientRequestBatch struct {
 
 	Sender   int64                               `protobuf:"varint,1,opt,name=sender,proto3" json:"sender,omitempty"`
 	Requests []*MessageBlock_SingleClientRequest `protobuf:"bytes,2,rep,name=requests,proto3" json:"requests,omitempty"`
-	Id       string                              `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"` // unique identifier specified by client for the client batch
+	Id       string                              `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"` // unique identifier specified by client for the client request batch
 }
 
 func (x *MessageBlock_ClientRequestBatch) Reset() {
