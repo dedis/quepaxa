@@ -54,7 +54,7 @@ type Client struct {
 	outgoingMessageChan chan *raxos.OutgoingRPC // buffer for messages that are written to the wire
 
 	defaultReplica      int64     // id of the default proposer to which the client sends the messages
-	replicaTimeout      int64     // in milliseconds: each replica has a unique proposer assigned, upon a timeout, the client changes its default replica
+	replicaTimeout      int64     // in seconds: each replica has a unique proposer assigned, upon a timeout, the client changes its default replica
 	lastSeenTimeReplica time.Time // time the assigned proposer last sent a response
 
 	debugOn bool // if turned on, the debug messages will be print on the console

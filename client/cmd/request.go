@@ -19,13 +19,14 @@ func (cl *Client) handleClientResponseBatch(batch *proto.ClientResponseBatch) {
 		time:  time.Now(), // record the time when the response was received
 	})
 	cl.lastSeenTimeReplica = time.Now() // mark the last time a response was received
-	cl.debug("Received Response Batch")
+	cl.debug("Added response Batch from " + strconv.Itoa(int(batch.Sender)) + " to received array")
 }
 
 /*
 	start the poisson arrival process (put arrivals to arrivalTimeChan) in a separate thread
-	start request generation processes  (get arrivals from arrivalTimeChan and generate batches and send them) in separate threads, and send them to the leader proposer, and write the sent batch to the correct array in sentRequests. Runs only for a pre-defined test duration
+	start request generation processes  (get arrivals from arrivalTimeChan and generate batches and send them) in separate threads, and send them to the leader proposer, and write batch to the correct array in sentRequests
 	start failure detector that checks the time since the last response was received, and update the default proposer
+	start the scheduler that schedules new requests
 	the thread sleeps for test duration + delta and then starts processing the responses
 
 */
@@ -38,12 +39,12 @@ func (cl *Client) SendRequests() {
 
 	// end of test
 
-	time.Sleep(time.Duration(cl.testDuration) * time.Second) // additional sleep duration to make sure that all the inflight responses are received
+	time.Sleep(time.Duration(cl.testDuration) * time.Second) // additional sleep duration to make sure that all the in-flight responses are received
 	cl.computeStats()
 }
 
 /*
-	Each request generator generates requests by generating string requests, forming batches and add them to the correct sent array
+	Each request generator generates requests by generating string requests, forming batches, send batches and add them to the correct sent array
 */
 
 func (cl *Client) startRequestGenerators() {
@@ -53,7 +54,7 @@ func (cl *Client) startRequestGenerators() {
 			lastSent := time.Now() // used to get how long to wait
 			for true {             // this runs forever
 				numRequests := int64(0)
-				sampleRequest := "Request" //todo this is only for testing purposes
+				sampleRequest := "Request" //todo this is only for testing purposes, should be replaced by KV Store / Redis accordingly
 				var requests []*proto.ClientRequestBatch_SingleClientRequest
 				// this loop collects requests until the minimum batch size is met OR the batch time is timeout
 				for !(numRequests >= cl.batchSize || (time.Now().Sub(lastSent).Microseconds() > cl.batchTime && numRequests > 0)) {
@@ -66,7 +67,7 @@ func (cl *Client) startRequestGenerators() {
 					Sender:   cl.clientName,
 					Receiver: cl.defaultReplica,
 					Requests: requests,
-					Id:       strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string
+					Id:       strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id
 				}
 
 				cl.debug("Sent " + strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter) + " batch size " + strconv.Itoa(len(requests)))
@@ -93,7 +94,6 @@ func (cl *Client) startRequestGenerators() {
 
 /*
 	Until the test duration is arrived, fetch new arrivals and inform the request generators
-
 */
 
 func (cl *Client) startScheduler() {
@@ -106,7 +106,6 @@ func (cl *Client) startScheduler() {
 			// busy waiting until the time to dispatch this request arrives
 		}
 		cl.arrivalChan <- true
-
 	}
 }
 
@@ -151,9 +150,7 @@ func (cl *Client) startFailureDetector() {
 				cl.debug("Changing the default replica")
 				cl.defaultReplica = (cl.defaultReplica + 1) % cl.numReplicas
 				cl.lastSeenTimeReplica = time.Now()
-
 			}
-
 		}
 	}()
 }
