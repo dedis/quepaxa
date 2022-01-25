@@ -53,7 +53,7 @@ func GetNLengthValue(N int) string {
 }
 
 /*
-	Generate a N length record of the form user..0..n
+	Generate a N length deterministic string record of the form user..0..n
 */
 
 func GetNLengthRecord(i int, N int) string {
