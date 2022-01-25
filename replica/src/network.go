@@ -253,3 +253,27 @@ func (in *Instance) sendMessage(peer int64, rpcPair RPCPair) {
 		Peer:    peer,
 	}
 }
+
+/*
+	Make a TCP connection to the client id
+*/
+
+func (in *Instance) connectToClient(id int32) {
+	var b [4]byte
+	bs := b[:4]
+	for true {
+		conn, err := net.Dial("tcp", in.clientAddrList[int(id)-int(in.numReplicas)])
+		if err == nil {
+			in.outgoingClientWriters[int64(id)-in.numReplicas] = bufio.NewWriter(conn)
+			binary.LittleEndian.PutUint16(bs, uint16(in.nodeName))
+			_, err := conn.Write(bs)
+			if err != nil {
+				in.debug("Error connecting to client " + strconv.Itoa(int(id)))
+				panic(err)
+			}
+			in.debug("Started outgoing connection to client" + strconv.Itoa(int(id)))
+			break
+		}
+	}
+
+}

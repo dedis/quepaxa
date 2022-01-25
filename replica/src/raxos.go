@@ -2,7 +2,6 @@ package raxos
 
 import (
 	"bufio"
-	"encoding/binary"
 	"fmt"
 	"math/rand"
 	"net"
@@ -11,13 +10,12 @@ import (
 	"raxos/configuration"
 	"raxos/proto"
 	_ "raxos/proto"
-	"strconv"
 	"sync"
 	"time"
 )
 
-const incomingRequestBufferSize = 100000 // size of the buffer that collects incoming client requests
-const numOutgoingThreads = 200           // number of wire writers: since the I/O writing is expensive we delegate that task to a thread pool and separate from the criticial path
+const incomingRequestBufferSize = 100000 // size of the buffer that collects incoming client request batches to form blocks
+const numOutgoingThreads = 200           // number of wire writers: since the I/O writing is expensive we delegate that task to a thread pool and separate from the critical path
 const incomingBufferSize = 1000000       // the size of the buffer which receives all the incoming messages
 const outgoingBufferSize = 1000000       // size of the buffer that collects messages to be written to the wire
 
@@ -45,19 +43,19 @@ type Instance struct {
 	rpcTable     map[uint8]*RPCPair
 	incomingChan chan *RPCPair // used to collect all the incoming messages
 
-	clientRequestBatchRpc   uint8 // 0
-	clientResponseBatchRpc  uint8 // 1
-	genericConsensusRpc     uint8 // 2
-	messageBlockRpc         uint8 // 3
-	messageBlockRequestRpc  uint8 // 4
-	clientStatusRequestRpc  uint8 // 5
-	clientStatusResponseRpc uint8 // 6
-	messageBlockAckRpc      uint8 // 7
+	clientRequestBatchRpc   uint8
+	clientResponseBatchRpc  uint8
+	genericConsensusRpc     uint8
+	messageBlockRpc         uint8
+	messageBlockRequestRpc  uint8
+	clientStatusRequestRpc  uint8
+	clientStatusResponseRpc uint8
+	messageBlockAckRpc      uint8
 
 	replicatedLog []Slot         // the replicated log
 	stateMachine  *benchmark.App // the application
 
-	committedIndex int64 // last index for which a request was committed and the result was sent to clent
+	committedIndex int64 // last index for which a request was committed and the result was sent to client
 	proposedIndex  int64 // last index for which a request was proposed //todo think about the relationship between committed index and the proposed index
 
 	proposed []string // assigns the proposed request to the slot
@@ -69,7 +67,7 @@ type Instance struct {
 	responseString string // fixed response string to use if the response size is fixed (might not be used)
 
 	batchSize int64 // maximum server side batch size
-	batchTime int64 // maximum replica side batch time
+	batchTime int64 // maximum replica side batch time in micro seconds
 
 	pipelineLength      int64 // maximum number of inflight consensus instances
 	numInflightRequests int64 // current numInflight requests
@@ -83,49 +81,26 @@ type Instance struct {
 	leaderTimeout int64       // in milliseconds
 	lastSeenTime  []time.Time // time each replica was last seen
 
-	debugOn       bool // if turned on, the debugg messages will be print on the console
+	debugOn       bool // if turned on, the debug messages will be print on the console
 	serverStarted bool // true if the first status message with operation type 1 received
-}
-
-func (in *Instance) connectToClient(id int32) {
-	var b [4]byte
-	bs := b[:4]
-	for true {
-		conn, err := net.Dial("tcp", in.clientAddrList[int(id)-int(in.numReplicas)])
-		if err == nil {
-			//in.replicaConnections[i] = conn
-			in.outgoingClientWriters[int64(id)-in.numReplicas] = bufio.NewWriter(conn)
-			//in.incomingReplicaReaders[i] = bufio.NewReader(in.replicaConnections[i])
-			binary.LittleEndian.PutUint16(bs, uint16(in.nodeName))
-			_, err := conn.Write(bs)
-			if err != nil {
-				panic(err)
-			}
-			in.debug("Started outgoing connection to " + strconv.Itoa(int(id)))
-			break
-		}
-	}
-
 }
 
 /*
 
-Instantiate a new Instance object, allocates the buffers
-Initializes the message store
+	Instantiate a new Instance object, allocates the buffers
+	Initializes the message store
 
 */
 
 func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serviceTime int64, responseSize int64, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmarkNumber int64, numKeys int64) *Instance {
 	in := Instance{
-		nodeName:        name,
-		numReplicas:     int64(len(cfg.Peers)),
-		numClients:      int64(len(cfg.Clients)),
-		replicaAddrList: GetReplicaAddressList(cfg), // from here
-		//replicaConnections:      make([]net.Conn, len(cfg.Peers)),
-		incomingReplicaReaders: make([]*bufio.Reader, len(cfg.Peers)),
-		outgoingReplicaWriters: make([]*bufio.Writer, len(cfg.Peers)),
-		clientAddrList:         getClientAddressList(cfg),
-		//clientConnections:       make([]net.Conn, len(cfg.Clients)),
+		nodeName:                name,
+		numReplicas:             int64(len(cfg.Peers)),
+		numClients:              int64(len(cfg.Clients)),
+		replicaAddrList:         GetReplicaAddressList(cfg),
+		incomingReplicaReaders:  make([]*bufio.Reader, len(cfg.Peers)),
+		outgoingReplicaWriters:  make([]*bufio.Writer, len(cfg.Peers)),
+		clientAddrList:          getClientAddressList(cfg),
 		incomingClientReaders:   make([]*bufio.Reader, len(cfg.Clients)),
 		outgoingClientWriters:   make([]*bufio.Writer, len(cfg.Clients)),
 		buffioWriterMutexes:     make([]sync.Mutex, len(cfg.Peers)+len(cfg.Clients)),
@@ -166,6 +141,8 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 	for i := 0; i < len(cfg.Peers)+len(cfg.Clients); i++ {
 		in.buffioWriterMutexes[i] = sync.Mutex{}
 	}
+
+	in.debug("Initialized a new instance")
 
 	rand.Seed(time.Now().UTC().UnixNano())
 	in.messageStore.Init()
