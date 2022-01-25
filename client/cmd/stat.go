@@ -12,7 +12,7 @@ import (
 /*
 	iteratively calculates the number of elements in the 2d array
 */
-func (cl *Client) getNumberofSentRequests(requests [][]sentRequestBatch) int {
+func (cl *Client) getNumberOfSentRequests(requests [][]sentRequestBatch) int {
 	count := 0
 	for i := 0; i < numRequestGenerationThreads; i++ {
 		sentRequestArrayOfI := requests[i] // requests[i] is an array of batch of requests
@@ -73,11 +73,12 @@ func (cl *Client) computeStats() {
 
 	f, err := os.Create(cl.logFilePath + strconv.Itoa(int(cl.clientName)) + ".txt")
 	if err != nil {
+		cl.debug("Error creating the output log file")
 		log.Fatal(err)
 	}
 	defer f.Close()
 
-	numTotalSentRequests := cl.getNumberofSentRequests(cl.sentRequests)
+	numTotalSentRequests := cl.getNumberOfSentRequests(cl.sentRequests)
 	numTotalReceivedResponses := cl.getNumberOfReceivedResponses(cl.receivedResponses)
 	var latencyList []int64    // contains the time duration spent for each request in micro seconds (includes failed requests)
 	var throughputList []int64 // contains the time duration spent for successful requests
@@ -87,9 +88,9 @@ func (cl *Client) computeStats() {
 			batchId := batch.batch.Id
 			matchingResponseIndex := cl.getMatchingResponseBatch(batchId)
 			if matchingResponseIndex == -1 {
-				// there is no response for this batch of requests, hence they are considered as failed
-				latencyList = cl.addValueNToArrayMTimes(latencyList, cl.replicaTimeout*1000, len(batch.batch.Requests))
-				cl.printRequests(batch.batch, batch.time.Sub(cl.startTime).Microseconds(), batch.time.Sub(cl.startTime).Microseconds()+cl.replicaTimeout*1000, f)
+				// there is no response for this batch of requests, hence they are considered as timeout requests
+				latencyList = cl.addValueNToArrayMTimes(latencyList, cl.replicaTimeout*1000*1000, len(batch.batch.Requests))
+				cl.printRequests(batch.batch, batch.time.Sub(cl.startTime).Microseconds(), batch.time.Sub(cl.startTime).Microseconds()+cl.replicaTimeout*1000*1000, f)
 			} else {
 				responseBatch := cl.receivedResponses[matchingResponseIndex]
 				startTime := batch.time
@@ -108,7 +109,7 @@ func (cl *Client) computeStats() {
 	duration := cl.testDuration
 	errorRate := (numTotalSentRequests - len(throughputList)) * 100.0 / numTotalSentRequests
 
-	fmt.Printf("Total Sent Requests:= %v \n", numTotalSentRequests)
+	fmt.Printf("\n Total Sent Requests:= %v \n", numTotalSentRequests)
 	fmt.Printf("Total Received Responses:= %v \n", numTotalReceivedResponses)
 	fmt.Printf("Total time := %v seconds\n", duration)
 	fmt.Printf("Throughput (successfully committed requests) := %v requests per second\n", len(throughputList)/int(duration))
@@ -134,7 +135,7 @@ func (cl *Client) getFloat64List(list []int64) []float64 {
 */
 
 func (cl *Client) printRequests(messages proto.ClientRequestBatch, startTime int64, endTime int64, f *os.File) {
-	_, _ = f.WriteString(messages.Id + "\n")
+	//_, _ = f.WriteString(messages.Id + "\n")
 	for i := 0; i < len(messages.Requests); i++ {
 		_, _ = f.WriteString(messages.Requests[i].Message + "," + strconv.Itoa(int(startTime)) + "," + strconv.Itoa(int(endTime)) + "\n")
 	}
