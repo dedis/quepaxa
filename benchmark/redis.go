@@ -8,8 +8,9 @@ import (
 )
 
 /*
-todo this implementation does not support replies. To support replies it has to invoke the driver for each request, and it doesn't give goo performance
-todo Check the Rabia Redis integration
+	todo this implementation does not support replies. To support replies it has to invoke the driver for each request, and it doesn't give good performance
+	todo Check the Rabia Redis integration and re-write this
+
 */
 
 const redisBatchSize = 50
