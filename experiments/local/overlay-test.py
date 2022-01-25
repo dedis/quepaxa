@@ -16,7 +16,8 @@ for i in range(1, len(sys.argv)):
 
     files.append(dict)
     print("Length of " + sys.argv[i] + " is " + str(numberOfRequests))
-    print("Approximate throughput " + str(numberOfRequests / 60.0) + "requests per second")
+    print("Approximate throughput " + str(
+        numberOfRequests / 60.0) + "requests per second")  # assuming a test duration of 60 todo change this if the test duration is changed
 
 
 def equals(array1, array2):
@@ -49,8 +50,8 @@ def checkMaps(files):
                         else:
                             match = match + len(map[key])
 
-    print(str(misMatch) + " entries miss match")
     print(str(match) + " entries match")
+    print(str(misMatch) + " entries miss match")
 
 
 checkMaps(files)
