@@ -50,6 +50,7 @@ def checkMaps(files):
                             match = match + len(map[key])
 
     print(str(misMatch) + " entries miss match")
+    print(str(match) + " entries match")
 
 
 checkMaps(files)
