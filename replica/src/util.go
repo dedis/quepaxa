@@ -9,7 +9,7 @@ import (
 )
 
 /*
-If enabled, print the messages to stdout
+	If enabled, print the messages to stdout
 */
 
 func (in *Instance) debug(message string) {
@@ -19,7 +19,7 @@ func (in *Instance) debug(message string) {
 }
 
 /*
-Returns the size of any type of object in bytes
+	Returns the size of any type of object in bytes
 */
 
 func getRealSizeOf(v interface{}) (int, error) {
@@ -31,7 +31,7 @@ func getRealSizeOf(v interface{}) (int, error) {
 }
 
 /*
-returns a deterministic string of size @length
+	returns a deterministic string of size @length
 */
 
 func getStringOfSizeN(length int) string {
@@ -45,7 +45,7 @@ func getStringOfSizeN(length int) string {
 }
 
 /*
-Creates a new copy of the message. Since the protobuf methods are not thread safe, its not possible to broadcast the same message without having separate message object for each
+	Creates a new copy of the message. Since the protobuf methods are not thread safe, it is not possible to broadcast the same message without having separate message object for each
 */
 
 func (in *Instance) getNewCopyOfMessage(code uint8, msg proto.Serializable) proto.Serializable {
@@ -187,8 +187,7 @@ func (in *Instance) proposedPreviously(hash string) (bool, int) {
 }
 
 /*
-
-checks of this value has been previously committed
+	checks of this value has been previously committed
 */
 
 func (in *Instance) committedPreviously(hash string) (bool, int) {
@@ -202,7 +201,7 @@ func (in *Instance) committedPreviously(hash string) (bool, int) {
 }
 
 /*
- returns a fixed leader (strawman1)
+	returns a fixed leader (strawman 1)
 */
 
 func (in *Instance) getDeterministicLeader1() int {
@@ -210,7 +209,7 @@ func (in *Instance) getDeterministicLeader1() int {
 }
 
 /*
-extracts clients ip:port list to an array
+	extracts clients ip:port list to an array
 */
 
 func getClientAddressList(cfg *configuration.InstanceConfig) []string {
@@ -222,7 +221,7 @@ func getClientAddressList(cfg *configuration.InstanceConfig) []string {
 }
 
 /*
-extracts replicas ip:port list to an array
+	extracts replicas ip:port list to an array
 */
 
 func GetReplicaAddressList(cfg *configuration.InstanceConfig) []string {
