@@ -1,3 +1,5 @@
-To send a status request ```./cmd/backsosctl/bin/ctl status --config doc/configuration/local/backsosctl/quorum.yml --operationType 1```
+To send a status request ```./client/bin/client --name 5 --requestType status --operationType [1, 2]```
 
-To send client requests ```./cmd/backsosctl/bin/ctl send "-" --config doc/configuration/local/backsosctl/quorum.yml```
+```OperationType 1``` for server bootstrapping ```OperationType 2``` for server log printing
+
+To send client requests ```./client/bin/client --name 5 --defaultReplica 0 --requestType request```
