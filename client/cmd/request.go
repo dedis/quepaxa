@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"raxos/proto"
@@ -40,6 +41,7 @@ func (cl *Client) SendRequests() {
 	// end of test
 
 	time.Sleep(time.Duration(cl.testDuration) * time.Second) // additional sleep duration to make sure that all the in-flight responses are received
+	fmt.Printf("Finish sending requests \n")
 	cl.computeStats()
 }
 
