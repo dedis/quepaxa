@@ -1,0 +1,25 @@
+# peers are the replicas which act as both recorders and proposers. clients are the clients
+# name and ip:port should be unique
+# to add more peers or clients: add new lines following the same structure
+peers:
+  - name: 0
+    address: 10.156.33.140:9000
+  - name: 1
+    address: 10.156.33.141:9001
+  - name: 2
+    address: 10.156.33.142:9002
+  - name: 3
+    address: 10.156.33.143:9003
+  - name: 4
+    address: 10.156.33.144:9004
+clients:
+  - name: 5
+    address: 10.156.33.145:10000
+  - name: 6
+    address: 10.156.33.146:10001
+  - name: 7
+    address: 10.156.33.147:10002
+  - name: 8
+    address: 10.156.33.148:10003
+  - name: 9
+    address: 10.156.33.149:10004
