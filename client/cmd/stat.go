@@ -83,6 +83,7 @@ func (cl *Client) computeStats() {
 	var latencyList []int64    // contains the time duration spent for each request in micro seconds (includes failed requests)
 	var throughputList []int64 // contains the time duration spent for successful requests
 	for i := 0; i < numRequestGenerationThreads; i++ {
+		fmt.Printf("Calculating stats for thread %d \n", i)
 		for j := 0; j < len(cl.sentRequests[i]); j++ {
 			batch := cl.sentRequests[i][j]
 			batchId := batch.batch.Id

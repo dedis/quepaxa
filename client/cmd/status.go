@@ -13,7 +13,7 @@ import (
 */
 
 func (cl *Client) handleClientStatusResponse(response *proto.ClientStatusResponse) {
-	fmt.Print("Status response from " + strconv.Itoa(int(response.Sender)))
+	fmt.Print("Status response from " + strconv.Itoa(int(response.Sender)) + " \n")
 }
 
 /*
