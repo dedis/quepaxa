@@ -128,7 +128,7 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		defaultReplica:          defaultReplica,
 		replicaTimeout:          replicaTimeout,
 		lastSeenTimeReplica:     time.Now(),
-		debugOn:                 true, // manually set this if debugging needs to be turned on
+		debugOn:                 false, // manually set this if debugging needs to be turned on
 		requestSize:             requestSize,
 		testDuration:            testDuration,
 		warmupDuration:          warmupDuration,

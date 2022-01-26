@@ -134,7 +134,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 		blockCounter:        0,
 		leaderTimeout:       leaderTimeout,
 		lastSeenTime:        make([]time.Time, len(cfg.Peers)),
-		debugOn:             true,
+		debugOn:             false,
 		serverStarted:       false,
 	}
 
