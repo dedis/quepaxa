@@ -23,7 +23,7 @@ func main() {
 	numKeys := flag.Int64("numKeys", 1000, "Number of keys in the key value store")
 	flag.Parse()
 
-	cfg, err := configuration.NewInstanceConfig(*configFile)
+	cfg, err := configuration.NewInstanceConfig(*configFile, *name)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "load config: %v\n", err)
 		os.Exit(1)

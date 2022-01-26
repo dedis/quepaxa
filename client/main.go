@@ -28,7 +28,7 @@ func main() {
 
 	flag.Parse()
 
-	cfg, err := configuration.NewInstanceConfig(*configFile)
+	cfg, err := configuration.NewInstanceConfig(*configFile, *name)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "load config: %v\n", err)
 		os.Exit(1)
