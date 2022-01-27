@@ -66,14 +66,14 @@ type Client struct {
 	benchmark      int64 // type of the workload: 0 for no-op, 1 for kv store and 2 for redis
 	numKeys        int64 // maximum number of keys for the key value store
 
-	arrivalTimeChan     chan int64              // channel to which the poisson process adds new request arrival times in nanoseconds w.r.t test start time
-	arrivalChan         chan bool               // channel to which the main scheduler adds new request arrivals, to be consumed by the request generation threads
-	RequestType         string                  // [request] for sending a stream of client requests, [status] for sending a status request
-	OperationType       int64                   // status operation type 1 (bootstrap server), 2: print log
-	sentRequests        [][]sentRequestBatch    // generator i updates sentRequests[i] :this is to avoid concurrent access to the same array
-	receivedResponses   []receivedResponseBatch // set of received client response batches from replicas
-	startTime           time.Time               // test start time
-	clientListenAddress string                  // TCP addresses to which the client listens to new incoming TCP connections
+	arrivalTimeChan     chan int64                       // channel to which the poisson process adds new request arrival times in nanoseconds w.r.t test start time
+	arrivalChan         chan bool                        // channel to which the main scheduler adds new request arrivals, to be consumed by the request generation threads
+	RequestType         string                           // [request] for sending a stream of client requests, [status] for sending a status request
+	OperationType       int64                            // status operation type 1 (bootstrap server), 2: print log
+	sentRequests        [][]sentRequestBatch             // generator i updates sentRequests[i] :this is to avoid concurrent access to the same array
+	receivedResponses   map[string]receivedResponseBatch // set of received client response batches from replicas
+	startTime           time.Time                        // test start time
+	clientListenAddress string                           // TCP addresses to which the client listens to new incoming TCP connections
 }
 
 /*
@@ -140,6 +140,7 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		RequestType:             requestType,
 		OperationType:           operationType,
 		sentRequests:            make([][]sentRequestBatch, numRequestGenerationThreads),
+		receivedResponses:       make(map[string]receivedResponseBatch),
 		startTime:               time.Now(),
 		clientListenAddress:     cfg.Clients[int(name)-len(cfg.Peers)].Address,
 	}

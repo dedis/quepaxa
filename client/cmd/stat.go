@@ -24,19 +24,6 @@ func (cl *Client) getNumberOfSentRequests(requests [][]sentRequestBatch) int {
 }
 
 /*
-	returns the matching response batch corresponding to the request batch id
-*/
-
-func (cl *Client) getMatchingResponseBatch(id string) int {
-	for i := 0; i < len(cl.receivedResponses); i++ {
-		if cl.receivedResponses[i].batch.Id == id {
-			return i
-		}
-	}
-	return -1
-}
-
-/*
 	Add value N to list, M times
 */
 
@@ -51,10 +38,10 @@ func (cl *Client) addValueNToArrayMTimes(list []int64, N int64, M int) []int64 {
 	Counts the number of individual responses in responses array
 */
 
-func (cl *Client) getNumberOfReceivedResponses(responses []receivedResponseBatch) int {
+func (cl *Client) getNumberOfReceivedResponses(responses map[string]receivedResponseBatch) int {
 	count := 0
-	for i := 0; i < len(responses); i++ {
-		count += len(responses[i].batch.Responses)
+	for _, element := range responses {
+		count += len(element.batch.Responses)
 	}
 	return count
 
@@ -87,13 +74,13 @@ func (cl *Client) computeStats() {
 		for j := 0; j < len(cl.sentRequests[i]); j++ {
 			batch := cl.sentRequests[i][j]
 			batchId := batch.batch.Id
-			matchingResponseIndex := cl.getMatchingResponseBatch(batchId)
-			if matchingResponseIndex == -1 {
+			matchingResponseBatch, ok := cl.receivedResponses[batchId]
+			if !ok {
 				// there is no response for this batch of requests, hence they are considered as timeout requests
 				latencyList = cl.addValueNToArrayMTimes(latencyList, cl.replicaTimeout*1000*1000, len(batch.batch.Requests))
 				cl.printRequests(batch.batch, batch.time.Sub(cl.startTime).Microseconds(), batch.time.Sub(cl.startTime).Microseconds()+cl.replicaTimeout*1000*1000, f)
 			} else {
-				responseBatch := cl.receivedResponses[matchingResponseIndex]
+				responseBatch := matchingResponseBatch
 				startTime := batch.time
 				endTime := responseBatch.time
 				batchLatency := endTime.Sub(startTime).Microseconds()

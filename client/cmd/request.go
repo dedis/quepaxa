@@ -15,10 +15,10 @@ import (
 */
 
 func (cl *Client) handleClientResponseBatch(batch *proto.ClientResponseBatch) {
-	cl.receivedResponses = append(cl.receivedResponses, receivedResponseBatch{
+	cl.receivedResponses[batch.Id] = receivedResponseBatch{
 		batch: *batch,
 		time:  time.Now(), // record the time when the response was received
-	})
+	}
 	cl.lastSeenTimeReplica = time.Now() // mark the last time a response was received
 	cl.debug("Added response Batch from " + strconv.Itoa(int(batch.Sender)) + " to received array")
 }
