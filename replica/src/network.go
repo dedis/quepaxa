@@ -199,7 +199,7 @@ func (in *Instance) internalSendMessage(peer int64, rpcPair *RPCPair) {
 	code := rpcPair.Code
 	oriMsg := rpcPair.Obj
 	var msg proto.Serializable
-	msg = in.getNewCopyOfMessage(code, oriMsg)
+	msg = oriMsg
 	var w *bufio.Writer
 
 	if peer < in.numReplicas {
@@ -245,6 +245,8 @@ func (in *Instance) StartOutgoingLinks() {
 
 /*
 	adds a new out going message to the out going channel
+    note that the message object inside the RPC pair should be unique because the protobuf objects are not thread safe
+    if its a broadcast, then seperate rpcPairs and seperate message objects should be passed
 */
 
 func (in *Instance) sendMessage(peer int64, rpcPair RPCPair) {

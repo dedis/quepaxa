@@ -32,25 +32,29 @@ func (in *Instance) BroadcastBlock() {
 				numRequests++
 			}
 
-			messageBlock := proto.MessageBlock{
-				Sender:   in.nodeName,
-				Receiver: 0,                                                                         // message block is a broadcast, so the receiver field is of no use
-				Hash:     strconv.Itoa(int(in.nodeName)) + "." + strconv.Itoa(int(in.blockCounter)), // unique block sequence number
-				Requests: in.convertToMessageBlockRequests(requests),
-			}
-
 			in.debug("Sent " + strconv.Itoa(int(in.nodeName)) + "." + strconv.Itoa(int(in.blockCounter)) + " batch size " + strconv.Itoa(len(requests)))
-
 			in.blockCounter++
 
-			rpcPair := RPCPair{
-				Code: in.messageBlockRpc,
-				Obj:  &messageBlock,
+			messageBlock := proto.MessageBlock{
+				Sender:   in.nodeName,
+				Receiver: 0,
+				Hash:     strconv.Itoa(int(in.nodeName)) + "." + strconv.Itoa(int(in.blockCounter)), // unique block sequence number
+				Requests: in.convertToMessageBlockRequests(requests),
 			}
 
 			in.messageStore.Add(&messageBlock)
 
 			for i := int64(0); i < in.numReplicas; i++ {
+				messageBlock := proto.MessageBlock{
+					Sender:   in.nodeName,
+					Receiver: i,
+					Hash:     strconv.Itoa(int(in.nodeName)) + "." + strconv.Itoa(int(in.blockCounter)), // unique block sequence number
+					Requests: in.convertToMessageBlockRequests(requests),
+				}
+				rpcPair := RPCPair{
+					Code: in.messageBlockRpc,
+					Obj:  &messageBlock,
+				}
 				in.sendMessage(i, rpcPair)
 			}
 
