@@ -126,24 +126,24 @@ echo "Sent status to print log"
 
 sleep 20
 
-scp -i ${replica1_cert}  ${replica1}:${remote_log_path}0.txt ${output_path}0.txt
-scp -i ${replica2_cert}  ${replica2}:${remote_log_path}1.txt ${output_path}1.txt
-scp -i ${replica3_cert}  ${replica3}:${remote_log_path}2.txt ${output_path}2.txt
-scp -i ${replica4_cert}  ${replica4}:${remote_log_path}3.txt ${output_path}3.txt
-scp -i ${replica5_cert}  ${replica5}:${remote_log_path}4.txt ${output_path}4.txt
+#scp -i ${replica1_cert}  ${replica1}:${remote_log_path}0.txt ${output_path}0.txt
+#scp -i ${replica2_cert}  ${replica2}:${remote_log_path}1.txt ${output_path}1.txt
+#scp -i ${replica3_cert}  ${replica3}:${remote_log_path}2.txt ${output_path}2.txt
+#scp -i ${replica4_cert}  ${replica4}:${remote_log_path}3.txt ${output_path}3.txt
+#scp -i ${replica5_cert}  ${replica5}:${remote_log_path}4.txt ${output_path}4.txt
+#
+#
+#scp -i ${client1_cert}   ${client1}:${remote_log_path}5.txt ${output_path}5.txt
+#scp -i ${client2_cert}   ${client2}:${remote_log_path}6.txt ${output_path}6.txt
+#scp -i ${client3_cert}   ${client3}:${remote_log_path}7.txt ${output_path}7.txt
+#scp -i ${client4_cert}   ${client4}:${remote_log_path}8.txt ${output_path}8.txt
+#scp -i ${client5_cert}   ${client5}:${remote_log_path}9.txt ${output_path}9.txt
 
+#echo "Copied all the files to local machine"
 
-scp -i ${client1_cert}   ${client1}:${remote_log_path}5.txt ${output_path}5.txt
-scp -i ${client2_cert}   ${client2}:${remote_log_path}6.txt ${output_path}6.txt
-scp -i ${client3_cert}   ${client3}:${remote_log_path}7.txt ${output_path}7.txt
-scp -i ${client4_cert}   ${client4}:${remote_log_path}8.txt ${output_path}8.txt
-scp -i ${client5_cert}   ${client5}:${remote_log_path}9.txt ${output_path}9.txt
+#sleep 5
 
-echo "Copied all the files to local machine"
-
-sleep 5
-
-python3 /home/oem/GolandProjects/raxos/experiments/python/overlay-test.py ${output_path}0.txt ${output_path}1.txt ${output_path}2.txt ${output_path}3.txt ${output_path}4.txt >${output_path}pythonreport.log
+#python3 /home/oem/GolandProjects/raxos/experiments/python/overlay-test.py ${output_path}0.txt ${output_path}1.txt ${output_path}2.txt ${output_path}3.txt ${output_path}4.txt >${output_path}pythonreport.log
 
 dst_directory="/home/oem/Desktop/Test/${arrivalRate}/"
 mkdir -p "${dst_directory}"

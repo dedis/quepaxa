@@ -42,10 +42,10 @@ client5_cert="/home/oem/Pictures/pasindu_rsa"
 
 mkdir /home/oem/GolandProjects/raxos/logs/raxos
 
+cp -r /home/oem/GolandProjects/raxos/logs/          /home/oem/GolandProjects/raxos/logs/raxos/
 cp -r /home/oem/GolandProjects/raxos/client/        /home/oem/GolandProjects/raxos/logs/raxos/
 cp -r /home/oem/GolandProjects/raxos/configuration/ /home/oem/GolandProjects/raxos/logs/raxos/
 cp -r /home/oem/GolandProjects/raxos/experiments/   /home/oem/GolandProjects/raxos/logs/raxos/
-cp -r /home/oem/GolandProjects/raxos/logs/          /home/oem/GolandProjects/raxos/logs/raxos/
 cp -r /home/oem/GolandProjects/raxos/replica/       /home/oem/GolandProjects/raxos/logs/raxos/
 
 zip -r /home/oem/GolandProjects/raxos/logs/raxos/raxos.zip /home/oem/GolandProjects/raxos/logs/raxos/
