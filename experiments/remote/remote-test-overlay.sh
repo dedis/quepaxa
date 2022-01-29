@@ -124,8 +124,8 @@ sleep 10
 sshpass ssh -i ${client1_cert}  ${client1} ".${remote_ctl_path} --name 5 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType status --operationType 2" >${output_path}status2.log
 echo "Sent status to print log"
 
-sleep 20
-
+#sleep 50
+#
 #scp -i ${replica1_cert}  ${replica1}:${remote_log_path}0.txt ${output_path}0.txt
 #scp -i ${replica2_cert}  ${replica2}:${remote_log_path}1.txt ${output_path}1.txt
 #scp -i ${replica3_cert}  ${replica3}:${remote_log_path}2.txt ${output_path}2.txt
@@ -138,11 +138,11 @@ sleep 20
 #scp -i ${client3_cert}   ${client3}:${remote_log_path}7.txt ${output_path}7.txt
 #scp -i ${client4_cert}   ${client4}:${remote_log_path}8.txt ${output_path}8.txt
 #scp -i ${client5_cert}   ${client5}:${remote_log_path}9.txt ${output_path}9.txt
-
+#
 #echo "Copied all the files to local machine"
 
 #sleep 5
-
+#
 #python3 /home/oem/GolandProjects/raxos/experiments/python/overlay-test.py ${output_path}0.txt ${output_path}1.txt ${output_path}2.txt ${output_path}3.txt ${output_path}4.txt >${output_path}pythonreport.log
 
 dst_directory="/home/oem/Desktop/Test/${arrivalRate}/"
