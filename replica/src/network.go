@@ -185,6 +185,12 @@ func (in *Instance) Run() {
 				in.handleMessageBlockAck(messageBlockAck)
 				break
 
+			case in.consensusRequestRpc:
+				consensusRequest := replicaMessage.Obj.(*proto.ConsensusRequest)
+				in.debug("Consensus Request hash  " + fmt.Sprintf("%#v", consensusRequest.Hash))
+				in.handleConsensusRequest(consensusRequest)
+				break
+
 			}
 			//in.lock.Unlock()
 		}

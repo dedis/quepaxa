@@ -154,15 +154,26 @@ func (in *Instance) sendMessageBlockRequest(hash string) {
 }
 
 /*
+	Decision message is applicable to both proposer and the recoder
+	Upon receiving a decision message, both proposer log and the consensus log should be updated
+*/
+
+func (in *Instance) handleDecision(consensus *proto.GenericConsensus) {
+	//todo
+}
+
+/*
 	handler for generic consensus messages, corresponding method is called depending on the destination. Note that a replica acts as both a recorder and proposer
 */
 
 func (in *Instance) handleGenericConsensus(consensus *proto.GenericConsensus) {
-	// 1 for the proposer and 2 for the recorder
+	// 1 for the proposer and 2 for the recorder and 3 for both
 	if consensus.Destination == 1 {
 		in.handleProposerConsensusMessage(consensus)
 	} else if consensus.Destination == 2 {
 		in.handleRecorderConsensusMessage(consensus)
+	} else if consensus.Destination == 3 {
+		in.handleDecision(consensus)
 	}
 
 }
@@ -175,9 +186,8 @@ func (in *Instance) handleClientStatusRequest(request *proto.ClientStatusRequest
 	if request.Operation == 1 {
 		in.startServer()
 	} else if request.Operation == 2 {
-		//in.printLog() //todo uncomment this once the consensus layer is creater
-		// todo remove the message store printing, its only for testing purposes
-		in.messageStore.printStore(in.logFilePath, in.nodeName)
+		in.printLog()
+		//in.messageStore.printStore(in.logFilePath, in.nodeName)
 	}
 
 	/*send a status response back to the client*/
@@ -255,9 +265,7 @@ func (in *Instance) handleMessageBlockAck(ack *proto.MessageBlockAck) {
 	if acks != nil && int64(len(acks)) == in.numReplicas/2+1 {
 		in.debug("-----Received majority block acks for ---" + ack.Hash)
 		// note that this block is guaranteed to be present in f+1 replicas, so its persistent
-		// todo remove the following invocation is only for testing purposes of the overlay
-		in.sendSampleClientResponse(ack)
-		// todo invoke to send to leader
+		//in.sendSampleClientResponse(ack) //  this is only to test the overlay
 		in.sendConsensusRequest(ack.Hash)
 	}
 }
@@ -292,7 +300,7 @@ func (in *Instance) printLog() {
 	}
 	defer f.Close()
 	choiceNum := 0
-	for _, entry := range in.replicatedLog {
+	for _, entry := range in.proposerReplicatedLog {
 		// a single entry contains a 2D sequence of commands
 		if entry.committed {
 			// if an entry is committed, then it should contain the block in the message store

@@ -51,9 +51,11 @@ type Instance struct {
 	clientStatusRequestRpc  uint8
 	clientStatusResponseRpc uint8
 	messageBlockAckRpc      uint8
+	consensusRequestRpc     uint8
 
-	replicatedLog []Slot         // the replicated log
-	stateMachine  *benchmark.App // the application
+	recorderReplicatedLog []Slot         // the replicated log of the recorder
+	proposerReplicatedLog []Slot         // the replicated log of the proposer
+	stateMachine          *benchmark.App // the application
 
 	committedIndex int64 // last index for which a request was committed and the result was sent to client
 	proposedIndex  int64 // last index for which a request was proposed //todo think about the relationship between committed index and the proposed index
@@ -115,6 +117,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 		clientStatusRequestRpc:  6,
 		clientStatusResponseRpc: 7,
 		messageBlockAckRpc:      8,
+		consensusRequestRpc:     9,
 		//replicatedLog:           nil,
 		stateMachine:   benchmark.InitApp(benchmarkNumber, serviceTime, numKeys),
 		committedIndex: -1,
@@ -155,6 +158,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 	in.RegisterRPC(new(proto.ClientStatusRequest), in.clientStatusRequestRpc)
 	in.RegisterRPC(new(proto.ClientStatusResponse), in.clientStatusResponseRpc)
 	in.RegisterRPC(new(proto.MessageBlockAck), in.messageBlockAckRpc)
+	in.RegisterRPC(new(proto.ConsensusRequest), in.consensusRequestRpc)
 
 	pid := os.Getpid()
 	fmt.Printf("initialized Raxos with process id: %v \n", pid)

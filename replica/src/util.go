@@ -89,8 +89,8 @@ func (in *Instance) proposedPreviously(hash string) (bool, int) {
 
 func (in *Instance) committedPreviously(hash string) (bool, int) {
 	// checks if this value is previously decided
-	for i := 0; i < len(in.replicatedLog); i++ {
-		if in.replicatedLog[i].decision.id == hash {
+	for i := 0; i < len(in.proposerReplicatedLog); i++ {
+		if in.proposerReplicatedLog[i].decision.id == hash {
 			return true, i
 		}
 	}
@@ -101,7 +101,7 @@ func (in *Instance) committedPreviously(hash string) (bool, int) {
 	returns a fixed leader (strawman 1)
 */
 
-func (in *Instance) getDeterministicLeader1() int {
+func (in *Instance) getDeterministicLeader1() int64 {
 	return 0 // node 0 is the default leader
 }
 

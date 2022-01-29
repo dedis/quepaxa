@@ -13,7 +13,7 @@ for i in range(1, num_clients + 1):
 # best case
 records = [headers]
 
-for arrivalrate in [1000, 5000, 10000, 15000, 25000, 55000, 75000, 100000, 110000, 120000, 130000, 140000, 150000]:
+for arrivalrate in [1000, 5000, 10000, 15000, 25000, 55000, 75000, 100000, 110000, 120000]:
     newRecord = [str(arrivalrate)]
     throughputs = []
     latency = []
