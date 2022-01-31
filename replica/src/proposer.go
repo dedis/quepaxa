@@ -1,33 +1,239 @@
 package raxos
 
 import (
+	"math"
 	"raxos/proto"
 	"strconv"
+	"strings"
 )
 
 /*
-	This is a message from the recorder to the proposer
+	Proposer: This is a message from the recorder to the proposer
 */
 
-func (in *Instance) handleProposerConsensusMessage(consensus *proto.GenericConsensus) {
-	//todo implementation
+func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.GenericConsensus) {
+
+	// case 1: a decide message from a recorder
+
+	if consensusMessage.M == in.decideMessage && in.proposerReplicatedLog[consensusMessage.Index].decided == false {
+		in.recordProposerDecide(consensusMessage)
+		return
+	}
+
+	// case 2: a propose reply message from a recorder
+
+	if consensusMessage.M == in.proposeMessage && in.proposerReplicatedLog[consensusMessage.Index].S == consensusMessage.S {
+		in.proposerReplicatedLog[consensusMessage.Index].E = append(in.proposerReplicatedLog[consensusMessage.Index].E, Value{
+			id:  consensusMessage.P.Id,
+			fit: consensusMessage.P.Fit,
+		})
+
+		// case 2.1: on receiving qaurum of replies
+		if int64(len(in.proposerReplicatedLog[consensusMessage.Index].E)) >= in.numReplicas/2+1 {
+
+			majorityValue := in.getProposalWithMajorityHi(in.proposerReplicatedLog[consensusMessage.Index].E)
+
+			// case 2.1.1 a majority of the proposals responses have Hi and I am not decided yet
+			if majorityValue.id != "" && majorityValue.fit != "" && in.proposerReplicatedLog[consensusMessage.Index].decided == false {
+				in.proposerReceivedMajorityProposeWithHi(consensusMessage, majorityValue)
+				return
+			}
+
+			// case 2.1.2 no proposal with majority Hi
+			if majorityValue.id == "" && majorityValue.fit == "" {
+				in.proposerReplicatedLog[consensusMessage.Index].S = in.proposerReplicatedLog[consensusMessage.Index].S + 1
+				in.proposerSendSpreadE(consensusMessage.Index)
+				return
+			}
+
+		}
+		return
+	}
+
 }
 
 /*
-	propose a new block for the slot index
+	Proposer: Upon receiving a quarum of propose responses, broadcast a spreadE message to all recorders
+*/
+
+func (in *Instance) proposerSendSpreadE(index int64) {
+	for i := int64(0); i < in.numReplicas; i++ {
+		consensusSpreadE := proto.GenericConsensus{
+			Sender:      in.nodeName,
+			Receiver:    i,
+			Index:       index,
+			M:           in.spreadEMessage,
+			S:           in.proposerReplicatedLog[index].S,
+			P:           nil,
+			E:           in.getGenericConsensusValueArray(in.proposerReplicatedLog[index].E),
+			C:           nil,
+			D:           false,
+			DS:          nil,
+			PR:          -1,
+			Destination: in.consensusMessageRecorderDestination,
+		}
+
+		rpcPair := RPCPair{
+			Code: in.genericConsensusRpc,
+			Obj:  &consensusSpreadE,
+		}
+		in.debug("sending a spreadE consensus message to " + strconv.Itoa(int(i)))
+
+		in.sendMessage(i, rpcPair)
+	}
+}
+
+/*
+	Proposer: Called when the proposer receives f+1 propose responses, and each reponse correspond to Hi priority for the same value
+*/
+
+func (in *Instance) proposerReceivedMajorityProposeWithHi(consensusMessage *proto.GenericConsensus, majorityValue Value) {
+	in.proposerReplicatedLog[consensusMessage.Index].S = math.MaxInt64
+	in.proposerReplicatedLog[consensusMessage.Index].decided = true
+	in.proposerReplicatedLog[consensusMessage.Index].decision = Value{
+		id:  majorityValue.id,
+		fit: majorityValue.fit,
+	}
+	in.proposerReplicatedLog[consensusMessage.Index].proposer = in.getProposer(majorityValue)
+
+	// send a decide message
+
+	for i := int64(0); i < in.numReplicas; i++ {
+
+		consensusDecide := proto.GenericConsensus{
+			Sender:   in.nodeName,
+			Receiver: i,
+			Index:    consensusMessage.Index,
+			M:        in.decideMessage,
+			S:        in.proposerReplicatedLog[consensusMessage.Index].S,
+			P:        nil,
+			E:        nil,
+			C:        nil,
+			D:        true,
+			DS: &proto.GenericConsensusValue{
+				Id:  in.proposerReplicatedLog[consensusMessage.Index].decision.id,
+				Fit: in.proposerReplicatedLog[consensusMessage.Index].decision.fit,
+			},
+			PR:          in.proposerReplicatedLog[consensusMessage.Index].proposer,
+			Destination: in.consensusMessageCommonDestination,
+		}
+
+		rpcPair := RPCPair{
+			Code: in.genericConsensusRpc,
+			Obj:  &consensusDecide,
+		}
+		in.debug("sending a decide consensus message to " + strconv.Itoa(int(i)))
+
+		in.sendMessage(i, rpcPair)
+	}
+}
+
+/*
+	Proposer: Scan the E set and assign the number of times the Hi priority appears for each proposal
+*/
+
+func (in *Instance) getProposalWithMajorityHi(e []Value) Value {
+	var ValueCount map[string]int64 // maps each id to hi count
+	ValueCount = make(map[string]int64)
+	for i := 0; i < len(e); i++ {
+		if strings.HasPrefix(e[i].fit, strconv.FormatInt(in.Hi, 10)) {
+			_, ok := ValueCount[e[i].id]
+			if !ok {
+				ValueCount[e[i].id] = 1 // note that each proposal has a unique id
+			} else {
+				ValueCount[e[i].id] = ValueCount[e[i].id] + 1
+			}
+		}
+	}
+	// check whether there is a value who has f+1 Hi count
+
+	for key, element := range ValueCount {
+		if element >= in.numReplicas/2+1 {
+			for i := 0; i < len(e); i++ {
+				if e[i].id == key {
+					return e[i]
+				}
+			}
+		}
+	}
+
+	return Value{
+		id:  "",
+		fit: "",
+	} // there is no proposal with f+1 Hi
+
+}
+
+/*
+	Proposer: mark the slot as decided and inform the upper layer
+*/
+
+func (in *Instance) recordProposerDecide(consensusMessage *proto.GenericConsensus) {
+	in.proposerReplicatedLog[consensusMessage.Index].S = consensusMessage.S
+	in.proposerReplicatedLog[consensusMessage.Index].decided = true
+	in.proposerReplicatedLog[consensusMessage.Index].decision = Value{
+		id:  consensusMessage.DS.Id,
+		fit: consensusMessage.DS.Fit,
+	}
+	in.proposerReplicatedLog[consensusMessage.Index].proposer = consensusMessage.PR
+	in.delivered(consensusMessage.Index, consensusMessage.DS.Id, consensusMessage.PR)
+}
+
+/*
+	Proposer: propose a new block for the slot index
 */
 
 func (in *Instance) propose(index int64, hash string) {
-	// propose hash for the slot[index]
+	/*
+		We use pipelining, so its possible that the proposer proposes messages corresponding to different instances without receiving the decisions for the prior instances
+	*/
+	in.proposerReplicatedLog = in.initializeSlot(in.proposerReplicatedLog, index) // create the slot if not already created
+	in.proposerReplicatedLog[index].S = 1
+	in.proposerReplicatedLog[index].P = Value{
+		id:  hash,
+		fit: "",
+	}
+
+	// send the proposal message to all the recorders
+	// note that for each replica a different RPC pair should be generated
+
+	for i := int64(0); i < in.numReplicas; i++ {
+
+		consensusPropose := proto.GenericConsensus{
+			Sender:   in.nodeName,
+			Receiver: i,
+			Index:    index,
+			M:        in.proposeMessage,
+			S:        in.proposerReplicatedLog[index].S,
+			P: &proto.GenericConsensusValue{
+				Id:  in.proposerReplicatedLog[index].P.id,
+				Fit: in.proposerReplicatedLog[index].P.fit,
+			},
+			E:           nil,
+			C:           nil,
+			D:           false,
+			DS:          nil,
+			PR:          -1,
+			Destination: in.consensusMessageRecorderDestination,
+		}
+
+		rpcPair := RPCPair{
+			Code: in.genericConsensusRpc,
+			Obj:  &consensusPropose,
+		}
+		in.debug("sending a generic consensus propose message to " + strconv.Itoa(int(i)))
+
+		in.sendMessage(i, rpcPair)
+	}
 }
 
 /*
 	indication from the consensus layer that a value is decided
 */
 
-func (in *Instance) delivered(index int, hash string, proposer int64) {
+func (in *Instance) delivered(index int64, hash string, proposer int64) {
 	in.updateStateMachine()
-	if len(in.proposed) > index && in.proposed[index] != "" && in.proposed[index] != hash {
+	if int64(len(in.proposed)) > index && in.proposed[index] != "" && in.proposed[index] != hash {
 		/*I previously proposed for this index, but somebody else has won the consensus*/
 		in.proposed[index] = ""
 		in.updateProposedIndex(hash)
@@ -147,4 +353,18 @@ func (in *Instance) updateProposedIndex(hash string) {
 	}
 	in.proposed[in.proposedIndex] = hash
 	in.debug("Added " + hash + " to proposed array position " + strconv.Itoa(int(in.proposedIndex)))
+}
+
+/*
+	Proposer: Returns the proposer who proposed this value
+*/
+
+func (in *Instance) getProposer(value Value) int64 {
+	priority := value.fit
+	proposer, err := strconv.Atoi(strings.Split(priority, ".")[1])
+	if err == nil {
+		return int64(proposer)
+	} else {
+		return -1
+	}
 }

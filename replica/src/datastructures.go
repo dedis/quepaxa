@@ -6,7 +6,7 @@ package raxos
 
 type Value struct {
 	id  string // id of the MessageBlock
-	fit int
+	fit string
 }
 
 /*
@@ -14,8 +14,8 @@ type Value struct {
 	the definition of the sets is different from the implementation, but the only different is the naming of sets. The core logic is same
 */
 type Slot struct {
-	index     int
-	S         int   // step
+	index     int64
+	S         int64 // step
 	P         Value // proposed value
 	E         []Value
 	C         []Value
@@ -23,5 +23,5 @@ type Slot struct {
 	committed bool
 	decided   bool
 	decision  Value
-	proposer  int // id of the proposer who decided this index
+	proposer  int64 // id of the proposer who decided this index
 }

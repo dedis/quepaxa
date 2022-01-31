@@ -168,11 +168,11 @@ func (in *Instance) handleDecision(consensus *proto.GenericConsensus) {
 
 func (in *Instance) handleGenericConsensus(consensus *proto.GenericConsensus) {
 	// 1 for the proposer and 2 for the recorder and 3 for both
-	if consensus.Destination == 1 {
+	if consensus.Destination == in.consensusMessageProposerDestination {
 		in.handleProposerConsensusMessage(consensus)
-	} else if consensus.Destination == 2 {
+	} else if consensus.Destination == in.consensusMessageRecorderDestination {
 		in.handleRecorderConsensusMessage(consensus)
-	} else if consensus.Destination == 3 {
+	} else if consensus.Destination == in.consensusMessageCommonDestination {
 		in.handleDecision(consensus)
 	}
 
@@ -328,4 +328,27 @@ func (in *Instance) printLog() {
 		}
 		choiceNum++
 	}
+}
+
+/*
+	Common: Add slots upto index 'index'
+*/
+
+func (in *Instance) initializeSlot(log []Slot, index int64) []Slot {
+
+	for i := int64(len(log)); i < index+1; i++ {
+		log = append(log, Slot{
+			index:     i,
+			S:         0,
+			P:         Value{},
+			E:         []Value{},
+			C:         []Value{},
+			U:         []Value{},
+			committed: false,
+			decided:   false,
+			decision:  Value{},
+			proposer:  -1,
+		})
+	}
+	return log
 }

@@ -85,6 +85,19 @@ type Instance struct {
 
 	debugOn       bool // if turned on, the debug messages will be print on the console
 	serverStarted bool // true if the first status message with operation type 1 received
+
+	proposeMessage        int64
+	spreadEMessage        int64
+	spreadCgatherEMessage int64
+	gatherCMessage        int64
+	decideMessage         int64
+	commitMessage         int64
+
+	consensusMessageRecorderDestination int64
+	consensusMessageProposerDestination int64
+	consensusMessageCommonDestination   int64
+
+	Hi int64 // highest priority for the consensus proposals
 }
 
 /*
@@ -123,22 +136,32 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 		committedIndex: -1,
 		proposedIndex:  -1,
 		//proposed:                nil,
-		logFilePath:         logFilePath,
-		serviceTime:         serviceTime,
-		responseSize:        responseSize,
-		responseString:      getStringOfSizeN(int(responseSize)),
-		batchSize:           batchSize,
-		batchTime:           batchTime,
-		pipelineLength:      pipelineLength,
-		numInflightRequests: 0,
-		outgoingMessageChan: make(chan *OutgoingRPC, outgoingBufferSize),
-		requestsIn:          make(chan *proto.ClientRequestBatch, incomingRequestBufferSize),
-		messageStore:        MessageStore{},
-		blockCounter:        0,
-		leaderTimeout:       leaderTimeout,
-		lastSeenTime:        make([]time.Time, len(cfg.Peers)),
-		debugOn:             false,
-		serverStarted:       false,
+		logFilePath:                         logFilePath,
+		serviceTime:                         serviceTime,
+		responseSize:                        responseSize,
+		responseString:                      getStringOfSizeN(int(responseSize)),
+		batchSize:                           batchSize,
+		batchTime:                           batchTime,
+		pipelineLength:                      pipelineLength,
+		numInflightRequests:                 0,
+		outgoingMessageChan:                 make(chan *OutgoingRPC, outgoingBufferSize),
+		requestsIn:                          make(chan *proto.ClientRequestBatch, incomingRequestBufferSize),
+		messageStore:                        MessageStore{},
+		blockCounter:                        0,
+		leaderTimeout:                       leaderTimeout,
+		lastSeenTime:                        make([]time.Time, len(cfg.Peers)),
+		debugOn:                             false,
+		serverStarted:                       false,
+		proposeMessage:                      0,
+		spreadEMessage:                      1,
+		spreadCgatherEMessage:               2,
+		gatherCMessage:                      3,
+		decideMessage:                       4,
+		commitMessage:                       5,
+		consensusMessageRecorderDestination: 0,
+		consensusMessageProposerDestination: 1,
+		consensusMessageCommonDestination:   2,
+		Hi:                                  100000,
 	}
 
 	for i := 0; i < len(cfg.Peers)+len(cfg.Clients); i++ {

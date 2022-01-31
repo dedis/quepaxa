@@ -128,3 +128,18 @@ func GetReplicaAddressList(cfg *configuration.InstanceConfig) []string {
 	}
 	return replicas
 }
+
+/*
+	Util: Convert data structure value array to proto generic consensus value array
+*/
+
+func (in *Instance) getGenericConsensusValueArray(e []Value) []*proto.GenericConsensusValue {
+	var returnArray []*proto.GenericConsensusValue
+	for i := 0; i < len(e); i++ {
+		returnArray = append(returnArray, &proto.GenericConsensusValue{
+			Id:  e[i].id,
+			Fit: e[i].fit,
+		})
+	}
+	return returnArray
+}

@@ -11,12 +11,12 @@ message GenericConsensus {
   int64 receiver = 2;
 
   int64 index = 3;
-  int64 M = 4;  // propose=1 , spreadE=2 , spreadC=3, gather=4, decide=5, commit=6
+  int64 M = 4;  // propose=1 , spreadE=2 , spreadCgatherE=3, gatherC=4, decide=5, commit=6
   int64 S = 5;  // step
 
   message value {
     string id = 1;
-    int64 fit = 2;
+    string fit = 2;
   }
 
   value P = 6;
