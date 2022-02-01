@@ -149,16 +149,16 @@ func (in *Instance) Run() {
 			code := replicaMessage.Code
 			switch code {
 
-			case in.clientRequestBatchRpc:
-				clientRequestBatch := replicaMessage.Obj.(*proto.ClientRequestBatch)
-				in.debug("Client request batch with id " + fmt.Sprintf("%#v", clientRequestBatch.Id))
-				in.handleClientRequestBatch(clientRequestBatch)
-				break
-
 			case in.genericConsensusRpc:
 				genericConsensus := replicaMessage.Obj.(*proto.GenericConsensus)
 				in.debug("Generic Consensus  " + fmt.Sprintf("%#v", genericConsensus))
 				in.handleGenericConsensus(genericConsensus)
+				break
+
+			case in.consensusRequestRpc:
+				consensusRequest := replicaMessage.Obj.(*proto.ConsensusRequest)
+				in.debug("Consensus Request hash  " + fmt.Sprintf("%#v", consensusRequest.Hash))
+				in.handleConsensusRequest(consensusRequest)
 				break
 
 			case in.messageBlockRpc:
@@ -173,22 +173,22 @@ func (in *Instance) Run() {
 				in.handleMessageBlockRequest(messageBlockRequest)
 				break
 
-			case in.clientStatusRequestRpc:
-				clientStatusRequest := replicaMessage.Obj.(*proto.ClientStatusRequest)
-				in.debug("Client Status Request from" + fmt.Sprintf("%#v", clientStatusRequest.Sender))
-				in.handleClientStatusRequest(clientStatusRequest)
-				break
-
 			case in.messageBlockAckRpc:
 				messageBlockAck := replicaMessage.Obj.(*proto.MessageBlockAck)
 				in.debug("Message Block Ack " + fmt.Sprintf("%#v", messageBlockAck.Hash))
 				in.handleMessageBlockAck(messageBlockAck)
 				break
 
-			case in.consensusRequestRpc:
-				consensusRequest := replicaMessage.Obj.(*proto.ConsensusRequest)
-				in.debug("Consensus Request hash  " + fmt.Sprintf("%#v", consensusRequest.Hash))
-				in.handleConsensusRequest(consensusRequest)
+			case in.clientRequestBatchRpc:
+				clientRequestBatch := replicaMessage.Obj.(*proto.ClientRequestBatch)
+				in.debug("Client request batch with id " + fmt.Sprintf("%#v", clientRequestBatch.Id))
+				in.handleClientRequestBatch(clientRequestBatch)
+				break
+
+			case in.clientStatusRequestRpc:
+				clientStatusRequest := replicaMessage.Obj.(*proto.ClientStatusRequest)
+				in.debug("Client Status Request from" + fmt.Sprintf("%#v", clientStatusRequest.Sender))
+				in.handleClientStatusRequest(clientStatusRequest)
 				break
 
 			}

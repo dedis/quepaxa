@@ -143,3 +143,18 @@ func (in *Instance) getGenericConsensusValueArray(e []Value) []*proto.GenericCon
 	}
 	return returnArray
 }
+
+/*
+	Util: Convert generic consensus value array to []value
+*/
+
+func (in *Instance) proposerConvertToValueArray(c []*proto.GenericConsensusValue) []Value {
+	returnArray := make([]Value, 0)
+	for i := 0; i < len(c); i++ {
+		returnArray = append(returnArray, Value{
+			id:  c[i].Id,
+			fit: c[i].Fit,
+		})
+	}
+	return returnArray
+}

@@ -1,5 +1,7 @@
 package raxos
 
+import "raxos/proto"
+
 /*
 	Value associates the id of message block with a priority assigned by the recorders
 */
@@ -24,4 +26,9 @@ type Slot struct {
 	decided   bool
 	decision  Value
 	proposer  int64 // id of the proposer who decided this index
+
+	proposeResponses        []*proto.GenericConsensus
+	spreadEResponses        []*proto.GenericConsensus
+	spreadCGatherEResponses []*proto.GenericConsensus
+	gatherCResponses        []*proto.GenericConsensus
 }
