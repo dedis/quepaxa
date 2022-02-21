@@ -134,27 +134,46 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 
 	}
 
-	// case 5: a catch-up message //todo
+	// case 5: a catch-up message
 	if consensusMessage.S > in.proposerReplicatedLog[consensusMessage.Index].S {
-		in.proposerReplicatedLog[consensusMessage.Index].S = consensusMessage.S
-		in.proposerReplicatedLog[consensusMessage.Index].P = Value{
-			id:  consensusMessage.P.Id,
-			fit: consensusMessage.P.Fit,
-		}
-		in.proposerReplicatedLog[consensusMessage.Index].E = []Value{}
-		in.proposerReplicatedLog[consensusMessage.Index].C = []Value{}
-		in.proposerReplicatedLog[consensusMessage.Index].U = []Value{}
+		in.consensusCatchUp(consensusMessage)
+	}
+}
 
-		in.proposerReplicatedLog[consensusMessage.Index].proposeResponses = []*proto.GenericConsensus{}
-		in.proposerReplicatedLog[consensusMessage.Index].spreadEResponses = []*proto.GenericConsensus{}
-		in.proposerReplicatedLog[consensusMessage.Index].spreadCGatherEResponses = []*proto.GenericConsensus{}
-		in.proposerReplicatedLog[consensusMessage.Index].gatherCResponses = []*proto.GenericConsensus{}
+/*
+	Proposer: catch-up when received a message with a higher time stamp from the recorder
+*/
 
-		in.proposerReplicatedLog[consensusMessage.Index].E = in.proposerConvertToValueArray(consensusMessage.E)
-		in.proposerReplicatedLog[consensusMessage.Index].C = in.proposerConvertToValueArray(consensusMessage.C)
+func (in *Instance) consensusCatchUp(consensusMessage *proto.GenericConsensus) {
+	in.proposerReplicatedLog[consensusMessage.Index].S = consensusMessage.S
+	in.proposerReplicatedLog[consensusMessage.Index].P = Value{
+		id:  consensusMessage.P.Id,
+		fit: consensusMessage.P.Fit,
+	}
+	in.proposerReplicatedLog[consensusMessage.Index].E = []Value{}
+	in.proposerReplicatedLog[consensusMessage.Index].C = []Value{}
+	in.proposerReplicatedLog[consensusMessage.Index].U = []Value{}
 
-		// todo think about catch up logic
+	in.proposerReplicatedLog[consensusMessage.Index].proposeResponses = []*proto.GenericConsensus{}
+	in.proposerReplicatedLog[consensusMessage.Index].spreadEResponses = []*proto.GenericConsensus{}
+	in.proposerReplicatedLog[consensusMessage.Index].spreadCGatherEResponses = []*proto.GenericConsensus{}
+	in.proposerReplicatedLog[consensusMessage.Index].gatherCResponses = []*proto.GenericConsensus{}
 
+	in.proposerReplicatedLog[consensusMessage.Index].E = in.proposerConvertToValueArray(consensusMessage.E)
+	in.proposerReplicatedLog[consensusMessage.Index].C = in.proposerConvertToValueArray(consensusMessage.C)
+
+	if consensusMessage.S%4 == 1 {
+		//send a propose message
+		in.proposerSendPropose(consensusMessage.Index)
+	} else if consensusMessage.S%4 == 2 {
+		//send a spreadE message
+		in.proposerSendSpreadE(consensusMessage.Index)
+	} else if consensusMessage.S%4 == 3 {
+		//send a spreadCGatherE message
+		in.proposerSendSpreadCGatherE(consensusMessage.Index)
+	} else if consensusMessage.S%4 == 0 {
+		//send a gatherC message
+		in.proposerSendGatherC(consensusMessage.Index)
 	}
 
 }
