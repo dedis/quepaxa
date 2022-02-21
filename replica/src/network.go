@@ -157,7 +157,7 @@ func (in *Instance) Run() {
 
 			case in.consensusRequestRpc:
 				consensusRequest := replicaMessage.Obj.(*proto.ConsensusRequest)
-				in.debug("Consensus Request hash  " + fmt.Sprintf("%#v", consensusRequest.Hash),0)
+				in.debug("Consensus Request hash  " + fmt.Sprintf("%#v", consensusRequest.Hash),1)
 				in.handleConsensusRequest(consensusRequest)
 				break
 

@@ -13,12 +13,7 @@ import (
 
 func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.GenericConsensus) {
 
-	// case 1: a decide message from a recorder
-
-	if consensusMessage.M == in.decideMessage && in.proposerReplicatedLog[consensusMessage.Index].decided == false {
-		in.recordProposerDecide(consensusMessage)
-		return
-	}
+	// case 1: a decide message from a recorder. This is not handled here, but in the common.go since it is common to both the proposer and the recorder
 
 	// case 2: a propose reply message from a recorder
 
@@ -203,7 +198,7 @@ func (in *Instance) proposerSendSpreadE(index int64) {
 			Code: in.genericConsensusRpc,
 			Obj:  &consensusSpreadE,
 		}
-		in.debug("sending a spreadE consensus message to " + strconv.Itoa(int(i)),1)
+		in.debug("sending a spreadE consensus message to "+strconv.Itoa(int(i)), 1)
 
 		in.sendMessage(i, rpcPair)
 	}
@@ -248,7 +243,7 @@ func (in *Instance) proposerReceivedMajorityProposeWithHi(consensusMessage *prot
 			Code: in.genericConsensusRpc,
 			Obj:  &consensusDecide,
 		}
-		in.debug("sending a decide consensus message to " + strconv.Itoa(int(i)),1)
+		in.debug("sending a decide consensus message to "+strconv.Itoa(int(i)), 1)
 
 		in.sendMessage(i, rpcPair)
 	}
@@ -324,36 +319,7 @@ func (in *Instance) propose(index int64, hash string) {
 	}
 
 	// send the proposal message to all the recorders
-	// note that for each replica a different RPC pair should be generated
-
-	for i := int64(0); i < in.numReplicas; i++ {
-
-		consensusPropose := proto.GenericConsensus{
-			Sender:   in.nodeName,
-			Receiver: i,
-			Index:    index,
-			M:        in.proposeMessage,
-			S:        in.proposerReplicatedLog[index].S,
-			P: &proto.GenericConsensusValue{
-				Id:  in.proposerReplicatedLog[index].P.id,
-				Fit: in.proposerReplicatedLog[index].P.fit,
-			},
-			E:           nil,
-			C:           nil,
-			D:           false,
-			DS:          nil,
-			PR:          -1,
-			Destination: in.consensusMessageRecorderDestination,
-		}
-
-		rpcPair := RPCPair{
-			Code: in.genericConsensusRpc,
-			Obj:  &consensusPropose,
-		}
-		in.debug("sending a generic consensus propose message to " + strconv.Itoa(int(i)),1)
-
-		in.sendMessage(i, rpcPair)
-	}
+	in.proposerSendPropose(index)
 }
 
 /*
@@ -367,7 +333,7 @@ func (in *Instance) delivered(index int64, hash string, proposer int64) {
 		in.proposed[index] = ""
 		in.updateProposedIndex(hash)
 		in.propose(in.proposedIndex, hash)
-		in.debug("Re proposed because the decided value is not the one I proposed earlier ",1)
+		in.debug("Re proposed because the decided value is not the one I proposed earlier ", 1)
 	}
 }
 
@@ -391,8 +357,9 @@ func (in *Instance) updateStateMachine() {
 		}
 
 		in.proposerReplicatedLog[in.committedIndex+1].committed = true
-		in.debug("Committed " + strconv.Itoa(int(in.committedIndex+1)),1)
+		in.debug("Committed "+strconv.Itoa(int(in.committedIndex+1)), 1)
 		in.committedIndex++
+		in.numInflightRequests--
 		in.executeAndSendResponse(messageBlock)
 	}
 }
@@ -426,18 +393,18 @@ func (in *Instance) executeAndSendResponse(block *proto.MessageBlock) {
 			}
 
 			in.sendMessage(clientRequestBatch.Sender, rpcPair)
-			in.debug("Sent client response batch to " + strconv.Itoa(int(clientRequestBatch.Sender)),1)
+			in.debug("Sent client response batch to "+strconv.Itoa(int(clientRequestBatch.Sender)), 1)
 		}
 
 	}
 }
 
 /*
-	Send a consensus request to the leader / set of leaders. Upon receiving this, the leader node will eventually propose a value for a slot, for this hash
+	Proposer: Send a consensus request to the leader / set of leaders. Upon receiving this, the leader node will eventually propose a value for a slot, for this hash
 */
 
 func (in *Instance) sendConsensusRequest(hash string) {
-	leader := in.getDeterministicLeader1()
+	leader := in.getDeterministicLeader1() //todo change this when adding the improvements
 	consensusRequest := proto.ConsensusRequest{
 		Sender:   in.nodeName,
 		Receiver: leader,
@@ -447,26 +414,28 @@ func (in *Instance) sendConsensusRequest(hash string) {
 		Code: in.consensusRequestRpc,
 		Obj:  &consensusRequest,
 	}
-	in.debug("sending a consensus request to " + strconv.Itoa(int(leader)),1)
+	in.debug("sending a consensus request to "+strconv.Itoa(int(leader))+" for the hash "+hash, 1)
 
 	in.sendMessage(leader, rpcPair)
 }
 
 /*
-	Upon receiving a consensus request, the leader node will propose it to the consensus layer
+	Proposer: Upon receiving a consensus request, the leader node will propose it to the consensus layer
 */
 
 func (in *Instance) handleConsensusRequest(request *proto.ConsensusRequest) {
-	// todo check pipeline length
 	if in.nodeName == in.getDeterministicLeader1() {
-		in.updateProposedIndex(request.Hash)
-		in.propose(in.proposedIndex, request.Hash)
-		in.debug("Proposed " + request.Hash + " to " + strconv.Itoa(int(in.proposedIndex)),1)
+		if in.numInflightRequests <= in.pipelineLength {
+			in.updateProposedIndex(request.Hash)
+			in.propose(in.proposedIndex, request.Hash)
+			in.numInflightRequests++
+			in.debug("Proposed "+request.Hash+" to "+strconv.Itoa(int(in.proposedIndex)), 1)
+		}
 	}
 }
 
 /*
-	Set proposed index = max(proposed_index, committed index)+1
+	Proposer: Set proposed index = max(proposed_index, committed index)+1
 	add "" entries upto proposed index
     set proposed[index]=hash
 */
@@ -481,7 +450,7 @@ func (in *Instance) updateProposedIndex(hash string) {
 		in.proposed = append(in.proposed, "")
 	}
 	in.proposed[in.proposedIndex] = hash
-	in.debug("Added " + hash + " to proposed array position " + strconv.Itoa(int(in.proposedIndex)),1)
+	in.debug("Added "+hash+" to proposed array position "+strconv.Itoa(int(in.proposedIndex)), 1)
 }
 
 /*
@@ -596,7 +565,7 @@ func (in *Instance) proposerSendSpreadCGatherE(index int64) {
 			Code: in.genericConsensusRpc,
 			Obj:  &consensusSpreadCGatherE,
 		}
-		in.debug("sending a spreadCGatherE consensus message to " + strconv.Itoa(int(i)),1)
+		in.debug("sending a spreadCGatherE consensus message to "+strconv.Itoa(int(i)), 1)
 
 		in.sendMessage(i, rpcPair)
 	}
@@ -679,7 +648,7 @@ func (in *Instance) proposerSendGatherC(index int64) {
 			Code: in.genericConsensusRpc,
 			Obj:  &consensusGatherC,
 		}
-		in.debug("sending a gatherC consensus message to " + strconv.Itoa(int(i)),1)
+		in.debug("sending a gatherC consensus message to "+strconv.Itoa(int(i)), 1)
 
 		in.sendMessage(i, rpcPair)
 	}
@@ -714,7 +683,7 @@ func (in *Instance) proposerSendPropose(index int64) {
 			Code: in.genericConsensusRpc,
 			Obj:  &consensusPropose,
 		}
-		in.debug("sending a consensus propose message to " + strconv.Itoa(int(i)),1)
+		in.debug("sending a consensus propose message to "+strconv.Itoa(int(i)), 1)
 
 		in.sendMessage(i, rpcPair)
 	}

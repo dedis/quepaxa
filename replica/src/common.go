@@ -32,7 +32,7 @@ func (in *Instance) BroadcastBlock() {
 				numRequests++
 			}
 
-			in.debug("Sent " + strconv.Itoa(int(in.nodeName)) + "." + strconv.Itoa(int(in.blockCounter)) + " batch size " + strconv.Itoa(len(requests)), 0)
+			in.debug("Sent "+strconv.Itoa(int(in.nodeName))+"."+strconv.Itoa(int(in.blockCounter))+" batch size "+strconv.Itoa(len(requests)), 0)
 			in.blockCounter++
 
 			messageBlock := proto.MessageBlock{
@@ -100,7 +100,7 @@ func (in *Instance) handleClientResponseBatch(batch *proto.ClientResponseBatch) 
 func (in *Instance) handleMessageBlock(block *proto.MessageBlock) {
 	// add this block to the MessageStore
 	in.messageStore.Add(block)
-	in.debug("Added a message block from " + strconv.Itoa(int(block.Sender)), 0)
+	in.debug("Added a message block from "+strconv.Itoa(int(block.Sender)), 0)
 	messageBlockAck := proto.MessageBlockAck{
 		Sender:   in.nodeName,
 		Receiver: block.Sender,
@@ -113,7 +113,7 @@ func (in *Instance) handleMessageBlock(block *proto.MessageBlock) {
 	}
 
 	in.sendMessage(block.Sender, rpcPair)
-	in.debug("Send block ack to " + strconv.Itoa(int(block.Sender)),0)
+	in.debug("Send block ack to "+strconv.Itoa(int(block.Sender)), 0)
 }
 
 /*
@@ -124,7 +124,7 @@ func (in *Instance) handleMessageBlockRequest(request *proto.MessageBlockRequest
 	messageBlock, ok := in.messageStore.Get(request.Hash)
 	if ok {
 		// the block exists
-		in.debug("Sending the requested block to " + strconv.Itoa(int(request.Sender)),0)
+		in.debug("Sending the requested block to "+strconv.Itoa(int(request.Sender)), 0)
 		messageBlock.Receiver = request.Sender
 		rpcPair := RPCPair{
 			Code: in.messageBlockRpc,
@@ -147,19 +147,24 @@ func (in *Instance) sendMessageBlockRequest(hash string) {
 		Code: in.messageBlockRequestRpc,
 		Obj:  &messageBlockRequest,
 	}
-	in.debug("sending a message block request to " + strconv.Itoa(int(randomPeer)),0)
+	in.debug("sending a message block request to "+strconv.Itoa(int(randomPeer)), 0)
 
 	in.sendMessage(int64(randomPeer), rpcPair)
 
 }
 
 /*
-	Decision message is applicable to both proposer and the recoder
+	Decision message is applicable to both proposer and the recorder
 	Upon receiving a decision message, both proposer log and the consensus log should be updated
 */
 
-func (in *Instance) handleDecision(consensus *proto.GenericConsensus) {
-	//todo
+func (in *Instance) handleDecision(consensusMessage *proto.GenericConsensus) {
+	if consensusMessage.M == in.decideMessage && in.proposerReplicatedLog[consensusMessage.Index].decided == false {
+		in.recordProposerDecide(consensusMessage)
+	}
+	if in.recorderReplicatedLog[consensusMessage.Index].decided == false && consensusMessage.M == in.decideMessage && consensusMessage.D == true {
+		in.recordRecorderDecide(consensusMessage)
+	}
 }
 
 /*
@@ -203,7 +208,7 @@ func (in *Instance) handleClientStatusRequest(request *proto.ClientStatusRequest
 	}
 
 	in.sendMessage(request.Sender, rpcPair)
-	in.debug("Sent status response",0)
+	in.debug("Sent status response", 0)
 
 }
 
@@ -248,7 +253,7 @@ func (in *Instance) sendSampleClientResponse(ack *proto.MessageBlockAck) {
 		}
 
 		in.sendMessage(clientRequestBatch.Sender, rpcPair)
-		in.debug("Sent client response batch to " + strconv.Itoa(int(clientRequestBatch.Sender)),0)
+		in.debug("Sent client response batch to "+strconv.Itoa(int(clientRequestBatch.Sender)), 0)
 
 	}
 }
@@ -263,7 +268,7 @@ func (in *Instance) handleMessageBlockAck(ack *proto.MessageBlockAck) {
 	in.messageStore.addAck(ack.Hash)
 	acks := in.messageStore.getAcks(ack.Hash)
 	if acks != nil && int64(len(acks)) == in.numReplicas/2+1 {
-		in.debug("-----Received majority block acks for ---" + ack.Hash,0)
+		in.debug("-----Received majority block acks for ---"+ack.Hash, 0)
 		// note that this block is guaranteed to be present in f+1 replicas, so its persistent
 		//in.sendSampleClientResponse(ack) //  this is only to test the overlay
 		in.sendConsensusRequest(ack.Hash)

@@ -18,15 +18,12 @@ func (in *Instance) handleRecorderConsensusMessage(consensusMessage *proto.Gener
 
 	// case 1: if this entry has been previously decided, send the response back
 	if in.recorderReplicatedLog[consensusMessage.Index].decided == true && consensusMessage.M != in.decideMessage {
+		in.debug("Received a message from "+strconv.Itoa(int(consensusMessage.Sender))+" that is not a decide message, replying with a decision message", 1)
 		in.sendRecorderDecided(consensusMessage)
 		return
 	}
 
-	// case 2: if this is decide message, and if I have not previously decided on this slot, decide it
-	if in.recorderReplicatedLog[consensusMessage.Index].decided == false && consensusMessage.M == in.decideMessage && consensusMessage.D == true {
-		in.recordRecorderDecide(consensusMessage)
-		return
-	}
+	// case 2: if this is decide message, and if I have not previously decided on this slot, decide it. This case is already handled in the common.go
 
 	// case 3: other consensus messages from a higher step
 	if in.recorderReplicatedLog[consensusMessage.Index].S < consensusMessage.S {
@@ -77,7 +74,7 @@ func (in *Instance) handleRecorderConsensusMessage(consensusMessage *proto.Gener
 		Code: in.genericConsensusRpc,
 		Obj:  &consensusReply,
 	}
-	in.debug("sending a generic consensus message to " + strconv.Itoa(int(consensusMessage.Sender)),1)
+	in.debug("Recorder sending a generic consensus reply message to "+strconv.Itoa(int(consensusMessage.Sender)), 1)
 
 	in.sendMessage(consensusMessage.Sender, rpcPair)
 
@@ -94,10 +91,11 @@ func (in *Instance) handleRecorderSpreadCGatherEMessage(consensusMessage *proto.
 			fit: consensusMessage.C[i].Fit,
 		})
 	}
+	in.debug("Recorder processed a SpreadCGatherE message and updated the C set", 1)
 }
 
 /*
-	Recorder: handle a spreadC message
+	Recorder: handle a spreadE message
 */
 
 func (in *Instance) handleRecorderSpreadEMessage(consensusMessage *proto.GenericConsensus) {
@@ -107,6 +105,7 @@ func (in *Instance) handleRecorderSpreadEMessage(consensusMessage *proto.Generic
 			fit: consensusMessage.E[i].Fit,
 		})
 	}
+	in.debug("Recorder processed a spreadE message and added the E set to its E set", 1)
 }
 
 /*
@@ -122,10 +121,11 @@ func (in *Instance) handleRecorderProposeMessage(consensusMessage *proto.Generic
 	} else {
 		in.recorderReplicatedLog[consensusMessage.Index].P = Value{
 			id:  consensusMessage.P.Id,
-			fit: string(rune(rand.Intn(int(in.Hi-10)))) + "." + strconv.FormatInt(consensusMessage.Sender, 10),
+			fit: string(rand.Intn(int(in.Hi-10))) + "." + strconv.FormatInt(consensusMessage.Sender, 10),
 		}
 	}
 	in.recorderReplicatedLog[consensusMessage.Index].E = append(in.recorderReplicatedLog[consensusMessage.Index].E, in.recorderReplicatedLog[consensusMessage.Index].P)
+	in.debug("Recorder assigned the priority to the proposal and appended to E set", 1)
 }
 
 /*
@@ -169,7 +169,7 @@ func (in *Instance) sendRecorderDecided(consensusMessage *proto.GenericConsensus
 		Code: in.genericConsensusRpc,
 		Obj:  &consensusReply,
 	}
-	in.debug("sending a decide consensus message to " + strconv.Itoa(int(consensusMessage.Sender)),1)
+	in.debug("sending a decide consensus message to "+strconv.Itoa(int(consensusMessage.Sender)), 1)
 
 	in.sendMessage(consensusMessage.Sender, rpcPair)
 }

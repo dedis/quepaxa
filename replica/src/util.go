@@ -100,7 +100,7 @@ func (in *Instance) committedPreviously(hash string) (bool, int) {
 }
 
 /*
-	returns a fixed leader (strawman 1)
+	Util: returns a fixed leader (strawman 1)
 */
 
 func (in *Instance) getDeterministicLeader1() int64 {
