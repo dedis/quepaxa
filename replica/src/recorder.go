@@ -77,7 +77,7 @@ func (in *Instance) handleRecorderConsensusMessage(consensusMessage *proto.Gener
 		Code: in.genericConsensusRpc,
 		Obj:  &consensusReply,
 	}
-	in.debug("sending a generic consensus message to " + strconv.Itoa(int(consensusMessage.Sender)))
+	in.debug("sending a generic consensus message to " + strconv.Itoa(int(consensusMessage.Sender)),1)
 
 	in.sendMessage(consensusMessage.Sender, rpcPair)
 
@@ -169,7 +169,7 @@ func (in *Instance) sendRecorderDecided(consensusMessage *proto.GenericConsensus
 		Code: in.genericConsensusRpc,
 		Obj:  &consensusReply,
 	}
-	in.debug("sending a decide consensus message to " + strconv.Itoa(int(consensusMessage.Sender)))
+	in.debug("sending a decide consensus message to " + strconv.Itoa(int(consensusMessage.Sender)),1)
 
 	in.sendMessage(consensusMessage.Sender, rpcPair)
 }

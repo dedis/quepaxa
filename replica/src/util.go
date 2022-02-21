@@ -12,9 +12,11 @@ import (
 	If enabled, print the messages to stdout
 */
 
-func (in *Instance) debug(message string) {
+func (in *Instance) debug(message string, level int) {
 	if in.debugOn {
-		fmt.Printf("%s\n", message)
+		if in.debugLevel <= level {
+			fmt.Printf("%s\n", message)
+		}
 	}
 }
 

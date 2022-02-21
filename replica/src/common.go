@@ -32,7 +32,7 @@ func (in *Instance) BroadcastBlock() {
 				numRequests++
 			}
 
-			in.debug("Sent " + strconv.Itoa(int(in.nodeName)) + "." + strconv.Itoa(int(in.blockCounter)) + " batch size " + strconv.Itoa(len(requests)))
+			in.debug("Sent " + strconv.Itoa(int(in.nodeName)) + "." + strconv.Itoa(int(in.blockCounter)) + " batch size " + strconv.Itoa(len(requests)), 0)
 			in.blockCounter++
 
 			messageBlock := proto.MessageBlock{
@@ -76,11 +76,11 @@ func (in *Instance) handleClientRequestBatch(batch *proto.ClientRequestBatch) {
 	select {
 	case in.requestsIn <- batch:
 		// Success: the server side buffers are not full
-		in.debug("Successful pushing into server batching")
+		in.debug("Successful pushing into server batching", 0)
 	default:
 		//Unsuccessful
 		// if the buffer is full, then this request will be dropped (failed request)
-		in.debug("Unsuccessful pushing into server batching")
+		in.debug("Unsuccessful pushing into server batching", 0)
 	}
 
 }
@@ -100,7 +100,7 @@ func (in *Instance) handleClientResponseBatch(batch *proto.ClientResponseBatch) 
 func (in *Instance) handleMessageBlock(block *proto.MessageBlock) {
 	// add this block to the MessageStore
 	in.messageStore.Add(block)
-	in.debug("Added a message block from " + strconv.Itoa(int(block.Sender)))
+	in.debug("Added a message block from " + strconv.Itoa(int(block.Sender)), 0)
 	messageBlockAck := proto.MessageBlockAck{
 		Sender:   in.nodeName,
 		Receiver: block.Sender,
@@ -113,7 +113,7 @@ func (in *Instance) handleMessageBlock(block *proto.MessageBlock) {
 	}
 
 	in.sendMessage(block.Sender, rpcPair)
-	in.debug("Send block ack to " + strconv.Itoa(int(block.Sender)))
+	in.debug("Send block ack to " + strconv.Itoa(int(block.Sender)),0)
 }
 
 /*
@@ -124,7 +124,7 @@ func (in *Instance) handleMessageBlockRequest(request *proto.MessageBlockRequest
 	messageBlock, ok := in.messageStore.Get(request.Hash)
 	if ok {
 		// the block exists
-		in.debug("Sending the requested block to " + strconv.Itoa(int(request.Sender)))
+		in.debug("Sending the requested block to " + strconv.Itoa(int(request.Sender)),0)
 		messageBlock.Receiver = request.Sender
 		rpcPair := RPCPair{
 			Code: in.messageBlockRpc,
@@ -147,7 +147,7 @@ func (in *Instance) sendMessageBlockRequest(hash string) {
 		Code: in.messageBlockRequestRpc,
 		Obj:  &messageBlockRequest,
 	}
-	in.debug("sending a message block request to " + strconv.Itoa(int(randomPeer)))
+	in.debug("sending a message block request to " + strconv.Itoa(int(randomPeer)),0)
 
 	in.sendMessage(int64(randomPeer), rpcPair)
 
@@ -203,7 +203,7 @@ func (in *Instance) handleClientStatusRequest(request *proto.ClientStatusRequest
 	}
 
 	in.sendMessage(request.Sender, rpcPair)
-	in.debug("Sent status response")
+	in.debug("Sent status response",0)
 
 }
 
@@ -248,7 +248,7 @@ func (in *Instance) sendSampleClientResponse(ack *proto.MessageBlockAck) {
 		}
 
 		in.sendMessage(clientRequestBatch.Sender, rpcPair)
-		in.debug("Sent client response batch to " + strconv.Itoa(int(clientRequestBatch.Sender)))
+		in.debug("Sent client response batch to " + strconv.Itoa(int(clientRequestBatch.Sender)),0)
 
 	}
 }
@@ -263,7 +263,7 @@ func (in *Instance) handleMessageBlockAck(ack *proto.MessageBlockAck) {
 	in.messageStore.addAck(ack.Hash)
 	acks := in.messageStore.getAcks(ack.Hash)
 	if acks != nil && int64(len(acks)) == in.numReplicas/2+1 {
-		in.debug("-----Received majority block acks for ---" + ack.Hash)
+		in.debug("-----Received majority block acks for ---" + ack.Hash,0)
 		// note that this block is guaranteed to be present in f+1 replicas, so its persistent
 		//in.sendSampleClientResponse(ack) //  this is only to test the overlay
 		in.sendConsensusRequest(ack.Hash)

@@ -203,7 +203,7 @@ func (in *Instance) proposerSendSpreadE(index int64) {
 			Code: in.genericConsensusRpc,
 			Obj:  &consensusSpreadE,
 		}
-		in.debug("sending a spreadE consensus message to " + strconv.Itoa(int(i)))
+		in.debug("sending a spreadE consensus message to " + strconv.Itoa(int(i)),1)
 
 		in.sendMessage(i, rpcPair)
 	}
@@ -248,7 +248,7 @@ func (in *Instance) proposerReceivedMajorityProposeWithHi(consensusMessage *prot
 			Code: in.genericConsensusRpc,
 			Obj:  &consensusDecide,
 		}
-		in.debug("sending a decide consensus message to " + strconv.Itoa(int(i)))
+		in.debug("sending a decide consensus message to " + strconv.Itoa(int(i)),1)
 
 		in.sendMessage(i, rpcPair)
 	}
@@ -350,7 +350,7 @@ func (in *Instance) propose(index int64, hash string) {
 			Code: in.genericConsensusRpc,
 			Obj:  &consensusPropose,
 		}
-		in.debug("sending a generic consensus propose message to " + strconv.Itoa(int(i)))
+		in.debug("sending a generic consensus propose message to " + strconv.Itoa(int(i)),1)
 
 		in.sendMessage(i, rpcPair)
 	}
@@ -367,7 +367,7 @@ func (in *Instance) delivered(index int64, hash string, proposer int64) {
 		in.proposed[index] = ""
 		in.updateProposedIndex(hash)
 		in.propose(in.proposedIndex, hash)
-		in.debug("Re proposed because the decided value is not the one I proposed earlier ")
+		in.debug("Re proposed because the decided value is not the one I proposed earlier ",1)
 	}
 }
 
@@ -391,7 +391,7 @@ func (in *Instance) updateStateMachine() {
 		}
 
 		in.proposerReplicatedLog[in.committedIndex+1].committed = true
-		in.debug("Committed " + strconv.Itoa(int(in.committedIndex+1)))
+		in.debug("Committed " + strconv.Itoa(int(in.committedIndex+1)),1)
 		in.committedIndex++
 		in.executeAndSendResponse(messageBlock)
 	}
@@ -426,7 +426,7 @@ func (in *Instance) executeAndSendResponse(block *proto.MessageBlock) {
 			}
 
 			in.sendMessage(clientRequestBatch.Sender, rpcPair)
-			in.debug("Sent client response batch to " + strconv.Itoa(int(clientRequestBatch.Sender)))
+			in.debug("Sent client response batch to " + strconv.Itoa(int(clientRequestBatch.Sender)),1)
 		}
 
 	}
@@ -447,7 +447,7 @@ func (in *Instance) sendConsensusRequest(hash string) {
 		Code: in.consensusRequestRpc,
 		Obj:  &consensusRequest,
 	}
-	in.debug("sending a consensus request to " + strconv.Itoa(int(leader)))
+	in.debug("sending a consensus request to " + strconv.Itoa(int(leader)),1)
 
 	in.sendMessage(leader, rpcPair)
 }
@@ -461,7 +461,7 @@ func (in *Instance) handleConsensusRequest(request *proto.ConsensusRequest) {
 	if in.nodeName == in.getDeterministicLeader1() {
 		in.updateProposedIndex(request.Hash)
 		in.propose(in.proposedIndex, request.Hash)
-		in.debug("Proposed " + request.Hash + " to " + strconv.Itoa(int(in.proposedIndex)))
+		in.debug("Proposed " + request.Hash + " to " + strconv.Itoa(int(in.proposedIndex)),1)
 	}
 }
 
@@ -481,7 +481,7 @@ func (in *Instance) updateProposedIndex(hash string) {
 		in.proposed = append(in.proposed, "")
 	}
 	in.proposed[in.proposedIndex] = hash
-	in.debug("Added " + hash + " to proposed array position " + strconv.Itoa(int(in.proposedIndex)))
+	in.debug("Added " + hash + " to proposed array position " + strconv.Itoa(int(in.proposedIndex)),1)
 }
 
 /*
@@ -596,7 +596,7 @@ func (in *Instance) proposerSendSpreadCGatherE(index int64) {
 			Code: in.genericConsensusRpc,
 			Obj:  &consensusSpreadCGatherE,
 		}
-		in.debug("sending a spreadCGatherE consensus message to " + strconv.Itoa(int(i)))
+		in.debug("sending a spreadCGatherE consensus message to " + strconv.Itoa(int(i)),1)
 
 		in.sendMessage(i, rpcPair)
 	}
@@ -679,7 +679,7 @@ func (in *Instance) proposerSendGatherC(index int64) {
 			Code: in.genericConsensusRpc,
 			Obj:  &consensusGatherC,
 		}
-		in.debug("sending a gatherC consensus message to " + strconv.Itoa(int(i)))
+		in.debug("sending a gatherC consensus message to " + strconv.Itoa(int(i)),1)
 
 		in.sendMessage(i, rpcPair)
 	}
@@ -714,7 +714,7 @@ func (in *Instance) proposerSendPropose(index int64) {
 			Code: in.genericConsensusRpc,
 			Obj:  &consensusPropose,
 		}
-		in.debug("sending a generic consensus propose message to " + strconv.Itoa(int(i)))
+		in.debug("sending a consensus propose message to " + strconv.Itoa(int(i)),1)
 
 		in.sendMessage(i, rpcPair)
 	}

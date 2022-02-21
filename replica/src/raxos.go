@@ -84,6 +84,7 @@ type Instance struct {
 	lastSeenTime  []time.Time // time each replica was last seen
 
 	debugOn       bool // if turned on, the debug messages will be print on the console
+	debugLevel    int  // debug level
 	serverStarted bool // true if the first status message with operation type 1 received
 
 	proposeMessage        int64
@@ -151,6 +152,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 		leaderTimeout:                       leaderTimeout,
 		lastSeenTime:                        make([]time.Time, len(cfg.Peers)),
 		debugOn:                             false,
+		debugLevel:                          0, // manually set the debug level
 		serverStarted:                       false,
 		proposeMessage:                      0,
 		spreadEMessage:                      1,
@@ -168,7 +170,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 		in.buffioWriterMutexes[i] = sync.Mutex{}
 	}
 
-	in.debug("Initialized a new instance")
+	in.debug("Initialized a new instance",0)
 
 	rand.Seed(time.Now().UTC().UnixNano())
 	in.messageStore.Init()
