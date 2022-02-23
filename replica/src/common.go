@@ -113,6 +113,7 @@ func (in *Instance) handleMessageBlock(block *proto.MessageBlock) {
 	}
 
 	in.sendMessage(block.Sender, rpcPair)
+	in.updateStateMachine() // this is an exception case that is invoked when a block was missing when committing and requested
 	in.debug("Send block ack to "+strconv.Itoa(int(block.Sender)), 0)
 }
 

@@ -76,6 +76,7 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 
 	// case 4: a SpreadCGatherE response
 	if consensusMessage.M == in.spreadCgatherEMessage && in.proposerReplicatedLog[consensusMessage.Index].S == consensusMessage.S {
+		// copy the E set
 		for i := 0; i < len(consensusMessage.E); i++ {
 			in.proposerReplicatedLog[consensusMessage.Index].E = append(in.proposerReplicatedLog[consensusMessage.Index].E, Value{
 				id:  consensusMessage.E[i].Id,
@@ -96,7 +97,7 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 			// case 4.1.1 If U.getTheBest() == E.getTheBest()
 			if U_Best.id != "" && U_Best.fit != "" && E_Best.id != "" && E_Best.fit != "" {
 				if U_Best.id == E_Best.id && U_Best.fit == E_Best.fit {
-					in.proposerReceivedMajorityProposeWithHi(consensusMessage, U_Best) //todo C-best of U-best?
+					in.proposerReceivedMajorityProposeWithHi(consensusMessage, U_Best) //todo C-best or U-best?
 					return
 				}
 			}
@@ -110,6 +111,7 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 
 	// case 5: a GatherC response
 	if consensusMessage.M == in.gatherCMessage && in.proposerReplicatedLog[consensusMessage.Index].S == consensusMessage.S {
+		// update the C set
 		for i := 0; i < len(consensusMessage.C); i++ {
 			in.proposerReplicatedLog[consensusMessage.Index].C = append(in.proposerReplicatedLog[consensusMessage.Index].C, Value{
 				id:  consensusMessage.C[i].Id,
@@ -160,15 +162,19 @@ func (in *Instance) consensusCatchUp(consensusMessage *proto.GenericConsensus) {
 	if consensusMessage.S%4 == 1 {
 		//send a propose message
 		in.proposerSendPropose(consensusMessage.Index)
+		return
 	} else if consensusMessage.S%4 == 2 {
 		//send a spreadE message
 		in.proposerSendSpreadE(consensusMessage.Index)
+		return
 	} else if consensusMessage.S%4 == 3 {
 		//send a spreadCGatherE message
 		in.proposerSendSpreadCGatherE(consensusMessage.Index)
+		return
 	} else if consensusMessage.S%4 == 0 {
 		//send a gatherC message
 		in.proposerSendGatherC(consensusMessage.Index)
+		return
 	}
 
 }
@@ -216,6 +222,7 @@ func (in *Instance) proposerReceivedMajorityProposeWithHi(consensusMessage *prot
 		fit: majorityValue.fit,
 	}
 	in.proposerReplicatedLog[consensusMessage.Index].proposer = in.getProposer(majorityValue)
+	in.delivered(consensusMessage.Index, majorityValue.id, in.proposerReplicatedLog[consensusMessage.Index].proposer)
 
 	// send a decide message
 
@@ -247,6 +254,7 @@ func (in *Instance) proposerReceivedMajorityProposeWithHi(consensusMessage *prot
 
 		in.sendMessage(i, rpcPair)
 	}
+
 }
 
 /*
@@ -323,7 +331,7 @@ func (in *Instance) propose(index int64, hash string) {
 }
 
 /*
-	indication from the consensus layer that a value is decided
+	Proposer: indication from the consensus layer that a value is decided
 */
 
 func (in *Instance) delivered(index int64, hash string, proposer int64) {
@@ -338,7 +346,7 @@ func (in *Instance) delivered(index int64, hash string, proposer int64) {
 }
 
 /*
-	invoked whenever a new slot is decided
+	Proposer: invoked whenever a new slot is decided
 	marks the slot as committed
 	sends the response back to the client
     //todo how does pipeline affect this? when failures occur slot i will be completed before slot i-n, in that case should we implement a new failure detector and repurpose?
@@ -347,6 +355,7 @@ func (in *Instance) delivered(index int64, hash string, proposer int64) {
 func (in *Instance) updateStateMachine() {
 	for in.proposerReplicatedLog[in.committedIndex+1].decided == true {
 		decision := in.proposerReplicatedLog[in.committedIndex+1].decision.id
+		// todo: if the decision is a sequence of hashes, then invoke the following for each hash: check if all the hashes exist and succeed only if everything exists
 		messageBlock, ok := in.messageStore.Get(decision)
 		if !ok {
 			/*
@@ -365,7 +374,7 @@ func (in *Instance) updateStateMachine() {
 }
 
 /*
-	Execute each command in the block, get the response array and send the responses back to the client if I am the proposer who created this block
+	Proposer: Execute each command in the block, get the response array and send the responses back to the client if I am the proposer who created this block
 */
 
 func (in *Instance) executeAndSendResponse(block *proto.MessageBlock) {
@@ -420,7 +429,7 @@ func (in *Instance) sendConsensusRequest(hash string) {
 }
 
 /*
-	Proposer: Upon receiving a consensus request, the leader node will propose it to the consensus layer
+	Proposer: Upon receiving a consensus request, the leader node will propose it to the consensus layer if the number of inflight requests is less than the pipeline length
 */
 
 func (in *Instance) handleConsensusRequest(request *proto.ConsensusRequest) {
@@ -500,7 +509,7 @@ func (in *Instance) getProposalWithMajoriyHiInAllESets(set [][]Value) Value {
 	HiCounts = make(map[string]int64)
 
 	for i := 0; i < len(set); i++ {
-		seenHashes := make(map[string]bool) // we need to make sure that we count only one occurence of the same proposal in each set E (if a given proposal appears more than once in an E set, we only count once)
+		seenHashes := make(map[string]bool) // we need to make sure that we count only one occurrence of the same proposal in each set E (if a given proposal appears more than once in an E set, we only count once)
 		for j := 0; j < len(set[i]); j++ {
 			_, ok := seenHashes[set[i][j].id+set[i][j].fit]
 			if ok {
