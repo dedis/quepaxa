@@ -3,8 +3,8 @@
 #     2. Zip logs/raxos/ and create raxos.zip
 #     3. Copy raxos.zip to all machines
 
-rm -r /home/oem/GolandProjects/raxos/client/bin/client
-rm -r /home/oem/GolandProjects/raxos/replica/bin/replica
+rm -r /home/pasindu/Documents/Raxos/client/bin/client
+rm -r /home/pasindu/Documents/Raxos/replica/bin/replica
 
 echo "Removed old binaries"
 
@@ -18,39 +18,39 @@ unzip_raxos="cd /home/pasindu/raxos && unzip raxos.zip"
 
 
 replica1=pasindu@dedis-140.icsil1.epfl.ch
-replica1_cert="/home/oem/Pictures/pasindu_rsa"
+replica1_cert="/home/pasindu/Pictures/pasindu_rsa"
 replica2=pasindu@dedis-141.icsil1.epfl.ch
-replica2_cert="/home/oem/Pictures/pasindu_rsa"
+replica2_cert="/home/pasindu/Pictures/pasindu_rsa"
 replica3=pasindu@dedis-142.icsil1.epfl.ch
-replica3_cert="/home/oem/Pictures/pasindu_rsa"
+replica3_cert="/home/pasindu/Pictures/pasindu_rsa"
 replica4=pasindu@dedis-143.icsil1.epfl.ch
-replica4_cert="/home/oem/Pictures/pasindu_rsa"
+replica4_cert="/home/pasindu/Pictures/pasindu_rsa"
 replica5=pasindu@dedis-144.icsil1.epfl.ch
-replica5_cert="/home/oem/Pictures/pasindu_rsa"
+replica5_cert="/home/pasindu/Pictures/pasindu_rsa"
 
 client1=pasindu@dedis-145.icsil1.epfl.ch
-client1_cert="/home/oem/Pictures/pasindu_rsa"
+client1_cert="/home/pasindu/Pictures/pasindu_rsa"
 client2=pasindu@dedis-146.icsil1.epfl.ch
-client2_cert="/home/oem/Pictures/pasindu_rsa"
+client2_cert="/home/pasindu/Pictures/pasindu_rsa"
 client3=pasindu@dedis-147.icsil1.epfl.ch
-client3_cert="/home/oem/Pictures/pasindu_rsa"
+client3_cert="/home/pasindu/Pictures/pasindu_rsa"
 client4=pasindu@dedis-148.icsil1.epfl.ch
-client4_cert="/home/oem/Pictures/pasindu_rsa"
+client4_cert="/home/pasindu/Pictures/pasindu_rsa"
 client5=pasindu@dedis-149.icsil1.epfl.ch
-client5_cert="/home/oem/Pictures/pasindu_rsa"
+client5_cert="/home/pasindu/Pictures/pasindu_rsa"
 
 
-mkdir /home/oem/GolandProjects/raxos/logs/raxos
+mkdir /home/pasindu/Documents/Raxos/logs/raxos
 
-cp -r /home/oem/GolandProjects/raxos/logs/          /home/oem/GolandProjects/raxos/logs/raxos/
-cp -r /home/oem/GolandProjects/raxos/client/        /home/oem/GolandProjects/raxos/logs/raxos/
-cp -r /home/oem/GolandProjects/raxos/configuration/ /home/oem/GolandProjects/raxos/logs/raxos/
-cp -r /home/oem/GolandProjects/raxos/experiments/   /home/oem/GolandProjects/raxos/logs/raxos/
-cp -r /home/oem/GolandProjects/raxos/replica/       /home/oem/GolandProjects/raxos/logs/raxos/
+cp -r /home/pasindu/Documents/Raxos/logs/          /home/pasindu/Documents/Raxos/logs/raxos/
+cp -r /home/pasindu/Documents/Raxos/client/        /home/pasindu/Documents/Raxos/logs/raxos/
+cp -r /home/pasindu/Documents/Raxos/configuration/ /home/pasindu/Documents/Raxos/logs/raxos/
+cp -r /home/pasindu/Documents/Raxos/experiments/   /home/pasindu/Documents/Raxos/logs/raxos/
+cp -r /home/pasindu/Documents/Raxos/replica/       /home/pasindu/Documents/Raxos/logs/raxos/
 
-zip -r /home/oem/GolandProjects/raxos/logs/raxos/raxos.zip /home/oem/GolandProjects/raxos/logs/raxos/
+zip -r /home/pasindu/Documents/Raxos/logs/raxos/raxos.zip /home/pasindu/Documents/Raxos/logs/raxos/
 
-local_zip_path="/home/oem/GolandProjects/raxos/logs/raxos/raxos.zip"
+local_zip_path="/home/pasindu/Documents/Raxos/logs/raxos/raxos.zip"
 replica_home_path="/home/pasindu/raxos/"
 
 
@@ -114,4 +114,6 @@ sshpass ssh ${client5} -i ${client5_cert}  ${kill_insstances}
 scp  -i ${client5_cert}  ${local_zip_path}  ${client5}:${replica_home_path}
 sshpass ssh ${client5} -i ${client5_cert}  ${unzip_raxos}
 
-rm -r /home/oem/GolandProjects/raxos/logs/raxos/
+rm -r /home/pasindu/Documents/Raxos/logs/raxos/
+
+echo "setup complete"
