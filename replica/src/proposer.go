@@ -374,22 +374,41 @@ func (in *Instance) delivered(index int64, hash string, proposer int64) {
 
 func (in *Instance) updateStateMachine() {
 	for len(in.proposerReplicatedLog) > int(in.committedIndex)+1 && in.proposerReplicatedLog[in.committedIndex+1].decided == true {
+
 		decision := in.proposerReplicatedLog[in.committedIndex+1].decision.id
-		// todo: if the decision is a sequence of hashes, then invoke the following for each hash: check if all the hashes exist and succeed only if everything exists
-		messageBlock, ok := in.messageStore.Get(decision)
-		if !ok {
-			/*
-				I haven't received the actual message block still, request it
-			*/
-			in.sendMessageBlockRequest(decision)
-			return
+		in.debug("Decided "+strconv.Itoa(int(in.committedIndex+1))+" with decision "+decision, 0)
+		// if the decision is a sequence of hashes, then invoke the following for each hash: check if all the hashes exist and succeed only if everything exists
+		blocks := make([]*proto.MessageBlock, 0)
+		hashes := strings.Split(decision, ":")
+		for i := 0; i < len(hashes); i++ {
+			hashes[i] = strings.TrimSpace(hashes[i])
+			in.debug("hash "+strconv.Itoa(i)+" is "+hashes[i], 0)
 		}
 
+		for i := 0; i < len(hashes); i++ {
+			if len(hashes[i]) == 0 {
+				continue
+			}
+			messageBlock, ok := in.messageStore.Get(hashes[i])
+			if !ok {
+				in.debug("Couldn't find hash "+hashes[i], 0)
+				/*
+					I haven't received the actual message block still, request it
+				*/
+				in.sendMessageBlockRequest(hashes[i])
+				return
+			}
+			blocks = append(blocks, messageBlock)
+		}
+		// found all the blocks
 		in.proposerReplicatedLog[in.committedIndex+1].committed = true
-		in.debug("Committed "+strconv.Itoa(int(in.committedIndex+1)), 1)
+		in.debug("Committed "+strconv.Itoa(int(in.committedIndex+1)), 2)
 		in.committedIndex++
 		in.numInflightRequests--
-		in.executeAndSendResponse(messageBlock)
+
+		for i := 0; i < len(blocks); i++ {
+			in.executeAndSendResponse(blocks[i])
+		}
 	}
 }
 
@@ -454,11 +473,11 @@ func (in *Instance) sendConsensusRequest(hash string) {
 
 func (in *Instance) handleConsensusRequest(request *proto.ConsensusRequest) {
 	if in.nodeName == in.getDeterministicLeader1() {
-		if true { //in.numInflightRequests <= in.pipelineLength { // this should be changed to not drop requests
+		if true { //todo in.numInflightRequests <= in.pipelineLength { // this should be changed to not drop requests
 			in.updateProposedIndex(request.Hash)
 			in.propose(in.proposedIndex, request.Hash)
 			in.numInflightRequests++
-			in.debug("Proposed "+request.Hash+" to "+strconv.Itoa(int(in.proposedIndex)), 1)
+			in.debug("Proposed "+request.Hash+" to "+strconv.Itoa(int(in.proposedIndex)), 0)
 		} else {
 			in.debug("Proposed failed due to inflight requests"+request.Hash+" to "+strconv.Itoa(int(in.proposedIndex)), 1)
 		}

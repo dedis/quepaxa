@@ -6,6 +6,7 @@ import (
 	"os"
 	"raxos/proto"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -276,7 +277,9 @@ func (in *Instance) handleMessageBlockAck(ack *proto.MessageBlockAck) {
 		in.debug("-----Received majority block acks for ---"+ack.Hash, 0)
 		// note that this block is guaranteed to be present in f+1 replicas, so its persistent
 		//in.sendSampleClientResponse(ack) //  this is only to test the overlay
-		in.sendConsensusRequest(ack.Hash)
+		//implement batching here
+		in.hashProposalsIn <- ack.Hash
+		//in.sendConsensusRequest(ack.Hash)
 	}
 }
 
@@ -314,19 +317,31 @@ func (in *Instance) printLog() {
 		// a single entry contains a 2D sequence of commands
 		if entry.committed {
 			// if an entry is committed, then it should contain the block in the message store
-			block, ok := in.messageStore.Get(entry.decision.id)
+			decision := entry.decision.id
+			hashes := strings.Split(decision, ":")
+			for i := 0; i < len(hashes); i++ {
+				hashes[i] = strings.TrimSpace(hashes[i])
+			}
 			choiceLocalNum := 0
-			if ok {
-				for i := 0; i < len(block.Requests); i++ {
-					for j := 0; j < len(block.Requests[i].Requests); j++ {
-						_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(choiceLocalNum) + ":")
-						_, _ = f.WriteString(block.Requests[i].Requests[j].Message + "\n")
-						choiceLocalNum++
-					}
+			for i := 0; i < len(hashes); i++ {
+				if len(hashes[i]) == 0 {
+					continue
 				}
-			} else {
-				_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(choiceLocalNum) + ":")
-				_, _ = f.WriteString("no-op" + "\n")
+
+				block, ok := in.messageStore.Get(hashes[i])
+				if ok {
+					for k := 0; k < len(block.Requests); k++ {
+						for j := 0; j < len(block.Requests[k].Requests); j++ {
+							_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(choiceLocalNum) + ":")
+							_, _ = f.WriteString(block.Requests[k].Requests[j].Message + "\n")
+							choiceLocalNum++
+						}
+					}
+				} else {
+					_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(choiceLocalNum) + ":")
+					_, _ = f.WriteString("no-op" + "\n")
+					choiceLocalNum++
+				}
 			}
 
 		} else {
@@ -361,4 +376,46 @@ func (in *Instance) initializeSlot(log []Slot, index int64) []Slot {
 		})
 	}
 	return log
+}
+
+/*
+	This is an infinite thread
+	It collects hashes of the blocks which are ready to be sent to the leader node
+*/
+
+func (in *Instance) CollectAndProposeHashes() {
+
+	go func() {
+		lastSent := time.Now() // used to get how long to wait
+		for true {             // this runs forever
+			numRequests := int(0)
+			requestString := ""
+			// this loop collects requests until the minimum batch time is met OR the batch time is timeout
+			for !(numRequests >= in.hashBatchSize || (time.Now().Sub(lastSent).Microseconds() > int64(in.hashBatchTime) && numRequests > 0)) {
+				newRequest := <-in.hashProposalsIn // keep collecting new requests for the next batch
+				requestString = requestString + ":" + newRequest
+				numRequests++
+			}
+
+			in.debug("Collected a batch of hashes to propose "+requestString, 1)
+
+			leader := in.getDeterministicLeader1() //todo change this when adding the improvements
+			consensusRequest := proto.ConsensusRequest{
+				Sender:   in.nodeName,
+				Receiver: leader,
+				Hash:     requestString,
+			}
+			rpcPair := RPCPair{
+				Code: in.consensusRequestRpc,
+				Obj:  &consensusRequest,
+			}
+			in.debug("sending a consensus request to "+strconv.Itoa(int(leader))+" for the hash "+requestString, 0)
+
+			in.sendMessage(leader, rpcPair)
+
+			lastSent = time.Now()
+		}
+
+	}()
+
 }

@@ -11,8 +11,8 @@ for i in range(1, len(sys.argv)):
     for l in lines:
         key = l.split(":")[0]
         values = l.split(":")[1]
-        dict[key] = values
         if values != "no-op":
+            dict[key] = values
             numberOfRequests = numberOfRequests + 1
 
     files.append(dict)

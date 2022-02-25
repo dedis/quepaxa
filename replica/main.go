@@ -31,6 +31,7 @@ func main() {
 
 	in := raxos.New(cfg, *name, *logFilePath, *serviceTime, *responseSize, *batchSize, *batchTime, *leaderTimeout, *pipelineLength, *benchmark, *numKeys)
 
+	in.CollectAndProposeHashes()
 	in.Run()
 	in.StartOutgoingLinks()
 	in.BroadcastBlock()
