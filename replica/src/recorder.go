@@ -140,6 +140,16 @@ func (in *Instance) recordRecorderDecide(consensusMessage *proto.GenericConsensu
 		fit: consensusMessage.DS.Fit,
 	}
 	in.recorderReplicatedLog[consensusMessage.Index].proposer = consensusMessage.PR
+
+	in.recorderReplicatedLog[consensusMessage.Index].P = Value{}
+	in.recorderReplicatedLog[consensusMessage.Index].E = []Value{}
+	in.recorderReplicatedLog[consensusMessage.Index].C = []Value{}
+	in.recorderReplicatedLog[consensusMessage.Index].U = []Value{}
+	in.recorderReplicatedLog[consensusMessage.Index].proposeResponses = []*proto.GenericConsensus{}
+	in.recorderReplicatedLog[consensusMessage.Index].spreadEResponses = []*proto.GenericConsensus{}
+	in.recorderReplicatedLog[consensusMessage.Index].spreadCGatherEResponses = []*proto.GenericConsensus{}
+	in.recorderReplicatedLog[consensusMessage.Index].gatherCResponses = []*proto.GenericConsensus{}
+
 }
 
 /*

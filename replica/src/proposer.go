@@ -222,6 +222,16 @@ func (in *Instance) proposerReceivedMajorityProposeWithHi(consensusMessage *prot
 		fit: majorityValue.fit,
 	}
 	in.proposerReplicatedLog[consensusMessage.Index].proposer = in.getProposer(majorityValue)
+
+	in.proposerReplicatedLog[consensusMessage.Index].P = Value{}
+	in.proposerReplicatedLog[consensusMessage.Index].E = []Value{}
+	in.proposerReplicatedLog[consensusMessage.Index].C = []Value{}
+	in.proposerReplicatedLog[consensusMessage.Index].U = []Value{}
+	in.proposerReplicatedLog[consensusMessage.Index].proposeResponses = []*proto.GenericConsensus{}
+	in.proposerReplicatedLog[consensusMessage.Index].spreadEResponses = []*proto.GenericConsensus{}
+	in.proposerReplicatedLog[consensusMessage.Index].spreadCGatherEResponses = []*proto.GenericConsensus{}
+	in.proposerReplicatedLog[consensusMessage.Index].gatherCResponses = []*proto.GenericConsensus{}
+
 	in.delivered(consensusMessage.Index, majorityValue.id, in.proposerReplicatedLog[consensusMessage.Index].proposer)
 
 	// send a decide message
@@ -308,6 +318,16 @@ func (in *Instance) recordProposerDecide(consensusMessage *proto.GenericConsensu
 		fit: consensusMessage.DS.Fit,
 	}
 	in.proposerReplicatedLog[consensusMessage.Index].proposer = consensusMessage.PR
+
+	in.proposerReplicatedLog[consensusMessage.Index].P = Value{}
+	in.proposerReplicatedLog[consensusMessage.Index].E = []Value{}
+	in.proposerReplicatedLog[consensusMessage.Index].C = []Value{}
+	in.proposerReplicatedLog[consensusMessage.Index].U = []Value{}
+	in.proposerReplicatedLog[consensusMessage.Index].proposeResponses = []*proto.GenericConsensus{}
+	in.proposerReplicatedLog[consensusMessage.Index].spreadEResponses = []*proto.GenericConsensus{}
+	in.proposerReplicatedLog[consensusMessage.Index].spreadCGatherEResponses = []*proto.GenericConsensus{}
+	in.proposerReplicatedLog[consensusMessage.Index].gatherCResponses = []*proto.GenericConsensus{}
+
 	in.delivered(consensusMessage.Index, consensusMessage.DS.Id, consensusMessage.PR)
 }
 
