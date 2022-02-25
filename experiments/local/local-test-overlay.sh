@@ -32,6 +32,9 @@ rm ${output_path}8.txt
 rm ${output_path}8.log
 rm ${output_path}9.txt
 rm ${output_path}9.log
+rm ${output_path}local-overlay-test.log
+rm ${output_path}status1.log
+rm ${output_path}status2.log
 
 echo "Removed old log files"
 

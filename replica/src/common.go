@@ -160,6 +160,10 @@ func (in *Instance) sendMessageBlockRequest(hash string) {
 */
 
 func (in *Instance) handleDecision(consensusMessage *proto.GenericConsensus) {
+
+	in.recorderReplicatedLog = in.initializeSlot(in.recorderReplicatedLog, consensusMessage.Index) // create the slot if not already created
+	in.proposerReplicatedLog = in.initializeSlot(in.proposerReplicatedLog, consensusMessage.Index) // create the slot if not already created
+
 	if consensusMessage.M == in.decideMessage && in.proposerReplicatedLog[consensusMessage.Index].decided == false {
 		in.recordProposerDecide(consensusMessage)
 	}
@@ -193,7 +197,7 @@ func (in *Instance) handleClientStatusRequest(request *proto.ClientStatusRequest
 		in.startServer()
 	} else if request.Operation == 2 {
 		in.printLog()
-		//in.messageStore.printStore(in.logFilePath, in.nodeName)
+		//in.messageStore.printStore(in.logFilePath, in.nodeName) //this is for the testing purposes
 	}
 
 	/*send a status response back to the client*/
@@ -316,13 +320,13 @@ func (in *Instance) printLog() {
 				for i := 0; i < len(block.Requests); i++ {
 					for j := 0; j < len(block.Requests[i].Requests); j++ {
 						_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(choiceLocalNum) + ":")
-						_, _ = f.WriteString(block.Requests[i].Requests[j].Message + ",")
+						_, _ = f.WriteString(block.Requests[i].Requests[j].Message + "\n")
 						choiceLocalNum++
 					}
 				}
 			} else {
 				_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(choiceLocalNum) + ":")
-				_, _ = f.WriteString("no-op" + ",")
+				_, _ = f.WriteString("no-op" + "\n")
 			}
 
 		} else {
@@ -330,7 +334,7 @@ func (in *Instance) printLog() {
 			// in theory this execution path should not execute
 
 			_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(0) + ":")
-			_, _ = f.WriteString("no-op" + ",")
+			_, _ = f.WriteString("no-op" + "\n")
 		}
 		choiceNum++
 	}
@@ -342,7 +346,7 @@ func (in *Instance) printLog() {
 
 func (in *Instance) initializeSlot(log []Slot, index int64) []Slot {
 
-	for i := int64(len(log)); i < index+1; i++ {
+	for i := int64(len(log)); i < index+1000; i++ {
 		log = append(log, Slot{
 			index:     i,
 			S:         0,

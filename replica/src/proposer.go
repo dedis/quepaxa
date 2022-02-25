@@ -353,7 +353,7 @@ func (in *Instance) delivered(index int64, hash string, proposer int64) {
 */
 
 func (in *Instance) updateStateMachine() {
-	for in.proposerReplicatedLog[in.committedIndex+1].decided == true {
+	for len(in.proposerReplicatedLog) > int(in.committedIndex)+1 && in.proposerReplicatedLog[in.committedIndex+1].decided == true {
 		decision := in.proposerReplicatedLog[in.committedIndex+1].decision.id
 		// todo: if the decision is a sequence of hashes, then invoke the following for each hash: check if all the hashes exist and succeed only if everything exists
 		messageBlock, ok := in.messageStore.Get(decision)
@@ -434,11 +434,13 @@ func (in *Instance) sendConsensusRequest(hash string) {
 
 func (in *Instance) handleConsensusRequest(request *proto.ConsensusRequest) {
 	if in.nodeName == in.getDeterministicLeader1() {
-		if in.numInflightRequests <= in.pipelineLength {
+		if true { //in.numInflightRequests <= in.pipelineLength { // this should be changed to not drop requests
 			in.updateProposedIndex(request.Hash)
 			in.propose(in.proposedIndex, request.Hash)
 			in.numInflightRequests++
 			in.debug("Proposed "+request.Hash+" to "+strconv.Itoa(int(in.proposedIndex)), 1)
+		} else {
+			in.debug("Proposed failed due to inflight requests"+request.Hash+" to "+strconv.Itoa(int(in.proposedIndex)), 1)
 		}
 	}
 }
