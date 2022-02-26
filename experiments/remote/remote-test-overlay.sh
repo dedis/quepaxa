@@ -1,10 +1,10 @@
 arrivalRate=$1
 
-remote_algo_path="/raxos/home/pasindu/Documents/Raxos/logs/raxos/replica/bin/replica"
-remote_ctl_path="/raxos/home/pasindu/Documents/Raxos/logs/raxos/client/bin/client"
-remote_log_path="/raxos/home/pasindu/Documents/Raxos/logs/raxos/logs/raxos/logs/"
-remote_config_path="/raxos/home/pasindu/Documents/Raxos/logs/raxos/logs/raxos/configuration/remote/configuration.yml"
-output_path="/home/pasindu/Documents/Raxos/logs/"
+remote_algo_path="/raxos/temp/replica/bin/replica"
+remote_ctl_path="/raxos/temp/client/bin/client"
+remote_log_path="/home/pasindu/raxos/temp/logs/"
+remote_config_path="/home/pasindu/raxos/temp/configuration/remote/configuration.yml"
+output_path="logs/"
 
 replica1=pasindu@dedis-140.icsil1.epfl.ch
 replica1_cert="/home/pasindu/Pictures/pasindu_rsa"
@@ -122,18 +122,17 @@ echo "Sent status to print log"
 
 sleep 50
 
-scp -i ${replica1_cert}  ${replica1}:${remote_log_path}0.txt ${output_path}0.txt
-scp -i ${replica2_cert}  ${replica2}:${remote_log_path}1.txt ${output_path}1.txt
-scp -i ${replica3_cert}  ${replica3}:${remote_log_path}2.txt ${output_path}2.txt
-scp -i ${replica4_cert}  ${replica4}:${remote_log_path}3.txt ${output_path}3.txt
-scp -i ${replica5_cert}  ${replica5}:${remote_log_path}4.txt ${output_path}4.txt
+scp -i ${replica1_cert} ${replica1}:${remote_log_path}0.txt ${output_path}0.txt
+scp -i ${replica2_cert} ${replica2}:${remote_log_path}1.txt ${output_path}1.txt
+scp -i ${replica3_cert} ${replica3}:${remote_log_path}2.txt ${output_path}2.txt
+scp -i ${replica4_cert} ${replica4}:${remote_log_path}3.txt ${output_path}3.txt
+scp -i ${replica5_cert} ${replica5}:${remote_log_path}4.txt ${output_path}4.txt
 
-
-scp -i ${client1_cert}   ${client1}:${remote_log_path}5.txt ${output_path}5.txt
-scp -i ${client2_cert}   ${client2}:${remote_log_path}6.txt ${output_path}6.txt
-scp -i ${client3_cert}   ${client3}:${remote_log_path}7.txt ${output_path}7.txt
-scp -i ${client4_cert}   ${client4}:${remote_log_path}8.txt ${output_path}8.txt
-scp -i ${client5_cert}   ${client5}:${remote_log_path}9.txt ${output_path}9.txt
+scp -i ${client1_cert} ${client1}:${remote_log_path}5.txt ${output_path}5.txt
+scp -i ${client2_cert} ${client2}:${remote_log_path}6.txt ${output_path}6.txt
+scp -i ${client3_cert} ${client3}:${remote_log_path}7.txt ${output_path}7.txt
+scp -i ${client4_cert} ${client4}:${remote_log_path}8.txt ${output_path}8.txt
+scp -i ${client5_cert} ${client5}:${remote_log_path}9.txt ${output_path}9.txt
 
 echo "Copied all the files to local machine"
 

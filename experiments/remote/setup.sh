@@ -1,21 +1,18 @@
-#     1. Build the project	
-#     2. Copy client/ configuration/ experiments/ logs/ replica/ directories to logs/raxos/ directory	
+#     1. Build the project
+#     2. Copy client/ configuration/ experiments/ logs/ replica/ directories to logs/raxos/ directory
 #     2. Zip logs/raxos/ and create raxos.zip
 #     3. Copy raxos.zip to all machines
 
-rm -r /home/pasindu/Documents/Raxos/client/bin/client
-rm -r /home/pasindu/Documents/Raxos/replica/bin/replica
+rm client/bin/client
+rm replica/bin/replica
 
 echo "Removed old binaries"
-
 mage generate && mage build
-
 echo "Built Raxos"
 
 reset_directory="rm -r /home/pasindu/raxos; mkdir /home/pasindu/raxos"
 kill_insstances="pkill replica ; pkill client"
 unzip_raxos="cd /home/pasindu/raxos && unzip raxos.zip"
-
 
 replica1=pasindu@dedis-140.icsil1.epfl.ch
 replica1_cert="/home/pasindu/Pictures/pasindu_rsa"
@@ -39,81 +36,80 @@ client4_cert="/home/pasindu/Pictures/pasindu_rsa"
 client5=pasindu@dedis-149.icsil1.epfl.ch
 client5_cert="/home/pasindu/Pictures/pasindu_rsa"
 
+mkdir temp
 
-mkdir /home/pasindu/Documents/Raxos/logs/raxos
+cp -r logs/ temp/
+cp -r client/ temp/
+cp -r configuration/ temp/
+cp -r experiments/ temp/
+cp -r replica/ temp/
 
-cp -r /home/pasindu/Documents/Raxos/logs/          /home/pasindu/Documents/Raxos/logs/raxos/
-cp -r /home/pasindu/Documents/Raxos/client/        /home/pasindu/Documents/Raxos/logs/raxos/
-cp -r /home/pasindu/Documents/Raxos/configuration/ /home/pasindu/Documents/Raxos/logs/raxos/
-cp -r /home/pasindu/Documents/Raxos/experiments/   /home/pasindu/Documents/Raxos/logs/raxos/
-cp -r /home/pasindu/Documents/Raxos/replica/       /home/pasindu/Documents/Raxos/logs/raxos/
+zip -r logs/raxos.zip temp/
+rm -r temp/
 
-zip -r /home/pasindu/Documents/Raxos/logs/raxos/raxos.zip /home/pasindu/Documents/Raxos/logs/raxos/
-
-local_zip_path="/home/pasindu/Documents/Raxos/logs/raxos/raxos.zip"
+local_zip_path="logs/raxos.zip"
 replica_home_path="/home/pasindu/raxos/"
 
-
 echo "Replica 1"
-sshpass ssh ${replica1} -i ${replica1_cert}  ${reset_directory}
-sshpass ssh ${replica1} -i ${replica1_cert}  ${kill_insstances}
-scp  -i ${replica1_cert}  ${local_zip_path}  ${replica1}:${replica_home_path}
-sshpass ssh ${replica1} -i ${replica1_cert}  ${unzip_raxos}
+sshpass ssh ${replica1} -i ${replica1_cert} ${reset_directory}
+sshpass ssh ${replica1} -i ${replica1_cert} ${kill_insstances}
+scp -i ${replica1_cert} ${local_zip_path} ${replica1}:${replica_home_path}
+sshpass ssh ${replica1} -i ${replica1_cert} ${unzip_raxos}
 
 echo "Replica 2"
-sshpass ssh ${replica2} -i ${replica2_cert}  ${reset_directory}
-sshpass ssh ${replica2} -i ${replica2_cert}  ${kill_insstances}
-scp  -i ${replica2_cert}  ${local_zip_path}  ${replica2}:${replica_home_path}
-sshpass ssh ${replica2} -i ${replica2_cert}  ${unzip_raxos}
+sshpass ssh ${replica2} -i ${replica2_cert} ${reset_directory}
+sshpass ssh ${replica2} -i ${replica2_cert} ${kill_insstances}
+scp -i ${replica2_cert} ${local_zip_path} ${replica2}:${replica_home_path}
+sshpass ssh ${replica2} -i ${replica2_cert} ${unzip_raxos}
 
 echo "Replica 3"
-sshpass ssh ${replica3} -i ${replica3_cert}  ${reset_directory}
-sshpass ssh ${replica3} -i ${replica3_cert}  ${kill_insstances}
-scp  -i ${replica3_cert}  ${local_zip_path}  ${replica3}:${replica_home_path}
-sshpass ssh ${replica3} -i ${replica3_cert}  ${unzip_raxos}
+sshpass ssh ${replica3} -i ${replica3_cert} ${reset_directory}
+sshpass ssh ${replica3} -i ${replica3_cert} ${kill_insstances}
+scp -i ${replica3_cert} ${local_zip_path} ${replica3}:${replica_home_path}
+sshpass ssh ${replica3} -i ${replica3_cert} ${unzip_raxos}
 
 echo "Replica 4"
-sshpass ssh ${replica4} -i ${replica4_cert}  ${reset_directory}
-sshpass ssh ${replica4} -i ${replica4_cert}  ${kill_insstances}
-scp  -i ${replica4_cert}  ${local_zip_path}  ${replica4}:${replica_home_path}
-sshpass ssh ${replica4} -i ${replica4_cert}  ${unzip_raxos}
+sshpass ssh ${replica4} -i ${replica4_cert} ${reset_directory}
+sshpass ssh ${replica4} -i ${replica4_cert} ${kill_insstances}
+scp -i ${replica4_cert} ${local_zip_path} ${replica4}:${replica_home_path}
+sshpass ssh ${replica4} -i ${replica4_cert} ${unzip_raxos}
 
 echo "Replica 5"
-sshpass ssh ${replica5} -i ${replica5_cert}  ${reset_directory}
-sshpass ssh ${replica5} -i ${replica5_cert}  ${kill_insstances}
-scp  -i ${replica5_cert}  ${local_zip_path}  ${replica5}:${replica_home_path}
-sshpass ssh ${replica5} -i ${replica5_cert}  ${unzip_raxos}
+sshpass ssh ${replica5} -i ${replica5_cert} ${reset_directory}
+sshpass ssh ${replica5} -i ${replica5_cert} ${kill_insstances}
+scp -i ${replica5_cert} ${local_zip_path} ${replica5}:${replica_home_path}
+sshpass ssh ${replica5} -i ${replica5_cert} ${unzip_raxos}
 
 echo "Client 1"
-sshpass ssh ${client1} -i ${client1_cert}  ${reset_directory}
-sshpass ssh ${client1} -i ${client1_cert}  ${kill_insstances}
-scp  -i ${client1_cert}  ${local_zip_path}  ${client1}:${replica_home_path}
-sshpass ssh ${client1} -i ${client1_cert}  ${unzip_raxos}
+sshpass ssh ${client1} -i ${client1_cert} ${reset_directory}
+sshpass ssh ${client1} -i ${client1_cert} ${kill_insstances}
+scp -i ${client1_cert} ${local_zip_path} ${client1}:${replica_home_path}
+sshpass ssh ${client1} -i ${client1_cert} ${unzip_raxos}
 
 echo "Client 2"
-sshpass ssh ${client2} -i ${client2_cert}  ${reset_directory}
-sshpass ssh ${client2} -i ${client2_cert}  ${kill_insstances}
-scp  -i ${client2_cert}  ${local_zip_path}  ${client2}:${replica_home_path}
-sshpass ssh ${client2} -i ${client2_cert}  ${unzip_raxos}
+sshpass ssh ${client2} -i ${client2_cert} ${reset_directory}
+sshpass ssh ${client2} -i ${client2_cert} ${kill_insstances}
+scp -i ${client2_cert} ${local_zip_path} ${client2}:${replica_home_path}
+sshpass ssh ${client2} -i ${client2_cert} ${unzip_raxos}
 
 echo "Client 3"
-sshpass ssh ${client3} -i ${client3_cert}  ${reset_directory}
-sshpass ssh ${client3} -i ${client3_cert}  ${kill_insstances}
-scp  -i ${client3_cert}  ${local_zip_path}  ${client3}:${replica_home_path}
-sshpass ssh ${client3} -i ${client3_cert}  ${unzip_raxos}
+sshpass ssh ${client3} -i ${client3_cert} ${reset_directory}
+sshpass ssh ${client3} -i ${client3_cert} ${kill_insstances}
+scp -i ${client3_cert} ${local_zip_path} ${client3}:${replica_home_path}
+sshpass ssh ${client3} -i ${client3_cert} ${unzip_raxos}
 
 echo "Client 4"
-sshpass ssh ${client4} -i ${client4_cert}  ${reset_directory}
-sshpass ssh ${client4} -i ${client4_cert}  ${kill_insstances}
-scp  -i ${client4_cert}  ${local_zip_path}  ${client4}:${replica_home_path}
-sshpass ssh ${client4} -i ${client4_cert}  ${unzip_raxos}
+sshpass ssh ${client4} -i ${client4_cert} ${reset_directory}
+sshpass ssh ${client4} -i ${client4_cert} ${kill_insstances}
+scp -i ${client4_cert} ${local_zip_path} ${client4}:${replica_home_path}
+sshpass ssh ${client4} -i ${client4_cert} ${unzip_raxos}
 
 echo "Client 5"
-sshpass ssh ${client5} -i ${client5_cert}  ${reset_directory}
-sshpass ssh ${client5} -i ${client5_cert}  ${kill_insstances}
-scp  -i ${client5_cert}  ${local_zip_path}  ${client5}:${replica_home_path}
-sshpass ssh ${client5} -i ${client5_cert}  ${unzip_raxos}
+sshpass ssh ${client5} -i ${client5_cert} ${reset_directory}
+sshpass ssh ${client5} -i ${client5_cert} ${kill_insstances}
+scp -i ${client5_cert} ${local_zip_path} ${client5}:${replica_home_path}
+sshpass ssh ${client5} -i ${client5_cert} ${unzip_raxos}
 
-rm -r /home/pasindu/Documents/Raxos/logs/raxos/
+rm ${local_zip_path}
 
 echo "setup complete"
