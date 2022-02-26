@@ -5,10 +5,10 @@ num_clients = int(sys.argv[1])
 headers = ["Arrival Rate", "Error Rate", "Median Latency (micro seconds)", "99% latency (micro seconds)",
            "Throughput (requests per second)"]
 for i in range(1, num_clients + 1):
-    headers.append("Client " + str(i) + " Throughput")
+    headers.append("Client " + str(i) + " Throughput (requests per second)")
 
 for i in range(1, num_clients + 1):
-    headers.append("Client " + str(i) + " Median Latency")
+    headers.append("Client " + str(i) + " Median Latency (micro seconds)")
 
 # best case
 records = [headers]
