@@ -18,7 +18,7 @@ const incomingRequestBufferSize = 100000 // size of the buffer that collects inc
 const numOutgoingThreads = 200           // number of wire writers: since the I/O writing is expensive we delegate that task to a thread pool and separate from the critical path
 const incomingBufferSize = 1000000       // the size of the buffer which receives all the incoming messages
 const outgoingBufferSize = 1000000       // size of the buffer that collects messages to be written to the wire
-const hashBatchSize = 10000              // size of the buffer that collects hashes to be sent to the leader
+const hashChannelSize = 10000            // size of the buffer that collects hashes to be sent to the leader
 
 type Instance struct {
 	nodeName    int64 // unique node identifier as defined in the configuration.yml
@@ -113,7 +113,7 @@ type Instance struct {
 
 */
 
-func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serviceTime int64, responseSize int64, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmarkNumber int64, numKeys int64) *Instance {
+func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serviceTime int64, responseSize int64, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmarkNumber int64, numKeys int64, hashBatchSize int64, hashBatchTime int64) *Instance {
 	in := Instance{
 		nodeName:                name,
 		numReplicas:             int64(len(cfg.Peers)),
@@ -169,9 +169,9 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 		consensusMessageProposerDestination: 1,
 		consensusMessageCommonDestination:   2,
 		Hi:                                  100000,
-		hashProposalsIn:                     make(chan string, hashBatchSize),
-		hashBatchSize:                       10, // todo this might have to be changed in the WAN
-		hashBatchTime:                       100,
+		hashProposalsIn:                     make(chan string, hashChannelSize),
+		hashBatchSize:                       int(hashBatchSize), // todo this might have to be changed in the WAN
+		hashBatchTime:                       int(hashBatchTime),
 	}
 
 	for i := 0; i < len(cfg.Peers)+len(cfg.Clients); i++ {
