@@ -25,6 +25,8 @@ func main() {
 	numKeys := flag.Int64("numKeys", 1000, "Number of keys in the key value store")
 	requestType := flag.String("requestType", "status", "request type: [status , request]")
 	operationType := flag.Int64("operationType", 1, "Type of operation for a status request: 1 (bootstrap server), 2: print log)")
+	debugLevel := flag.Int64("debugLevel", 0, "debug level")
+	debugOn := flag.Bool("debugOn", false, "turn on/off debug")
 
 	flag.Parse()
 
@@ -34,7 +36,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cl := cmd.New(*name, cfg, *logFilePath, *batchSize, *batchTime, *defaultReplica, *replicaTimeout, *requestSize, *testDuration, *warmupDuration, *arrivalRate, *benchmark, *numKeys, *requestType, *operationType)
+	cl := cmd.New(*name, cfg, *logFilePath, *batchSize, *batchTime, *defaultReplica, *replicaTimeout, *requestSize, *testDuration, *warmupDuration, *arrivalRate, *benchmark, *numKeys, *requestType, *operationType, int(*debugLevel), *debugOn)
 
 	go cl.WaitForConnections()
 	cl.Run()

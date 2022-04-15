@@ -21,11 +21,11 @@ func (cl *Client) handleClientStatusResponse(response *proto.ClientStatusRespons
 */
 
 func (cl *Client) SendStatus(operationType int64) {
-	cl.debug("Sending status request to all replicas")
+	cl.debug("Sending status request to all replicas", 0)
 	for i := int64(0); i < cl.numReplicas; i++ {
 
 		/*
-			Since the send Message doesn't expect broadcast, create a message for each replica
+			Since send Message doesn't expect broadcast, create a message for each replica
 		*/
 
 		statusRequest := proto.ClientStatusRequest{
@@ -41,7 +41,7 @@ func (cl *Client) SendStatus(operationType int64) {
 		}
 
 		cl.sendMessage(i, rpcPair)
-		cl.debug("Sent status to " + strconv.Itoa(int(i)))
+		cl.debug("Sent status to "+strconv.Itoa(int(i)), 0)
 	}
 	time.Sleep(time.Duration(statusTimeout) * time.Second)
 }

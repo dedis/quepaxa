@@ -20,7 +20,7 @@ func (cl *Client) handleClientResponseBatch(batch *proto.ClientResponseBatch) {
 		time:  time.Now(), // record the time when the response was received
 	}
 	cl.lastSeenTimeReplica = time.Now() // mark the last time a response was received
-	cl.debug("Added response Batch from " + strconv.Itoa(int(batch.Sender)) + " to received array")
+	cl.debug("Added response Batch from "+strconv.Itoa(int(batch.Sender))+" to received array", 0)
 }
 
 /*
@@ -72,7 +72,7 @@ func (cl *Client) startRequestGenerators() {
 					Id:       strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id
 				}
 
-				cl.debug("Sent " + strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter) + " batch size " + strconv.Itoa(len(requests)))
+				cl.debug("Sent "+strconv.Itoa(int(cl.clientName))+"."+strconv.Itoa(threadNumber)+"."+strconv.Itoa(localCounter)+" batch size "+strconv.Itoa(len(requests)), 0)
 
 				localCounter++
 
@@ -142,14 +142,14 @@ func (cl *Client) generateArrivalTimes() {
 
 func (cl *Client) startFailureDetector() {
 	go func() {
-		cl.debug("Starting failure detector")
+		cl.debug("Starting failure detector", 0)
 		for true {
 
 			time.Sleep(time.Duration(cl.replicaTimeout) * time.Second)
 			if time.Now().Sub(cl.lastSeenTimeReplica).Seconds() > float64(cl.replicaTimeout) {
 
 				// change the default replica
-				cl.debug("Changing the default replica")
+				cl.debug("Changing the default replica", 2)
 				cl.defaultReplica = (cl.defaultReplica + 1) % cl.numReplicas
 				cl.lastSeenTimeReplica = time.Now()
 			}

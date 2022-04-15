@@ -57,7 +57,8 @@ type Client struct {
 	replicaTimeout      int64     // in seconds: each replica has a unique proposer assigned, upon a timeout, the client changes its default replica
 	lastSeenTimeReplica time.Time // time the assigned proposer last sent a response
 
-	debugOn bool // if turned on, the debug messages will be print on the console
+	debugOn    bool // if turned on, the debug messages will be print on the console
+	debugLevel int  // debug level
 
 	requestSize    int64 // size of the request payload in bytes (applicable only for the no-op application / testing purposes)
 	testDuration   int64 // test duration in seconds
@@ -105,7 +106,7 @@ const arrivalBufferSize = 1000000     // size of the buffer that collects new re
 	Instantiate a new Client instance, allocate the buffers
 */
 
-func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batchSize int64, batchTime int64, defaultReplica int64, replicaTimeout int64, requestSize int64, testDuration int64, warmupDuration int64, arrivalRate int64, benchmark int64, numKeys int64, requestType string, operationType int64) *Client {
+func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batchSize int64, batchTime int64, defaultReplica int64, replicaTimeout int64, requestSize int64, testDuration int64, warmupDuration int64, arrivalRate int64, benchmark int64, numKeys int64, requestType string, operationType int64, debugLevel int, debugOn bool) *Client {
 	cl := Client{
 		clientName:      name,
 		numReplicas:     int64(len(cfg.Peers)),
@@ -128,7 +129,8 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		defaultReplica:          defaultReplica,
 		replicaTimeout:          replicaTimeout,
 		lastSeenTimeReplica:     time.Now(),
-		debugOn:                 false, // manually set this if debugging needs to be turned on
+		debugOn:                 debugOn, // manually set this if debugging needs to be turned on
+		debugLevel:              debugLevel,
 		requestSize:             requestSize,
 		testDuration:            testDuration,
 		warmupDuration:          warmupDuration,
@@ -145,7 +147,7 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		clientListenAddress:     cfg.Clients[int(name)-len(cfg.Peers)].Address,
 	}
 
-	cl.debug("Created a new client instance")
+	cl.debug("Created a new client instance", 0)
 
 	for i := 0; i < len(cfg.Peers); i++ {
 		cl.socketMutexs[i] = sync.Mutex{}
@@ -161,7 +163,7 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 	cl.RegisterRPC(new(proto.ClientStatusRequest), cl.clientStatusRequestRpc)
 	cl.RegisterRPC(new(proto.ClientStatusResponse), cl.clientStatusResponseRpc)
 
-	cl.debug("Registered RPCs in the table")
+	cl.debug("Registered RPCs in the table", 0)
 
 	pid := os.Getpid()
 	fmt.Printf("initialized client %v with process id: %v \n", name, pid)
@@ -183,7 +185,7 @@ func (cl *Client) RegisterRPC(msgObj proto.Serializable, code uint8) {
 
 func (cl *Client) ConnectToReplicas() {
 
-	cl.debug("Connecting to " + strconv.Itoa(int(cl.numReplicas)) + " replicas")
+	cl.debug("Connecting to "+strconv.Itoa(int(cl.numReplicas))+" replicas", 0)
 
 	var b [4]byte
 	bs := b[:4]
@@ -197,15 +199,15 @@ func (cl *Client) ConnectToReplicas() {
 				binary.LittleEndian.PutUint16(bs, uint16(cl.clientName))
 				_, err := conn.Write(bs)
 				if err != nil {
-					cl.debug("Error while connecting to replica" + strconv.Itoa(int(i)))
+					cl.debug("Error while connecting to replica"+strconv.Itoa(int(i)), 0)
 					panic(err)
 				}
-				cl.debug("Established outgoing connection to " + strconv.Itoa(int(i)))
+				cl.debug("Established outgoing connection to "+strconv.Itoa(int(i)), 0)
 				break
 			}
 		}
 	}
-	cl.debug("Established all outgoing connections to replicas")
+	cl.debug("Established all outgoing connections to replicas", 0)
 }
 
 /*
@@ -218,7 +220,7 @@ func (cl *Client) WaitForConnections() {
 	var b [4]byte
 	bs := b[:4]
 	Listener, _ := net.Listen("tcp", cl.clientListenAddress)
-	cl.debug("Listening to incoming connections on " + cl.clientListenAddress)
+	cl.debug("Listening to incoming connections on "+cl.clientListenAddress, 0)
 
 	for true {
 		conn, err := Listener.Accept()
@@ -231,11 +233,11 @@ func (cl *Client) WaitForConnections() {
 			panic(err)
 		}
 		id := int32(binary.LittleEndian.Uint16(bs))
-		cl.debug("Received incoming tcp connection from " + strconv.Itoa(int(id)))
+		cl.debug("Received incoming tcp connection from "+strconv.Itoa(int(id)), 0)
 
 		cl.incomingReplicaReaders[id] = bufio.NewReader(conn)
 		go cl.connectionListener(cl.incomingReplicaReaders[id], id)
-		cl.debug("Started listening to " + strconv.Itoa(int(id)))
+		cl.debug("Started listening to "+strconv.Itoa(int(id)), 0)
 
 	}
 }
@@ -251,13 +253,13 @@ func (cl *Client) connectionListener(reader *bufio.Reader, id int32) {
 
 	for true {
 		if msgType, err = reader.ReadByte(); err != nil {
-			cl.debug("Error while reading message code: connection broken from " + strconv.Itoa(int(id)))
+			cl.debug("Error while reading message code: connection broken from "+strconv.Itoa(int(id)), 1)
 			return
 		}
 		if rpair, present := cl.rpcTable[msgType]; present {
 			obj := rpair.Obj.New()
 			if err = obj.Unmarshal(reader); err != nil {
-				cl.debug("Error while unmarshalling")
+				cl.debug("Error while unmarshalling", 1)
 				return
 			}
 			cl.incomingChan <- &raxos.RPCPair{
@@ -265,7 +267,7 @@ func (cl *Client) connectionListener(reader *bufio.Reader, id int32) {
 				Obj:  obj,
 			}
 		} else {
-			cl.debug("Error: received unknown message type")
+			cl.debug("Error: received unknown message type", 1)
 		}
 	}
 }
@@ -274,8 +276,8 @@ func (cl *Client) connectionListener(reader *bufio.Reader, id int32) {
 	If turned on, prints the message to console
 */
 
-func (cl *Client) debug(message string) {
-	if cl.debugOn {
+func (cl *Client) debug(message string, level int) {
+	if cl.debugOn && level >= cl.debugLevel {
 		fmt.Printf("%s\n", message)
 	}
 }
@@ -289,22 +291,22 @@ func (cl *Client) Run() {
 	go func() {
 		for true {
 
-			cl.debug("Checking channel\n")
+			cl.debug("Checking channel\n", 0)
 			replicaMessage := <-cl.incomingChan
 			//in.lock.Lock()
-			cl.debug("Received replica message")
+			cl.debug("Received replica message", 0)
 			code := replicaMessage.Code
 			switch code {
 
 			case cl.clientResponseBatchRpc:
 				clientResponseBatch := replicaMessage.Obj.(*proto.ClientResponseBatch)
-				cl.debug("Client response batch from " + fmt.Sprintf("%#v", clientResponseBatch.Sender))
+				cl.debug("Client response batch from "+fmt.Sprintf("%#v", clientResponseBatch.Sender), 0)
 				cl.handleClientResponseBatch(clientResponseBatch)
 				break
 
 			case cl.clientStatusResponseRpc:
 				clientStatusResponse := replicaMessage.Obj.(*proto.ClientStatusResponse)
-				cl.debug("Client Status Response from" + fmt.Sprintf("%#v", clientStatusResponse.Sender))
+				cl.debug("Client Status Response from"+fmt.Sprintf("%#v", clientStatusResponse.Sender), 0)
 				cl.handleClientStatusResponse(clientStatusResponse)
 				break
 			}
@@ -319,30 +321,28 @@ func (cl *Client) Run() {
 
 func (cl *Client) internalSendMessage(peer int64, rpcPair *raxos.RPCPair) {
 	code := rpcPair.Code
-	oriMsg := rpcPair.Obj
-	var msg proto.Serializable
-	msg = oriMsg // unlike in the replica where we generate a new message, to avoid unsafe concurrent proto operations, we use a single message object, because the client doesn't broadcast (even when it does it create a new message)
+	msg := rpcPair.Obj
 	var w *bufio.Writer
 
 	w = cl.outgoingReplicaWriters[peer]
 	cl.socketMutexs[peer].Lock()
 	err := w.WriteByte(code)
 	if err != nil {
-		cl.debug("Error writing message code byte:" + err.Error())
+		cl.debug("Error writing message code byte:"+err.Error(), 1)
 		return
 	}
 	err = msg.Marshal(w)
 	if err != nil {
-		cl.debug("Error while marshalling:" + err.Error())
+		cl.debug("Error while marshalling:"+err.Error(), 1)
 		return
 	}
 	err = w.Flush()
 	if err != nil {
-		cl.debug("Error flushing:" + err.Error())
+		cl.debug("Error flushing:"+err.Error(), 1)
 		return
 	}
 	cl.socketMutexs[peer].Unlock()
-	cl.debug("Internal sent message to " + strconv.Itoa(int(peer)))
+	cl.debug("Internal sent message to "+strconv.Itoa(int(peer)), 0)
 }
 
 /*
@@ -355,7 +355,7 @@ func (cl *Client) StartOutgoingLinks() {
 			for true {
 				outgoingMessage := <-cl.outgoingMessageChan
 				cl.internalSendMessage(outgoingMessage.Peer, outgoingMessage.RpcPair)
-				cl.debug("Invoked internal sent to replica " + strconv.Itoa(int(outgoingMessage.Peer)))
+				cl.debug("Invoked internal sent to replica "+strconv.Itoa(int(outgoingMessage.Peer)), 0)
 			}
 		}()
 	}
@@ -370,5 +370,5 @@ func (cl *Client) sendMessage(peer int64, rpcPair raxos.RPCPair) {
 		RpcPair: &rpcPair,
 		Peer:    peer,
 	}
-	cl.debug("Added RPC pair to outgoing channel to peer " + strconv.Itoa(int(peer)))
+	cl.debug("Added RPC pair to outgoing channel to peer "+strconv.Itoa(int(peer)), 0)
 }
