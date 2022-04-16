@@ -60,8 +60,8 @@ func (cl *Client) startRequestGenerators() {
 				var requests []*proto.ClientRequestBatch_SingleClientRequest
 				// this loop collects requests until the minimum batch size is met OR the batch time is timeout
 				for !(numRequests >= cl.batchSize || (time.Now().Sub(lastSent).Microseconds() > cl.batchTime && numRequests > 0)) {
-					_ = <-cl.arrivalChan                                                                               // keep collecting new requests arrivals
-					requests = append(requests, &proto.ClientRequestBatch_SingleClientRequest{Message: sampleRequest}) //todo for actual benchmarks the same request should be replaced with redis op or kvstore op
+					_ = <-cl.arrivalChan                                                                                                                                                                                                                                     // keep collecting new requests arrivals
+					requests = append(requests, &proto.ClientRequestBatch_SingleClientRequest{Message: strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter) + "." + strconv.Itoa(int(numRequests)) + "." + sampleRequest}) //todo for actual benchmarks the same request should be replaced with redis op or kvstore op
 					numRequests++
 				}
 
