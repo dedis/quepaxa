@@ -7,13 +7,13 @@ import "raxos/proto"
 */
 
 type Value struct {
-	id  string // id of the MessageBlock
+	id  string // id of the MessageBlock(s)
 	fit string
 }
 
 /*
 	Slot maintains the consensus and the smr state of a single Slot
-	the definition of the sets is different from the implementation, but the only different is the naming of sets. The core logic is same
+	the definition of the sets is different from the algorithm, but the only different is the naming of sets. The core logic is same
 */
 type Slot struct {
 	index     int64

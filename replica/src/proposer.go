@@ -8,12 +8,10 @@ import (
 )
 
 /*
-	Proposer: This is a message from the recorder to the proposer
+	Proposer: handler for proposer consensus messages
 */
 
 func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.GenericConsensus) {
-
-	// case 1: a decide message from a recorder. This is not handled here, but in the common.go since it is common to both the proposer and the recorder
 
 	// case 2: a propose reply message from a recorder
 
@@ -97,7 +95,7 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 			// case 4.1.1 If U.getTheBest() == E.getTheBest()
 			if U_Best.id != "" && U_Best.fit != "" && E_Best.id != "" && E_Best.fit != "" {
 				if U_Best.id == E_Best.id && U_Best.fit == E_Best.fit {
-					in.proposerReceivedMajorityProposeWithHi(consensusMessage, U_Best) //todo C-best or U-best?
+					in.proposerReceivedMajorityProposeWithHi(consensusMessage, U_Best)
 					return
 				}
 			}
@@ -138,7 +136,7 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 }
 
 /*
-	Proposer: catch-up when received a message with a higher time stamp from the recorder
+	Catch-up when received a message with a higher time stamp from the recorder
 */
 
 func (in *Instance) consensusCatchUp(consensusMessage *proto.GenericConsensus) {
@@ -180,7 +178,7 @@ func (in *Instance) consensusCatchUp(consensusMessage *proto.GenericConsensus) {
 }
 
 /*
-	Proposer: Upon receiving a quarum of propose responses, broadcast a spreadE message to all recorders
+	Upon receiving a quorum of propose responses, broadcast a spreadE message to all recorders
 */
 
 func (in *Instance) proposerSendSpreadE(index int64) {
@@ -204,14 +202,14 @@ func (in *Instance) proposerSendSpreadE(index int64) {
 			Code: in.genericConsensusRpc,
 			Obj:  &consensusSpreadE,
 		}
-		in.debug("sending a spreadE consensus message to "+strconv.Itoa(int(i)), 1)
+		in.debug("sending a spreadE consensus message to recorder "+strconv.Itoa(int(i)), 1)
 
 		in.sendMessage(i, rpcPair)
 	}
 }
 
 /*
-	Proposer: Called when the proposer receives f+1 propose responses, and each response correspond to Hi priority for the same value
+	Proposer: Called when the proposer receives f+1 propose responses, and each response corresponds to Hi priority for the same value
 */
 
 func (in *Instance) proposerReceivedMajorityProposeWithHi(consensusMessage *proto.GenericConsensus, majorityValue Value) {
@@ -223,6 +221,7 @@ func (in *Instance) proposerReceivedMajorityProposeWithHi(consensusMessage *prot
 	}
 	in.proposerReplicatedLog[consensusMessage.Index].proposer = in.getProposer(majorityValue)
 
+	// clean the memory
 	in.proposerReplicatedLog[consensusMessage.Index].P = Value{}
 	in.proposerReplicatedLog[consensusMessage.Index].E = []Value{}
 	in.proposerReplicatedLog[consensusMessage.Index].C = []Value{}
@@ -243,7 +242,7 @@ func (in *Instance) proposerReceivedMajorityProposeWithHi(consensusMessage *prot
 			Receiver: i,
 			Index:    consensusMessage.Index,
 			M:        in.decideMessage,
-			S:        in.proposerReplicatedLog[consensusMessage.Index].S,
+			S:        in.proposerReplicatedLog[consensusMessage.Index].S, // not needed
 			P:        nil,
 			E:        nil,
 			C:        nil,
@@ -253,7 +252,7 @@ func (in *Instance) proposerReceivedMajorityProposeWithHi(consensusMessage *prot
 				Fit: in.proposerReplicatedLog[consensusMessage.Index].decision.fit,
 			},
 			PR:          in.proposerReplicatedLog[consensusMessage.Index].proposer,
-			Destination: in.consensusMessageCommonDestination,
+			Destination: in.consensusMessageCommonDestination, // to be consumed by both proposer and recorder
 		}
 
 		rpcPair := RPCPair{
@@ -268,7 +267,7 @@ func (in *Instance) proposerReceivedMajorityProposeWithHi(consensusMessage *prot
 }
 
 /*
-	Proposer: Scan the propose replies set and assign the number of times the Hi priority appears for each proposal
+	Scan the propose replies set from recorders and assign the number of times the Hi priority appears for each proposal
 */
 
 func (in *Instance) getProposalWithMajorityHi(e []*proto.GenericConsensus) Value {
@@ -276,7 +275,7 @@ func (in *Instance) getProposalWithMajorityHi(e []*proto.GenericConsensus) Value
 	ValueCount = make(map[string]int64)
 	for i := 0; i < len(e); i++ {
 		if strings.HasPrefix(e[i].P.Fit, strconv.FormatInt(in.Hi, 10)) {
-			_, ok := ValueCount[e[i].P.Id+e[i].P.Fit]
+			_, ok := ValueCount[e[i].P.Id+e[i].P.Fit] // note that this is a unique key
 			if !ok {
 				ValueCount[e[i].P.Id+e[i].P.Fit] = 1 // note that each proposal has a unique id
 			} else {
@@ -329,10 +328,11 @@ func (in *Instance) recordProposerDecide(consensusMessage *proto.GenericConsensu
 	in.proposerReplicatedLog[consensusMessage.Index].gatherCResponses = []*proto.GenericConsensus{}
 
 	in.delivered(consensusMessage.Index, consensusMessage.DS.Id, consensusMessage.PR)
+
 }
 
 /*
-	Proposer: propose a new block for the slot index
+	propose a new block for the slot index
 */
 
 func (in *Instance) propose(index int64, hash string) {
@@ -351,7 +351,7 @@ func (in *Instance) propose(index int64, hash string) {
 }
 
 /*
-	Proposer: indication from the consensus layer that a value is decided
+	indication from the consensus layer that a value is decided
 */
 
 func (in *Instance) delivered(index int64, hash string, proposer int64) {
@@ -376,7 +376,7 @@ func (in *Instance) updateStateMachine() {
 	for len(in.proposerReplicatedLog) > int(in.committedIndex)+1 && in.proposerReplicatedLog[in.committedIndex+1].decided == true {
 
 		decision := in.proposerReplicatedLog[in.committedIndex+1].decision.id
-		in.debug("Decided "+strconv.Itoa(int(in.committedIndex+1))+" with decision "+decision, 0)
+		in.debug("Decided "+strconv.Itoa(int(in.committedIndex+1))+" with decision "+decision, 1)
 		// if the decision is a sequence of hashes, then invoke the following for each hash: check if all the hashes exist and succeed only if everything exists
 		blocks := make([]*proto.MessageBlock, 0)
 		hashes := strings.Split(decision, ":")
@@ -413,7 +413,7 @@ func (in *Instance) updateStateMachine() {
 }
 
 /*
-	Proposer: Execute each command in the block, get the response array and send the responses back to the client if I am the proposer who created this block
+	Execute each command in the block, get the response array and send the responses back to the client if I am the proposer who created this block
 */
 
 func (in *Instance) executeAndSendResponse(block *proto.MessageBlock) {
@@ -448,27 +448,7 @@ func (in *Instance) executeAndSendResponse(block *proto.MessageBlock) {
 }
 
 /*
-	Proposer: Send a consensus request to the leader / set of leaders. Upon receiving this, the leader node will eventually propose a value for a slot, for this hash
-*/
-
-func (in *Instance) sendConsensusRequest(hash string) {
-	leader := in.getDeterministicLeader1() //todo change this when adding the improvements
-	consensusRequest := proto.ConsensusRequest{
-		Sender:   in.nodeName,
-		Receiver: leader,
-		Hash:     hash,
-	}
-	rpcPair := RPCPair{
-		Code: in.consensusRequestRpc,
-		Obj:  &consensusRequest,
-	}
-	in.debug("sending a consensus request to "+strconv.Itoa(int(leader))+" for the hash "+hash, 1)
-
-	in.sendMessage(leader, rpcPair)
-}
-
-/*
-	Proposer: Upon receiving a consensus request, the leader node will propose it to the consensus layer if the number of inflight requests is less than the pipeline length
+	Upon receiving a consensus request, the leader node will propose it to the consensus layer if the number of inflight requests is less than the pipeline length
 */
 
 func (in *Instance) handleConsensusRequest(request *proto.ConsensusRequest) {
@@ -504,7 +484,7 @@ func (in *Instance) updateProposedIndex(hash string) {
 }
 
 /*
-	Proposer: Returns the proposer who proposed this value
+	Proposer: Returns the proposer who proposed this value, extracted using the fitness
 */
 
 func (in *Instance) getProposer(value Value) int64 {
@@ -518,7 +498,7 @@ func (in *Instance) getProposer(value Value) int64 {
 }
 
 /*
-	Proposer: Create an E multi set which is a 2d array, each element of E is the E set of the response[i]
+	A util function to create an E multi set which is a 2d array, each element of E is the E set of the response[i]
 */
 
 func (in *Instance) getESetfromSpreadEResponses(responses []*proto.GenericConsensus) [][]Value {
@@ -537,7 +517,7 @@ func (in *Instance) getESetfromSpreadEResponses(responses []*proto.GenericConsen
 }
 
 /*
-	Proposer: Scans all the spreadE E sets, and checks if there is a proposal which appears in all the E sets with priority Hi
+	Proposer: Scans all the E sets, and checks if there is a proposal which appears in all the E sets with priority Hi
 */
 
 func (in *Instance) getProposalWithMajoriyHiInAllESets(set [][]Value) Value {
@@ -622,7 +602,7 @@ func (in *Instance) proposerSendSpreadCGatherE(index int64) {
 }
 
 /*
-	Proposer: Returns the best proposal in the array: best proposal is the proposal with the highest priority.
+	Returns the best proposal in the array: best proposal is the proposal with the highest priority.
 	Note that priorities have the form pi.node such that in case of equal pi, the higher node number wins
 */
 
@@ -644,7 +624,7 @@ func (in *Instance) getBestProposal(e []Value) Value {
 }
 
 /*
-	Proposer: checks if value2 has a higher priority than value1
+	checks if value2 has a higher priority than value1
 */
 
 func (in *Instance) hasHigherPriority(value1 Value, value2 Value) bool {
@@ -674,7 +654,7 @@ func (in *Instance) hasHigherPriority(value1 Value, value2 Value) bool {
 }
 
 /*
-	Proposer: Send a GatherC message to all recorders
+	Send a GatherC message to all recorders
 */
 
 func (in *Instance) proposerSendGatherC(index int64) {
@@ -705,7 +685,7 @@ func (in *Instance) proposerSendGatherC(index int64) {
 }
 
 /*
-	Proposer: Broadcast slow path propose message to all recorders
+	Broadcast slow path propose message to all recorders: what is slow path? we do not make any distinction in the recorder side
 */
 
 func (in *Instance) proposerSendPropose(index int64) {
@@ -740,7 +720,7 @@ func (in *Instance) proposerSendPropose(index int64) {
 }
 
 /*
-	Proposer: upon receiving majority gather messages, reset the variables
+	Upon receiving majority gather messages, increase s and reset the variables
 */
 
 func (in *Instance) proposerResetSlotAfterReceivingGather(consensusMessage *proto.GenericConsensus) {

@@ -27,13 +27,11 @@ type Instance struct {
 
 	//lock sync.Mutex // todo for the moment we don't need this because the shared state is accessed only by the single main thread, but have to verify this
 
-	replicaAddrList []string // array with the IP:port address of every replica
-	//replicaConnections     []net.Conn // cache of replica connections to all other replicas
+	replicaAddrList        []string // array with the IP:port address of every replica
 	incomingReplicaReaders []*bufio.Reader
 	outgoingReplicaWriters []*bufio.Writer
 
-	clientAddrList []string // array with the IP:port address of every client
-	//clientConnections     []net.Conn // cache of client connections to all other clients
+	clientAddrList        []string // array with the IP:port address of every client
 	incomingClientReaders []*bufio.Reader
 	outgoingClientWriters []*bufio.Writer
 
@@ -59,7 +57,7 @@ type Instance struct {
 	stateMachine          *benchmark.App // the application
 
 	committedIndex int64 // last index for which a request was committed and the result was sent to client
-	proposedIndex  int64 // last index for which a request was proposed //todo think about the relationship between committed index and the proposed index
+	proposedIndex  int64 // last index for which a request was proposed
 
 	proposed []string // assigns the proposed request to the slot
 
@@ -69,7 +67,7 @@ type Instance struct {
 	responseSize   int64  // fixed response size (might not be useful if the replica doesn't send fixed sized responses)
 	responseString string // fixed response string to use if the response size is fixed (might not be used)
 
-	batchSize int64 // maximum server side batch size
+	batchSize int64 // maximum replica side batch size
 	batchTime int64 // maximum replica side batch time in micro seconds
 
 	pipelineLength      int64 // maximum number of inflight consensus instances
@@ -108,12 +106,11 @@ type Instance struct {
 
 /*
 
-	Instantiate a new Instance object, allocates the buffers
-	Initializes the message store
+	Instantiate a new Instance object, allocates the buffers and initialize the message store
 
 */
 
-func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serviceTime int64, responseSize int64, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmarkNumber int64, numKeys int64, hashBatchSize int64, hashBatchTime int64) *Instance {
+func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serviceTime int64, responseSize int64, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmarkNumber int64, numKeys int64, hashBatchSize int64, hashBatchTime int64, debugOn bool, debugLevel int) *Instance {
 	in := Instance{
 		nodeName:                name,
 		numReplicas:             int64(len(cfg.Peers)),
@@ -156,8 +153,8 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 		blockCounter:                        0,
 		leaderTimeout:                       leaderTimeout,
 		lastSeenTime:                        make([]time.Time, len(cfg.Peers)),
-		debugOn:                             false,
-		debugLevel:                          2, // manually set the debug level
+		debugOn:                             debugOn,
+		debugLevel:                          debugLevel, // manually set the debug level
 		serverStarted:                       false,
 		proposeMessage:                      0,
 		spreadEMessage:                      1,

@@ -47,7 +47,7 @@ func (ms *MessageStore) Add(block *proto.MessageBlock) {
 }
 
 /*
-	return an existing block
+	return an existing mem block
 */
 
 func (ms *MessageStore) Get(id string) (*proto.MessageBlock, bool) {

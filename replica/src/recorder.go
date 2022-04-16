@@ -81,7 +81,7 @@ func (in *Instance) handleRecorderConsensusMessage(consensusMessage *proto.Gener
 }
 
 /*
-	Recorder: handling of a spreadCGatherE message
+	handler for spreadCGatherE message
 */
 
 func (in *Instance) handleRecorderSpreadCGatherEMessage(consensusMessage *proto.GenericConsensus) {
@@ -95,7 +95,7 @@ func (in *Instance) handleRecorderSpreadCGatherEMessage(consensusMessage *proto.
 }
 
 /*
-	Recorder: handle a spreadE message
+	handler for spreadE message
 */
 
 func (in *Instance) handleRecorderSpreadEMessage(consensusMessage *proto.GenericConsensus) {
@@ -109,7 +109,7 @@ func (in *Instance) handleRecorderSpreadEMessage(consensusMessage *proto.Generic
 }
 
 /*
-	Recorder: handle of a propose message
+	handler for propose messages
 */
 
 func (in *Instance) handleRecorderProposeMessage(consensusMessage *proto.GenericConsensus) {
@@ -129,7 +129,7 @@ func (in *Instance) handleRecorderProposeMessage(consensusMessage *proto.Generic
 }
 
 /*
-	Recorder:  mark the slot as decided
+	mark the slot as decided
 */
 
 func (in *Instance) recordRecorderDecide(consensusMessage *proto.GenericConsensus) {
@@ -153,7 +153,7 @@ func (in *Instance) recordRecorderDecide(consensusMessage *proto.GenericConsensu
 }
 
 /*
-	Recorder: send a decide message
+	send a decide message to the proposer
 */
 
 func (in *Instance) sendRecorderDecided(consensusMessage *proto.GenericConsensus) {

@@ -46,11 +46,19 @@ func getStringOfSizeN(length int) string {
 	return str
 }
 
+/*
+	a util function to convert a single client request between mem pool and client request
+*/
+
 func (in *Instance) convertClientRequest(request *proto.ClientRequestBatch_SingleClientRequest) *proto.MessageBlock_SingleClientRequest {
 	var returnClientRequest proto.MessageBlock_SingleClientRequest
 	returnClientRequest.Message = request.Message
 	return &returnClientRequest
 }
+
+/*
+	a util function to convert between client request and mem pool client request batch
+*/
 
 func (in *Instance) convertToClientRequestBatch(batch *proto.ClientRequestBatch) *proto.MessageBlock_ClientRequestBatch {
 	var returnBatch proto.MessageBlock_ClientRequestBatch
@@ -61,6 +69,10 @@ func (in *Instance) convertToClientRequestBatch(batch *proto.ClientRequestBatch)
 	}
 	return &returnBatch
 }
+
+/*
+	A util function to convert different client request batch array
+*/
 
 func (in *Instance) convertToMessageBlockRequests(requests []*proto.ClientRequestBatch) []*proto.MessageBlock_ClientRequestBatch {
 	var returnArray []*proto.MessageBlock_ClientRequestBatch
@@ -132,7 +144,7 @@ func GetReplicaAddressList(cfg *configuration.InstanceConfig) []string {
 }
 
 /*
-	Util: Convert data structure value array to proto generic consensus value array
+	A Util function the convert data structure value array to proto generic consensus value array
 */
 
 func (in *Instance) getGenericConsensusValueArray(e []Value) []*proto.GenericConsensusValue {
@@ -147,7 +159,7 @@ func (in *Instance) getGenericConsensusValueArray(e []Value) []*proto.GenericCon
 }
 
 /*
-	Util: Convert generic consensus value array to []value
+	onvert generic consensus value array to []value
 */
 
 func (in *Instance) proposerConvertToValueArray(c []*proto.GenericConsensusValue) []Value {
