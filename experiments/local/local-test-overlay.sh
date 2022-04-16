@@ -65,7 +65,7 @@ sleep 10
 
 echo "Sent initial status to bootstrap"
 
-sleep 20
+sleep 10
 
 echo "Starting client[s]"
 

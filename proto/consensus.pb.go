@@ -36,7 +36,7 @@ type GenericConsensus struct {
 	D           bool                     `protobuf:"varint,9,opt,name=D,proto3" json:"D,omitempty"`
 	DS          *GenericConsensusValue   `protobuf:"bytes,10,opt,name=DS,proto3" json:"DS,omitempty"`
 	PR          int64                    `protobuf:"varint,11,opt,name=PR,proto3" json:"PR,omitempty"`                   // id of the proposer who decided this index
-	Destination int64                    `protobuf:"varint,12,opt,name=destination,proto3" json:"destination,omitempty"` // 1 for the proposer and 2 for the recorder, and 3 for both (decision messages)
+	Destination int64                    `protobuf:"varint,12,opt,name=destination,proto3" json:"destination,omitempty"` // 0 for the proposer and 1 for the recorder, and 2 for both (decision messages)
 }
 
 func (x *GenericConsensus) Reset() {

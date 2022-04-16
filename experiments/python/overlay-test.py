@@ -10,9 +10,9 @@ for i in range(1, len(sys.argv)):
     numberOfRequests = 0
     for l in lines:
         key = l.split(":")[0]
-        values = l.split(":")[1]
-        if values != "no-op":
-            dict[key] = values
+        value = l.split(":")[1]
+        if value != "no-op":
+            dict[key] = value
             numberOfRequests = numberOfRequests + 1
 
     files.append(dict)
