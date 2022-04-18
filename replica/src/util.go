@@ -104,7 +104,7 @@ func (in *Instance) proposedPreviously(hash string) (bool, int) {
 func (in *Instance) committedPreviously(hash string) (bool, int) {
 	// checks if this value is previously decided
 	for i := 0; i < len(in.proposerReplicatedLog); i++ {
-		if in.proposerReplicatedLog[i].decision.id == hash {
+		if in.proposerReplicatedLog[i].decision.Id == hash {
 			return true, i
 		}
 	}
@@ -144,31 +144,37 @@ func GetReplicaAddressList(cfg *configuration.InstanceConfig) []string {
 }
 
 /*
-	A Util function the convert data structure value array to proto generic consensus value array
+	A util function to support set union, item wise, for proto value
 */
 
-func (in *Instance) getGenericConsensusValueArray(e []Value) []*proto.GenericConsensusValue {
-	var returnArray []*proto.GenericConsensusValue
-	for i := 0; i < len(e); i++ {
-		returnArray = append(returnArray, &proto.GenericConsensusValue{
-			Id:  e[i].id,
-			Fit: e[i].fit,
-		})
+func (in *Instance) setUnionProtoValue(array []*proto.GenericConsensusValue, protoValue *proto.GenericConsensusValue) []*proto.GenericConsensusValue {
+	for i := 0; i < len(array); i++ {
+		if array[i].Id == protoValue.Id && array[i].Fit == protoValue.Fit {
+			return array
+		}
 	}
-	return returnArray
+	array = append(array, protoValue)
+	return array
 }
 
 /*
-	onvert generic consensus value array to []value
+	A util function to support set union, set wise, for proto value
 */
 
-func (in *Instance) proposerConvertToValueArray(c []*proto.GenericConsensusValue) []Value {
-	returnArray := make([]Value, 0)
-	for i := 0; i < len(c); i++ {
-		returnArray = append(returnArray, Value{
-			id:  c[i].Id,
-			fit: c[i].Fit,
-		})
+func (in *Instance) setUnionProtoValues(array []*proto.GenericConsensusValue, protoValue []*proto.GenericConsensusValue) []*proto.GenericConsensusValue {
+
+	for i := 0; i < len(protoValue); i++ {
+		found := false
+		for j := 0; j < len(array); j++ {
+			if array[j].Id == protoValue[i].Id && array[j].Fit == protoValue[i].Fit {
+				found = true
+				break
+			}
+		}
+		if found == false {
+			array = append(array, protoValue[i])
+		}
 	}
-	return returnArray
+
+	return array
 }

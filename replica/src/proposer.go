@@ -2,6 +2,7 @@ package raxos
 
 import (
 	"math"
+	"os"
 	"raxos/proto"
 	"strconv"
 	"strings"
@@ -16,10 +17,7 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 	// case 2: a propose reply message from a recorder
 
 	if consensusMessage.M == in.proposeMessage && in.proposerReplicatedLog[consensusMessage.Index].S == consensusMessage.S {
-		in.proposerReplicatedLog[consensusMessage.Index].E = append(in.proposerReplicatedLog[consensusMessage.Index].E, Value{
-			id:  consensusMessage.P.Id,
-			fit: consensusMessage.P.Fit,
-		})
+		in.proposerReplicatedLog[consensusMessage.Index].E = in.setUnionProtoValue(in.proposerReplicatedLog[consensusMessage.Index].E, consensusMessage.P)
 
 		in.proposerReplicatedLog[consensusMessage.Index].proposeResponses = append(in.proposerReplicatedLog[consensusMessage.Index].proposeResponses, consensusMessage)
 
@@ -29,13 +27,13 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 			majorityValue := in.getProposalWithMajorityHi(in.proposerReplicatedLog[consensusMessage.Index].proposeResponses)
 
 			// case 2.1.1 a majority of the proposals responses have Hi and I am not decided yet
-			if majorityValue.id != "" && majorityValue.fit != "" && in.proposerReplicatedLog[consensusMessage.Index].decided == false {
+			if majorityValue.Id != "" && majorityValue.Fit != "" && in.proposerReplicatedLog[consensusMessage.Index].decided == false {
 				in.proposerReceivedMajorityProposeWithHi(consensusMessage, majorityValue)
 				return
 			}
 
 			// case 2.1.2 no proposal with majority Hi
-			if majorityValue.id == "" && majorityValue.fit == "" {
+			if majorityValue.Id == "" && majorityValue.Fit == "" {
 				in.proposerReplicatedLog[consensusMessage.Index].S = in.proposerReplicatedLog[consensusMessage.Index].S + 1
 				in.proposerSendSpreadE(consensusMessage.Index)
 				return
@@ -53,14 +51,14 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 		if int64(len(in.proposerReplicatedLog[consensusMessage.Index].spreadEResponses)) == in.numReplicas/2+1 {
 			EdashSet := in.getESetfromSpreadEResponses(in.proposerReplicatedLog[consensusMessage.Index].spreadEResponses) // EdashSet is a 2D array that contains the E' set extracted from each spreadE reponse
 			// case 3.1.1 all E' sets contain Hi for the same value
-			var hiValue Value
+			var hiValue *proto.GenericConsensusValue
 			hiValue = in.getProposalWithMajoriyHiInAllESets(EdashSet)
-			if hiValue.id != "" && hiValue.fit != "" && in.proposerReplicatedLog[consensusMessage.Index].decided == false {
+			if hiValue.Id != "" && hiValue.Fit != "" && in.proposerReplicatedLog[consensusMessage.Index].decided == false {
 				in.proposerReceivedMajorityProposeWithHi(consensusMessage, hiValue)
 				return
 			}
 			// case 3.1.2 no hash has f+1 Hi
-			if hiValue.id == "" || hiValue.fit == "" {
+			if hiValue.Id == "" || hiValue.Fit == "" {
 				in.proposerReplicatedLog[consensusMessage.Index].C = in.proposerReplicatedLog[consensusMessage.Index].E
 				in.proposerReplicatedLog[consensusMessage.Index].S = in.proposerReplicatedLog[consensusMessage.Index].S + 1
 				in.proposerSendSpreadCGatherE(consensusMessage.Index)
@@ -75,12 +73,8 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 	// case 4: a SpreadCGatherE response
 	if consensusMessage.M == in.spreadCgatherEMessage && in.proposerReplicatedLog[consensusMessage.Index].S == consensusMessage.S {
 		// copy the E set
-		for i := 0; i < len(consensusMessage.E); i++ {
-			in.proposerReplicatedLog[consensusMessage.Index].E = append(in.proposerReplicatedLog[consensusMessage.Index].E, Value{
-				id:  consensusMessage.E[i].Id,
-				fit: consensusMessage.E[i].Fit,
-			})
-		}
+		in.proposerReplicatedLog[consensusMessage.Index].E = in.setUnionProtoValues(in.proposerReplicatedLog[consensusMessage.Index].E, consensusMessage.E)
+
 		in.proposerReplicatedLog[consensusMessage.Index].spreadCGatherEResponses = append(in.proposerReplicatedLog[consensusMessage.Index].spreadCGatherEResponses, consensusMessage)
 
 		// case 4.1: upon receiving a majority SpreadCGatherE responses
@@ -93,8 +87,9 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 			U_Best := in.getBestProposal(in.proposerReplicatedLog[consensusMessage.Index].U)
 
 			// case 4.1.1 If U.getTheBest() == E.getTheBest()
-			if U_Best.id != "" && U_Best.fit != "" && E_Best.id != "" && E_Best.fit != "" {
-				if U_Best.id == E_Best.id && U_Best.fit == E_Best.fit {
+			if U_Best.Id != "" && U_Best.Fit != "" && E_Best.Id != "" && E_Best.Fit != "" {
+				if U_Best.Id == E_Best.Id && U_Best.Fit == E_Best.Fit {
+					in.debug("decided "+strconv.Itoa(int(consensusMessage.Index))+" in the SpreadCGatherE phase, step is "+strconv.Itoa(int(in.proposerReplicatedLog[consensusMessage.Index].S))+" size of E set is "+strconv.Itoa(len(in.proposerReplicatedLog[consensusMessage.Index].E)), 3)
 					in.proposerReceivedMajorityProposeWithHi(consensusMessage, U_Best)
 					return
 				}
@@ -110,12 +105,8 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 	// case 5: a GatherC response
 	if consensusMessage.M == in.gatherCMessage && in.proposerReplicatedLog[consensusMessage.Index].S == consensusMessage.S {
 		// update the C set
-		for i := 0; i < len(consensusMessage.C); i++ {
-			in.proposerReplicatedLog[consensusMessage.Index].C = append(in.proposerReplicatedLog[consensusMessage.Index].C, Value{
-				id:  consensusMessage.C[i].Id,
-				fit: consensusMessage.C[i].Fit,
-			})
-		}
+		in.proposerReplicatedLog[consensusMessage.Index].C = in.setUnionProtoValues(in.proposerReplicatedLog[consensusMessage.Index].C, consensusMessage.C)
+
 		in.proposerReplicatedLog[consensusMessage.Index].gatherCResponses = append(in.proposerReplicatedLog[consensusMessage.Index].gatherCResponses, consensusMessage)
 
 		// case 5.1: upon receiving majority GatherC
@@ -141,21 +132,19 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 
 func (in *Instance) consensusCatchUp(consensusMessage *proto.GenericConsensus) {
 	in.proposerReplicatedLog[consensusMessage.Index].S = consensusMessage.S
-	in.proposerReplicatedLog[consensusMessage.Index].P = Value{
-		id:  consensusMessage.P.Id,
-		fit: consensusMessage.P.Fit,
-	}
-	in.proposerReplicatedLog[consensusMessage.Index].E = []Value{}
-	in.proposerReplicatedLog[consensusMessage.Index].C = []Value{}
-	in.proposerReplicatedLog[consensusMessage.Index].U = []Value{}
+	in.proposerReplicatedLog[consensusMessage.Index].P = consensusMessage.P
+
+	in.proposerReplicatedLog[consensusMessage.Index].E = []*proto.GenericConsensusValue{}
+	in.proposerReplicatedLog[consensusMessage.Index].C = []*proto.GenericConsensusValue{}
+	in.proposerReplicatedLog[consensusMessage.Index].U = []*proto.GenericConsensusValue{}
 
 	in.proposerReplicatedLog[consensusMessage.Index].proposeResponses = []*proto.GenericConsensus{}
 	in.proposerReplicatedLog[consensusMessage.Index].spreadEResponses = []*proto.GenericConsensus{}
 	in.proposerReplicatedLog[consensusMessage.Index].spreadCGatherEResponses = []*proto.GenericConsensus{}
 	in.proposerReplicatedLog[consensusMessage.Index].gatherCResponses = []*proto.GenericConsensus{}
 
-	in.proposerReplicatedLog[consensusMessage.Index].E = in.proposerConvertToValueArray(consensusMessage.E)
-	in.proposerReplicatedLog[consensusMessage.Index].C = in.proposerConvertToValueArray(consensusMessage.C)
+	in.proposerReplicatedLog[consensusMessage.Index].E = consensusMessage.E
+	in.proposerReplicatedLog[consensusMessage.Index].C = consensusMessage.C
 
 	if consensusMessage.S%4 == 1 {
 		//send a propose message
@@ -190,7 +179,7 @@ func (in *Instance) proposerSendSpreadE(index int64) {
 			M:           in.spreadEMessage,
 			S:           in.proposerReplicatedLog[index].S,
 			P:           nil,
-			E:           in.getGenericConsensusValueArray(in.proposerReplicatedLog[index].E),
+			E:           in.proposerReplicatedLog[index].E,
 			C:           nil,
 			D:           false,
 			DS:          nil,
@@ -212,45 +201,39 @@ func (in *Instance) proposerSendSpreadE(index int64) {
 	Proposer: Called when the proposer receives f+1 propose responses, and each response corresponds to Hi priority for the same value
 */
 
-func (in *Instance) proposerReceivedMajorityProposeWithHi(consensusMessage *proto.GenericConsensus, majorityValue Value) {
+func (in *Instance) proposerReceivedMajorityProposeWithHi(consensusMessage *proto.GenericConsensus, majorityValue *proto.GenericConsensusValue) {
 	in.proposerReplicatedLog[consensusMessage.Index].S = math.MaxInt64
 	in.proposerReplicatedLog[consensusMessage.Index].decided = true
-	in.proposerReplicatedLog[consensusMessage.Index].decision = Value{
-		id:  majorityValue.id,
-		fit: majorityValue.fit,
-	}
+	in.proposerReplicatedLog[consensusMessage.Index].decision = majorityValue
 	in.proposerReplicatedLog[consensusMessage.Index].proposer = in.getProposer(majorityValue)
 
 	// clean the memory
-	in.proposerReplicatedLog[consensusMessage.Index].P = Value{}
-	in.proposerReplicatedLog[consensusMessage.Index].E = []Value{}
-	in.proposerReplicatedLog[consensusMessage.Index].C = []Value{}
-	in.proposerReplicatedLog[consensusMessage.Index].U = []Value{}
+	in.proposerReplicatedLog[consensusMessage.Index].P = &proto.GenericConsensusValue{}
+	in.proposerReplicatedLog[consensusMessage.Index].E = []*proto.GenericConsensusValue{}
+	in.proposerReplicatedLog[consensusMessage.Index].C = []*proto.GenericConsensusValue{}
+	in.proposerReplicatedLog[consensusMessage.Index].U = []*proto.GenericConsensusValue{}
 	in.proposerReplicatedLog[consensusMessage.Index].proposeResponses = []*proto.GenericConsensus{}
 	in.proposerReplicatedLog[consensusMessage.Index].spreadEResponses = []*proto.GenericConsensus{}
 	in.proposerReplicatedLog[consensusMessage.Index].spreadCGatherEResponses = []*proto.GenericConsensus{}
 	in.proposerReplicatedLog[consensusMessage.Index].gatherCResponses = []*proto.GenericConsensus{}
 
-	in.delivered(consensusMessage.Index, majorityValue.id, in.proposerReplicatedLog[consensusMessage.Index].proposer)
+	in.delivered(consensusMessage.Index, majorityValue.Id, in.proposerReplicatedLog[consensusMessage.Index].proposer)
 
 	// send a decide message
 
 	for i := int64(0); i < in.numReplicas; i++ {
 
 		consensusDecide := proto.GenericConsensus{
-			Sender:   in.nodeName,
-			Receiver: i,
-			Index:    consensusMessage.Index,
-			M:        in.decideMessage,
-			S:        in.proposerReplicatedLog[consensusMessage.Index].S, // not needed
-			P:        nil,
-			E:        nil,
-			C:        nil,
-			D:        true,
-			DS: &proto.GenericConsensusValue{
-				Id:  in.proposerReplicatedLog[consensusMessage.Index].decision.id,
-				Fit: in.proposerReplicatedLog[consensusMessage.Index].decision.fit,
-			},
+			Sender:      in.nodeName,
+			Receiver:    i,
+			Index:       consensusMessage.Index,
+			M:           in.decideMessage,
+			S:           in.proposerReplicatedLog[consensusMessage.Index].S, // not needed
+			P:           nil,
+			E:           nil,
+			C:           nil,
+			D:           true,
+			DS:          in.proposerReplicatedLog[consensusMessage.Index].decision,
 			PR:          in.proposerReplicatedLog[consensusMessage.Index].proposer,
 			Destination: in.consensusMessageCommonDestination, // to be consumed by both proposer and recorder
 		}
@@ -270,7 +253,7 @@ func (in *Instance) proposerReceivedMajorityProposeWithHi(consensusMessage *prot
 	Scan the propose replies set from recorders and assign the number of times the Hi priority appears for each proposal
 */
 
-func (in *Instance) getProposalWithMajorityHi(e []*proto.GenericConsensus) Value {
+func (in *Instance) getProposalWithMajorityHi(e []*proto.GenericConsensus) *proto.GenericConsensusValue {
 	var ValueCount map[string]int64 // maps each id to hi count
 	ValueCount = make(map[string]int64)
 	for i := 0; i < len(e); i++ {
@@ -289,18 +272,15 @@ func (in *Instance) getProposalWithMajorityHi(e []*proto.GenericConsensus) Value
 		if element >= in.numReplicas/2+1 {
 			for i := 0; i < len(e); i++ {
 				if e[i].P.Id+e[i].P.Fit == key {
-					return Value{
-						id:  e[i].P.Id,
-						fit: e[i].P.Fit,
-					}
+					return e[i].P
 				}
 			}
 		}
 	}
 
-	return Value{
-		id:  "",
-		fit: "",
+	return &proto.GenericConsensusValue{
+		Id:  "",
+		Fit: "",
 	} // there is no proposal with f+1 Hi
 
 }
@@ -312,16 +292,13 @@ func (in *Instance) getProposalWithMajorityHi(e []*proto.GenericConsensus) Value
 func (in *Instance) recordProposerDecide(consensusMessage *proto.GenericConsensus) {
 	in.proposerReplicatedLog[consensusMessage.Index].S = consensusMessage.S
 	in.proposerReplicatedLog[consensusMessage.Index].decided = true
-	in.proposerReplicatedLog[consensusMessage.Index].decision = Value{
-		id:  consensusMessage.DS.Id,
-		fit: consensusMessage.DS.Fit,
-	}
+	in.proposerReplicatedLog[consensusMessage.Index].decision = consensusMessage.DS
 	in.proposerReplicatedLog[consensusMessage.Index].proposer = consensusMessage.PR
 
-	in.proposerReplicatedLog[consensusMessage.Index].P = Value{}
-	in.proposerReplicatedLog[consensusMessage.Index].E = []Value{}
-	in.proposerReplicatedLog[consensusMessage.Index].C = []Value{}
-	in.proposerReplicatedLog[consensusMessage.Index].U = []Value{}
+	in.proposerReplicatedLog[consensusMessage.Index].P = &proto.GenericConsensusValue{}
+	in.proposerReplicatedLog[consensusMessage.Index].E = []*proto.GenericConsensusValue{}
+	in.proposerReplicatedLog[consensusMessage.Index].C = []*proto.GenericConsensusValue{}
+	in.proposerReplicatedLog[consensusMessage.Index].U = []*proto.GenericConsensusValue{}
 	in.proposerReplicatedLog[consensusMessage.Index].proposeResponses = []*proto.GenericConsensus{}
 	in.proposerReplicatedLog[consensusMessage.Index].spreadEResponses = []*proto.GenericConsensus{}
 	in.proposerReplicatedLog[consensusMessage.Index].spreadCGatherEResponses = []*proto.GenericConsensus{}
@@ -341,9 +318,9 @@ func (in *Instance) propose(index int64, hash string) {
 	*/
 	in.proposerReplicatedLog = in.initializeSlot(in.proposerReplicatedLog, index) // create the slot if not already created
 	in.proposerReplicatedLog[index].S = 1
-	in.proposerReplicatedLog[index].P = Value{
-		id:  hash,
-		fit: "",
+	in.proposerReplicatedLog[index].P = &proto.GenericConsensusValue{
+		Id:  hash,
+		Fit: "",
 	}
 
 	// send the proposal message to all the recorders
@@ -375,7 +352,7 @@ func (in *Instance) delivered(index int64, hash string, proposer int64) {
 func (in *Instance) updateStateMachine() {
 	for len(in.proposerReplicatedLog) > int(in.committedIndex)+1 && in.proposerReplicatedLog[in.committedIndex+1].decided == true {
 
-		decision := in.proposerReplicatedLog[in.committedIndex+1].decision.id
+		decision := in.proposerReplicatedLog[in.committedIndex+1].decision.Id
 		in.debug("Decided "+strconv.Itoa(int(in.committedIndex+1))+" with decision "+decision, 1)
 		// if the decision is a sequence of hashes, then invoke the following for each hash: check if all the hashes exist and succeed only if everything exists
 		blocks := make([]*proto.MessageBlock, 0)
@@ -452,7 +429,8 @@ func (in *Instance) executeAndSendResponse(block *proto.MessageBlock) {
 */
 
 func (in *Instance) handleConsensusRequest(request *proto.ConsensusRequest) {
-	if in.nodeName == in.getDeterministicLeader1() {
+	//if in.nodeName == in.getDeterministicLeader1() {
+	if true { // for testing purpose
 		if true { //todo in.numInflightRequests <= in.pipelineLength { // this should be changed to not drop requests
 			in.updateProposedIndex(request.Hash)
 			in.propose(in.proposedIndex, request.Hash)
@@ -487,8 +465,8 @@ func (in *Instance) updateProposedIndex(hash string) {
 	Proposer: Returns the proposer who proposed this value, extracted using the fitness
 */
 
-func (in *Instance) getProposer(value Value) int64 {
-	priority := value.fit
+func (in *Instance) getProposer(value *proto.GenericConsensusValue) int64 {
+	priority := value.Fit
 	proposer, err := strconv.Atoi(strings.Split(priority, ".")[1])
 	if err == nil {
 		return int64(proposer)
@@ -501,17 +479,12 @@ func (in *Instance) getProposer(value Value) int64 {
 	A util function to create an E multi set which is a 2d array, each element of E is the E set of the response[i]
 */
 
-func (in *Instance) getESetfromSpreadEResponses(responses []*proto.GenericConsensus) [][]Value {
-	var EMultiSet [][]Value
-	EMultiSet = make([][]Value, len(responses))
+func (in *Instance) getESetfromSpreadEResponses(responses []*proto.GenericConsensus) [][]*proto.GenericConsensusValue {
+	var EMultiSet [][]*proto.GenericConsensusValue
+	EMultiSet = make([][]*proto.GenericConsensusValue, len(responses))
 	for i := 0; i < len(responses); i++ {
-		EMultiSet[i] = make([]Value, len(responses[i].E))
-		for j := 0; j < len(responses[i].E); j++ {
-			EMultiSet[i] = append(EMultiSet[i], Value{
-				id:  responses[i].E[j].Id,
-				fit: responses[i].E[j].Fit,
-			})
-		}
+		EMultiSet[i] = make([]*proto.GenericConsensusValue, len(responses[i].E))
+		EMultiSet[i] = in.setUnionProtoValues(EMultiSet[i], responses[i].E)
 	}
 	return EMultiSet
 }
@@ -520,11 +493,8 @@ func (in *Instance) getESetfromSpreadEResponses(responses []*proto.GenericConsen
 	Proposer: Scans all the E sets, and checks if there is a proposal which appears in all the E sets with priority Hi
 */
 
-func (in *Instance) getProposalWithMajoriyHiInAllESets(set [][]Value) Value {
-	hiValue := Value{
-		id:  "",
-		fit: "",
-	}
+func (in *Instance) getProposalWithMajoriyHiInAllESets(set [][]*proto.GenericConsensusValue) *proto.GenericConsensusValue {
+	hiValue := &proto.GenericConsensusValue{}
 
 	var HiCounts map[string]int64
 	HiCounts = make(map[string]int64)
@@ -532,17 +502,17 @@ func (in *Instance) getProposalWithMajoriyHiInAllESets(set [][]Value) Value {
 	for i := 0; i < len(set); i++ {
 		seenHashes := make(map[string]bool) // we need to make sure that we count only one occurrence of the same proposal in each set E (if a given proposal appears more than once in an E set, we only count once)
 		for j := 0; j < len(set[i]); j++ {
-			_, ok := seenHashes[set[i][j].id+set[i][j].fit]
+			_, ok := seenHashes[set[i][j].Id+set[i][j].Fit]
 			if ok {
 				continue
 			} else {
-				seenHashes[set[i][j].id+set[i][j].fit] = true
-				if strings.HasPrefix(set[i][j].fit, strconv.FormatInt(in.Hi, 10)) {
-					_, ok = HiCounts[set[i][j].id+set[i][j].fit]
+				seenHashes[set[i][j].Id+set[i][j].Fit] = true
+				if strings.HasPrefix(set[i][j].Fit, strconv.FormatInt(in.Hi, 10)) {
+					_, ok = HiCounts[set[i][j].Id+set[i][j].Fit]
 					if ok {
-						HiCounts[set[i][j].id+set[i][j].fit] = HiCounts[set[i][j].id+set[i][j].fit] + 1
+						HiCounts[set[i][j].Id+set[i][j].Fit] = HiCounts[set[i][j].Id+set[i][j].Fit] + 1
 					} else {
-						HiCounts[set[i][j].id+set[i][j].fit] = 1
+						HiCounts[set[i][j].Id+set[i][j].Fit] = 1
 					}
 				}
 
@@ -555,11 +525,8 @@ func (in *Instance) getProposalWithMajoriyHiInAllESets(set [][]Value) Value {
 
 			for i := 0; i < len(set); i++ {
 				for j := 0; j < len(set[i]); j++ {
-					if set[i][j].id+set[i][j].fit == key {
-						return Value{
-							id:  set[i][j].id,
-							fit: set[i][j].fit,
-						}
+					if set[i][j].Id+set[i][j].Fit == key {
+						return set[i][j]
 					}
 				}
 			}
@@ -584,7 +551,7 @@ func (in *Instance) proposerSendSpreadCGatherE(index int64) {
 			S:           in.proposerReplicatedLog[index].S,
 			P:           nil,
 			E:           nil,
-			C:           in.getGenericConsensusValueArray(in.proposerReplicatedLog[index].C),
+			C:           in.proposerReplicatedLog[index].C,
 			D:           false,
 			DS:          nil,
 			PR:          -1,
@@ -606,11 +573,8 @@ func (in *Instance) proposerSendSpreadCGatherE(index int64) {
 	Note that priorities have the form pi.node such that in case of equal pi, the higher node number wins
 */
 
-func (in *Instance) getBestProposal(e []Value) Value {
-	hiValue := Value{
-		id:  "",
-		fit: "",
-	}
+func (in *Instance) getBestProposal(e []*proto.GenericConsensusValue) *proto.GenericConsensusValue {
+	var hiValue *proto.GenericConsensusValue
 
 	hiValue = e[0]
 
@@ -627,10 +591,18 @@ func (in *Instance) getBestProposal(e []Value) Value {
 	checks if value2 has a higher priority than value1
 */
 
-func (in *Instance) hasHigherPriority(value1 Value, value2 Value) bool {
-	fit1 := value1.fit
-	fit2 := value2.fit
+func (in *Instance) hasHigherPriority(value1 *proto.GenericConsensusValue, value2 *proto.GenericConsensusValue) bool {
+	fit1 := value1.Fit
+	fit2 := value2.Fit
 
+	if in.debugOn {
+		f1 := strings.Split(fit1, ".")
+		f2 := strings.Split(fit2, ".")
+		if len(f1) < 2 || len(f2) < 2 {
+			in.debug("Priorities: "+value1.Fit+" "+value2.Fit, 3)
+			os.Exit(255)
+		}
+	}
 	pi_1, _ := strconv.Atoi(strings.Split(fit1, ".")[0])
 	pi_2, _ := strconv.Atoi(strings.Split(fit2, ".")[0])
 
@@ -692,15 +664,12 @@ func (in *Instance) proposerSendPropose(index int64) {
 	for i := int64(0); i < in.numReplicas; i++ {
 
 		consensusPropose := proto.GenericConsensus{
-			Sender:   in.nodeName,
-			Receiver: i,
-			Index:    index,
-			M:        in.proposeMessage,
-			S:        in.proposerReplicatedLog[index].S,
-			P: &proto.GenericConsensusValue{
-				Id:  in.proposerReplicatedLog[index].P.id,
-				Fit: in.proposerReplicatedLog[index].P.fit,
-			},
+			Sender:      in.nodeName,
+			Receiver:    i,
+			Index:       index,
+			M:           in.proposeMessage,
+			S:           in.proposerReplicatedLog[index].S,
+			P:           in.proposerReplicatedLog[index].P,
 			E:           nil,
 			C:           nil,
 			D:           false,
@@ -725,13 +694,13 @@ func (in *Instance) proposerSendPropose(index int64) {
 
 func (in *Instance) proposerResetSlotAfterReceivingGather(consensusMessage *proto.GenericConsensus) {
 	in.proposerReplicatedLog[consensusMessage.Index].S = in.proposerReplicatedLog[consensusMessage.Index].S + 1
-	in.proposerReplicatedLog[consensusMessage.Index].P = Value{
-		id:  in.getBestProposal(in.proposerReplicatedLog[consensusMessage.Index].C).id,
-		fit: "",
+	in.proposerReplicatedLog[consensusMessage.Index].P = &proto.GenericConsensusValue{
+		Id:  in.getBestProposal(in.proposerReplicatedLog[consensusMessage.Index].C).Id,
+		Fit: "",
 	}
-	in.proposerReplicatedLog[consensusMessage.Index].E = []Value{}
-	in.proposerReplicatedLog[consensusMessage.Index].C = []Value{}
-	in.proposerReplicatedLog[consensusMessage.Index].U = []Value{}
+	in.proposerReplicatedLog[consensusMessage.Index].E = []*proto.GenericConsensusValue{}
+	in.proposerReplicatedLog[consensusMessage.Index].C = []*proto.GenericConsensusValue{}
+	in.proposerReplicatedLog[consensusMessage.Index].U = []*proto.GenericConsensusValue{}
 
 	in.proposerReplicatedLog[consensusMessage.Index].proposeResponses = []*proto.GenericConsensus{}
 	in.proposerReplicatedLog[consensusMessage.Index].spreadEResponses = []*proto.GenericConsensus{}

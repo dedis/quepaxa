@@ -50,22 +50,16 @@ func (in *Instance) handleRecorderConsensusMessage(consensusMessage *proto.Gener
 	// send the response back to proposer
 
 	consensusReply := proto.GenericConsensus{
-		Sender:   in.nodeName,
-		Receiver: consensusMessage.Sender,
-		Index:    consensusMessage.Index,
-		M:        consensusMessage.M,
-		S:        in.recorderReplicatedLog[consensusMessage.Index].S,
-		P: &proto.GenericConsensusValue{
-			Id:  in.recorderReplicatedLog[consensusMessage.Index].P.id,
-			Fit: in.recorderReplicatedLog[consensusMessage.Index].P.fit,
-		},
-		E: in.getGenericConsensusValueArray(in.recorderReplicatedLog[consensusMessage.Index].E),
-		C: in.getGenericConsensusValueArray(in.recorderReplicatedLog[consensusMessage.Index].C),
-		D: in.recorderReplicatedLog[consensusMessage.Index].decided,
-		DS: &proto.GenericConsensusValue{
-			Id:  in.recorderReplicatedLog[consensusMessage.Index].decision.id,
-			Fit: in.recorderReplicatedLog[consensusMessage.Index].decision.fit,
-		},
+		Sender:      in.nodeName,
+		Receiver:    consensusMessage.Sender,
+		Index:       consensusMessage.Index,
+		M:           consensusMessage.M,
+		S:           in.recorderReplicatedLog[consensusMessage.Index].S,
+		P:           in.recorderReplicatedLog[consensusMessage.Index].P,
+		E:           in.recorderReplicatedLog[consensusMessage.Index].E,
+		C:           in.recorderReplicatedLog[consensusMessage.Index].C,
+		D:           in.recorderReplicatedLog[consensusMessage.Index].decided,
+		DS:          in.recorderReplicatedLog[consensusMessage.Index].decision,
 		PR:          in.recorderReplicatedLog[consensusMessage.Index].proposer,
 		Destination: in.consensusMessageProposerDestination,
 	}
@@ -85,12 +79,8 @@ func (in *Instance) handleRecorderConsensusMessage(consensusMessage *proto.Gener
 */
 
 func (in *Instance) handleRecorderSpreadCGatherEMessage(consensusMessage *proto.GenericConsensus) {
-	for i := 0; i < len(consensusMessage.C); i++ {
-		in.recorderReplicatedLog[consensusMessage.Index].C = append(in.recorderReplicatedLog[consensusMessage.Index].C, Value{
-			id:  consensusMessage.C[i].Id,
-			fit: consensusMessage.C[i].Fit,
-		})
-	}
+	in.recorderReplicatedLog[consensusMessage.Index].C = in.setUnionProtoValues(in.recorderReplicatedLog[consensusMessage.Index].C, consensusMessage.C)
+
 	in.debug("Recorder processed a SpreadCGatherE message and updated the C set", 1)
 }
 
@@ -99,12 +89,8 @@ func (in *Instance) handleRecorderSpreadCGatherEMessage(consensusMessage *proto.
 */
 
 func (in *Instance) handleRecorderSpreadEMessage(consensusMessage *proto.GenericConsensus) {
-	for i := 0; i < len(consensusMessage.E); i++ {
-		in.recorderReplicatedLog[consensusMessage.Index].E = append(in.recorderReplicatedLog[consensusMessage.Index].E, Value{
-			id:  consensusMessage.E[i].Id,
-			fit: consensusMessage.E[i].Fit,
-		})
-	}
+	in.recorderReplicatedLog[consensusMessage.Index].E = in.setUnionProtoValues(in.recorderReplicatedLog[consensusMessage.Index].E, consensusMessage.E)
+
 	in.debug("Recorder processed a spreadE message and added the E set to its E set", 1)
 }
 
@@ -114,17 +100,22 @@ func (in *Instance) handleRecorderSpreadEMessage(consensusMessage *proto.Generic
 
 func (in *Instance) handleRecorderProposeMessage(consensusMessage *proto.GenericConsensus) {
 	if consensusMessage.Sender == in.getDeterministicLeader1() {
-		in.recorderReplicatedLog[consensusMessage.Index].P = Value{
-			id:  consensusMessage.P.Id,
-			fit: strconv.FormatInt(in.Hi, 10) + "." + strconv.FormatInt(consensusMessage.Sender, 10),
+		in.recorderReplicatedLog[consensusMessage.Index].P = &proto.GenericConsensusValue{
+			Id:  consensusMessage.P.Id,
+			Fit: strconv.FormatInt(in.Hi, 10) + "." + strconv.FormatInt(consensusMessage.Sender, 10),
 		}
 	} else {
-		in.recorderReplicatedLog[consensusMessage.Index].P = Value{
-			id:  consensusMessage.P.Id,
-			fit: string(rand.Intn(int(in.Hi-10))) + "." + strconv.FormatInt(consensusMessage.Sender, 10),
+		randPriority := rand.Intn(int(in.Hi - 1))
+		in.recorderReplicatedLog[consensusMessage.Index].P = &proto.GenericConsensusValue{
+			Id:  consensusMessage.P.Id,
+			Fit: strconv.FormatInt(int64(randPriority), 10) + "." + strconv.FormatInt(consensusMessage.Sender, 10),
 		}
 	}
-	in.recorderReplicatedLog[consensusMessage.Index].E = append(in.recorderReplicatedLog[consensusMessage.Index].E, in.recorderReplicatedLog[consensusMessage.Index].P)
+	// reset the E, C sets
+	in.recorderReplicatedLog[consensusMessage.Index].E = make([]*proto.GenericConsensusValue, 0)
+	in.recorderReplicatedLog[consensusMessage.Index].C = make([]*proto.GenericConsensusValue, 0)
+
+	in.recorderReplicatedLog[consensusMessage.Index].E = in.setUnionProtoValue(in.recorderReplicatedLog[consensusMessage.Index].E, in.recorderReplicatedLog[consensusMessage.Index].P)
 	in.debug("Recorder assigned the priority to the proposal and appended to E set", 1)
 }
 
@@ -135,16 +126,14 @@ func (in *Instance) handleRecorderProposeMessage(consensusMessage *proto.Generic
 func (in *Instance) recordRecorderDecide(consensusMessage *proto.GenericConsensus) {
 	in.recorderReplicatedLog[consensusMessage.Index].decided = true
 	in.recorderReplicatedLog[consensusMessage.Index].S = consensusMessage.S
-	in.recorderReplicatedLog[consensusMessage.Index].decision = Value{
-		id:  consensusMessage.DS.Id,
-		fit: consensusMessage.DS.Fit,
-	}
+	in.recorderReplicatedLog[consensusMessage.Index].decision = consensusMessage.DS
 	in.recorderReplicatedLog[consensusMessage.Index].proposer = consensusMessage.PR
 
-	in.recorderReplicatedLog[consensusMessage.Index].P = Value{}
-	in.recorderReplicatedLog[consensusMessage.Index].E = []Value{}
-	in.recorderReplicatedLog[consensusMessage.Index].C = []Value{}
-	in.recorderReplicatedLog[consensusMessage.Index].U = []Value{}
+	in.recorderReplicatedLog[consensusMessage.Index].P = &proto.GenericConsensusValue{}
+	in.recorderReplicatedLog[consensusMessage.Index].E = []*proto.GenericConsensusValue{}
+	in.recorderReplicatedLog[consensusMessage.Index].C = []*proto.GenericConsensusValue{}
+	in.recorderReplicatedLog[consensusMessage.Index].U = []*proto.GenericConsensusValue{}
+
 	in.recorderReplicatedLog[consensusMessage.Index].proposeResponses = []*proto.GenericConsensus{}
 	in.recorderReplicatedLog[consensusMessage.Index].spreadEResponses = []*proto.GenericConsensus{}
 	in.recorderReplicatedLog[consensusMessage.Index].spreadCGatherEResponses = []*proto.GenericConsensus{}
@@ -158,19 +147,16 @@ func (in *Instance) recordRecorderDecide(consensusMessage *proto.GenericConsensu
 
 func (in *Instance) sendRecorderDecided(consensusMessage *proto.GenericConsensus) {
 	consensusReply := proto.GenericConsensus{
-		Sender:   in.nodeName,
-		Receiver: consensusMessage.Sender,
-		Index:    consensusMessage.Index,
-		M:        in.decideMessage,
-		S:        in.recorderReplicatedLog[consensusMessage.Index].S,
-		P:        nil,
-		E:        nil,
-		C:        nil,
-		D:        true,
-		DS: &proto.GenericConsensusValue{
-			Id:  in.recorderReplicatedLog[consensusMessage.Index].decision.id,
-			Fit: in.recorderReplicatedLog[consensusMessage.Index].decision.fit,
-		},
+		Sender:      in.nodeName,
+		Receiver:    consensusMessage.Sender,
+		Index:       consensusMessage.Index,
+		M:           in.decideMessage,
+		S:           in.recorderReplicatedLog[consensusMessage.Index].S,
+		P:           nil,
+		E:           nil,
+		C:           nil,
+		D:           true,
+		DS:          in.recorderReplicatedLog[consensusMessage.Index].decision,
 		PR:          in.recorderReplicatedLog[consensusMessage.Index].proposer,
 		Destination: in.consensusMessageCommonDestination,
 	}

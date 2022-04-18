@@ -301,7 +301,7 @@ func (in *Instance) printLog() {
 		// a single entry contains a 2D sequence of commands
 		if entry.committed {
 			// if an entry is committed, then it should contain the blocks in the message store
-			decision := entry.decision.id
+			decision := entry.decision.Id
 			hashes := strings.Split(decision, ":")
 			for i := 0; i < len(hashes); i++ {
 				hashes[i] = strings.TrimSpace(hashes[i])
@@ -349,13 +349,13 @@ func (in *Instance) initializeSlot(log []Slot, index int64) []Slot {
 		log = append(log, Slot{
 			index:     i,
 			S:         0,
-			P:         Value{},
-			E:         []Value{},
-			C:         []Value{},
-			U:         []Value{},
+			P:         &proto.GenericConsensusValue{},
+			E:         []*proto.GenericConsensusValue{},
+			C:         []*proto.GenericConsensusValue{},
+			U:         []*proto.GenericConsensusValue{},
 			committed: false,
 			decided:   false,
-			decision:  Value{},
+			decision:  &proto.GenericConsensusValue{},
 			proposer:  -1,
 		})
 	}
