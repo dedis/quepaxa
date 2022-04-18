@@ -2,7 +2,6 @@ package raxos
 
 import (
 	"math"
-	"os"
 	"raxos/proto"
 	"strconv"
 	"strings"
@@ -134,17 +133,15 @@ func (in *Instance) consensusCatchUp(consensusMessage *proto.GenericConsensus) {
 	in.proposerReplicatedLog[consensusMessage.Index].S = consensusMessage.S
 	in.proposerReplicatedLog[consensusMessage.Index].P = consensusMessage.P
 
-	in.proposerReplicatedLog[consensusMessage.Index].E = []*proto.GenericConsensusValue{}
-	in.proposerReplicatedLog[consensusMessage.Index].C = []*proto.GenericConsensusValue{}
+	in.proposerReplicatedLog[consensusMessage.Index].E = consensusMessage.E
+	in.proposerReplicatedLog[consensusMessage.Index].C = consensusMessage.C
+
 	in.proposerReplicatedLog[consensusMessage.Index].U = []*proto.GenericConsensusValue{}
 
 	in.proposerReplicatedLog[consensusMessage.Index].proposeResponses = []*proto.GenericConsensus{}
 	in.proposerReplicatedLog[consensusMessage.Index].spreadEResponses = []*proto.GenericConsensus{}
 	in.proposerReplicatedLog[consensusMessage.Index].spreadCGatherEResponses = []*proto.GenericConsensus{}
 	in.proposerReplicatedLog[consensusMessage.Index].gatherCResponses = []*proto.GenericConsensus{}
-
-	in.proposerReplicatedLog[consensusMessage.Index].E = consensusMessage.E
-	in.proposerReplicatedLog[consensusMessage.Index].C = consensusMessage.C
 
 	if consensusMessage.S%4 == 1 {
 		//send a propose message
@@ -483,7 +480,7 @@ func (in *Instance) getESetfromSpreadEResponses(responses []*proto.GenericConsen
 	var EMultiSet [][]*proto.GenericConsensusValue
 	EMultiSet = make([][]*proto.GenericConsensusValue, len(responses))
 	for i := 0; i < len(responses); i++ {
-		EMultiSet[i] = make([]*proto.GenericConsensusValue, len(responses[i].E))
+		EMultiSet[i] = make([]*proto.GenericConsensusValue, 0)
 		EMultiSet[i] = in.setUnionProtoValues(EMultiSet[i], responses[i].E)
 	}
 	return EMultiSet
@@ -598,26 +595,37 @@ func (in *Instance) hasHigherPriority(value1 *proto.GenericConsensusValue, value
 	if in.debugOn {
 		f1 := strings.Split(fit1, ".")
 		f2 := strings.Split(fit2, ".")
-		if len(f1) < 2 || len(f2) < 2 {
-			in.debug("Priorities: "+value1.Fit+" "+value2.Fit, 3)
-			os.Exit(255)
+		if len(f1) < 3 || len(f2) < 3 {
+			in.debug("error in priorities:value 1: "+value1.Fit+", value 2: "+value2.Fit+" EOF ", 3)
+			//os.Exit(255)
 		}
 	}
 	pi_1, _ := strconv.Atoi(strings.Split(fit1, ".")[0])
 	pi_2, _ := strconv.Atoi(strings.Split(fit2, ".")[0])
 
-	node_1, _ := strconv.Atoi(strings.Split(fit1, ".")[1])
-	node_2, _ := strconv.Atoi(strings.Split(fit2, ".")[1])
+	prop_1, _ := strconv.Atoi(strings.Split(fit1, ".")[1])
+	prop_2, _ := strconv.Atoi(strings.Split(fit2, ".")[1])
+
+	rec_1, _ := strconv.Atoi(strings.Split(fit1, ".")[2])
+	rec_2, _ := strconv.Atoi(strings.Split(fit2, ".")[2])
 
 	if pi_2 > pi_1 {
 		return true
 	} else if pi_1 > pi_2 {
 		return false
 	} else if pi_2 == pi_1 {
-		if node_2 > node_1 {
+		if prop_2 > prop_1 {
 			return true
-		} else {
+		} else if prop_2 < prop_1 {
 			return false
+		} else if prop_2 == prop_1 {
+			if rec_2 > rec_1 {
+				return true
+			} else if rec_2 < rec_1 {
+				return false
+			} else if rec_2 == rec_1 {
+				in.debug("Found equal priorities: "+fit1+" and "+fit2, 4)
+			}
 		}
 	}
 

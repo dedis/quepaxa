@@ -383,7 +383,7 @@ func (in *Instance) CollectAndProposeHashes() {
 
 			in.debug("Collected a batch of hashes to propose "+requestString, 1)
 
-			leader := in.getDeterministicLeader1() //todo change this when adding the optimizations
+			leader := int64(1) //in.getDeterministicLeader1() //todo change this when adding the optimizations
 			consensusRequest := proto.ConsensusRequest{
 				Sender:   in.nodeName,
 				Receiver: leader,

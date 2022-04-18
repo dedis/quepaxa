@@ -2,8 +2,10 @@ package raxos
 
 import (
 	"math/rand"
+	"os"
 	"raxos/proto"
 	"strconv"
+	"strings"
 )
 
 /*
@@ -102,15 +104,25 @@ func (in *Instance) handleRecorderProposeMessage(consensusMessage *proto.Generic
 	if consensusMessage.Sender == in.getDeterministicLeader1() {
 		in.recorderReplicatedLog[consensusMessage.Index].P = &proto.GenericConsensusValue{
 			Id:  consensusMessage.P.Id,
-			Fit: strconv.FormatInt(in.Hi, 10) + "." + strconv.FormatInt(consensusMessage.Sender, 10),
+			Fit: strconv.FormatInt(in.Hi, 10) + "." + strconv.FormatInt(consensusMessage.Sender, 10) + "." + strconv.FormatInt(in.nodeName, 10),
 		}
 	} else {
-		randPriority := rand.Intn(int(in.Hi - 1))
+		randPriority := rand.Intn(int(in.Hi-1)) + int(in.Hi)
 		in.recorderReplicatedLog[consensusMessage.Index].P = &proto.GenericConsensusValue{
 			Id:  consensusMessage.P.Id,
-			Fit: strconv.FormatInt(int64(randPriority), 10) + "." + strconv.FormatInt(consensusMessage.Sender, 10),
+			Fit: strconv.FormatInt(int64(randPriority), 10) + "." + strconv.FormatInt(consensusMessage.Sender, 10) + "." + strconv.FormatInt(in.nodeName, 10),
 		}
 	}
+
+	fit := in.recorderReplicatedLog[consensusMessage.Index].P.Fit
+	if in.debugOn {
+		f1 := strings.Split(fit, ".")
+		if len(f1) < 3 {
+			in.debug("error in recorder priority assignment :priority: "+fit, 4)
+			os.Exit(255)
+		}
+	}
+
 	// reset the E, C sets
 	in.recorderReplicatedLog[consensusMessage.Index].E = make([]*proto.GenericConsensusValue, 0)
 	in.recorderReplicatedLog[consensusMessage.Index].C = make([]*proto.GenericConsensusValue, 0)
