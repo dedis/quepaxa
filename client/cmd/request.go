@@ -20,7 +20,7 @@ func (cl *Client) handleClientResponseBatch(batch *proto.ClientResponseBatch) {
 		time:  time.Now(), // record the time when the response was received
 	}
 	cl.lastSeenTimeReplica = time.Now() // mark the last time a response was received
-	cl.debug("Added response Batch from " + strconv.Itoa(int(batch.Sender)) + " to received array")
+	cl.debug("Added response Batch from "+strconv.Itoa(int(batch.Sender))+" to received array", 0)
 }
 
 /*
@@ -60,8 +60,8 @@ func (cl *Client) startRequestGenerators() {
 				var requests []*proto.ClientRequestBatch_SingleClientRequest
 				// this loop collects requests until the minimum batch size is met OR the batch time is timeout
 				for !(numRequests >= cl.batchSize || (time.Now().Sub(lastSent).Microseconds() > cl.batchTime && numRequests > 0)) {
-					_ = <-cl.arrivalChan                                                                               // keep collecting new requests arrivals
-					requests = append(requests, &proto.ClientRequestBatch_SingleClientRequest{Message: sampleRequest}) //todo for actual benchmarks the same request should be replaced with redis op or kvstore op
+					_ = <-cl.arrivalChan                                                                                                                                                                                                                                     // keep collecting new requests arrivals
+					requests = append(requests, &proto.ClientRequestBatch_SingleClientRequest{Message: strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter) + "." + strconv.Itoa(int(numRequests)) + "." + sampleRequest}) //todo for actual benchmarks the same request should be replaced with redis op or kvstore op
 					numRequests++
 				}
 
@@ -72,7 +72,7 @@ func (cl *Client) startRequestGenerators() {
 					Id:       strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id
 				}
 
-				cl.debug("Sent " + strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter) + " batch size " + strconv.Itoa(len(requests)))
+				cl.debug("Sent "+strconv.Itoa(int(cl.clientName))+"."+strconv.Itoa(threadNumber)+"."+strconv.Itoa(localCounter)+" batch size "+strconv.Itoa(len(requests)), 0)
 
 				localCounter++
 
@@ -142,14 +142,14 @@ func (cl *Client) generateArrivalTimes() {
 
 func (cl *Client) startFailureDetector() {
 	go func() {
-		cl.debug("Starting failure detector")
+		cl.debug("Starting failure detector", 0)
 		for true {
 
 			time.Sleep(time.Duration(cl.replicaTimeout) * time.Second)
 			if time.Now().Sub(cl.lastSeenTimeReplica).Seconds() > float64(cl.replicaTimeout) {
 
 				// change the default replica
-				cl.debug("Changing the default replica")
+				cl.debug("Changing the default replica", 2)
 				cl.defaultReplica = (cl.defaultReplica + 1) % cl.numReplicas
 				cl.lastSeenTimeReplica = time.Now()
 			}

@@ -10,9 +10,10 @@ for i in range(1, len(sys.argv)):
     numberOfRequests = 0
     for l in lines:
         key = l.split(":")[0]
-        values = l.split(":")[1].split(",")
-        dict[key] = values[:len(values) - 1]
-        numberOfRequests = numberOfRequests + len(values) - 1
+        value = l.split(":")[1]
+        if value != "no-op":
+            dict[key] = value
+            numberOfRequests = numberOfRequests + 1
 
     files.append(dict)
     print("Length of " + sys.argv[i] + " is " + str(numberOfRequests))
@@ -20,12 +21,9 @@ for i in range(1, len(sys.argv)):
         numberOfRequests / 60.0) + "requests per second")  # assuming a test duration of 60 todo change this if the test duration is changed
 
 
-def equals(array1, array2):
-    if len(array1) != len(array2):
+def equals(value1, value2):
+    if value1 != value2:
         return False
-    for i in range(len(array1)):
-        if array1[i] != array2[i]:
-            return False
 
     return True
 
@@ -46,9 +44,9 @@ def checkMaps(files):
                         if not equals(files[j][key], map[key]):
                             print("Mismatch in log position " + str(key) + " in " + mapName + ":" + map[
                                 key] + " and " + tarName + ":" + files[j][key])
-                            misMatch = misMatch + len(map[key])
+                            misMatch = misMatch + 1
                         else:
-                            match = match + len(map[key])
+                            match = match + 1
 
     print(str(match) + " entries match")
     print(str(misMatch) + " entries miss match")

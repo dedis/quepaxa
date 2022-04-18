@@ -5,7 +5,7 @@ import "io"
 /*
 
 	Each Message sent over the network in Raxos should implement this interface
-	If a new message type needs to be added: first define it in the a proto file, generate the go protobuf files using mage generate and then implement the three methods
+	If a new message type needs to be added: first define it in a proto file, generate the go protobuf files using mage generate and then implement the three methods
 
 */
 

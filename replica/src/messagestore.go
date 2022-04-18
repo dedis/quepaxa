@@ -47,12 +47,16 @@ func (ms *MessageStore) Add(block *proto.MessageBlock) {
 }
 
 /*
-	return an existing block
+	return an existing mem block
 */
 
 func (ms *MessageStore) Get(id string) (*proto.MessageBlock, bool) {
 	i, ok := ms.messageBlocks.Load(id)
-	return i.(Block).messageBlock, ok
+	if ok {
+		return i.(Block).messageBlock, ok
+	} else {
+		return nil, ok
+	}
 }
 
 /*

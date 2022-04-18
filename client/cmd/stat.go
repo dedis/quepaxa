@@ -35,7 +35,7 @@ func (cl *Client) addValueNToArrayMTimes(list []int64, N int64, M int) []int64 {
 }
 
 /*
-	Counts the number of individual responses in responses array
+	Counts the number of individual responses in responses map
 */
 
 func (cl *Client) getNumberOfReceivedResponses(responses map[string]receivedResponseBatch) int {
@@ -60,7 +60,7 @@ func (cl *Client) computeStats() {
 
 	f, err := os.Create(cl.logFilePath + strconv.Itoa(int(cl.clientName)) + ".txt")
 	if err != nil {
-		cl.debug("Error creating the output log file")
+		cl.debug("Error creating the output log file", 1)
 		log.Fatal(err)
 	}
 	defer f.Close()

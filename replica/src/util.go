@@ -12,9 +12,11 @@ import (
 	If enabled, print the messages to stdout
 */
 
-func (in *Instance) debug(message string) {
+func (in *Instance) debug(message string, level int) {
 	if in.debugOn {
-		fmt.Printf("%s\n", message)
+		if in.debugLevel <= level {
+			fmt.Printf("%s\n", message)
+		}
 	}
 }
 
@@ -44,11 +46,19 @@ func getStringOfSizeN(length int) string {
 	return str
 }
 
+/*
+	a util function to convert a single client request between mem pool and client request
+*/
+
 func (in *Instance) convertClientRequest(request *proto.ClientRequestBatch_SingleClientRequest) *proto.MessageBlock_SingleClientRequest {
 	var returnClientRequest proto.MessageBlock_SingleClientRequest
 	returnClientRequest.Message = request.Message
 	return &returnClientRequest
 }
+
+/*
+	a util function to convert between client request and mem pool client request batch
+*/
 
 func (in *Instance) convertToClientRequestBatch(batch *proto.ClientRequestBatch) *proto.MessageBlock_ClientRequestBatch {
 	var returnBatch proto.MessageBlock_ClientRequestBatch
@@ -59,6 +69,10 @@ func (in *Instance) convertToClientRequestBatch(batch *proto.ClientRequestBatch)
 	}
 	return &returnBatch
 }
+
+/*
+	A util function to convert different client request batch array
+*/
 
 func (in *Instance) convertToMessageBlockRequests(requests []*proto.ClientRequestBatch) []*proto.MessageBlock_ClientRequestBatch {
 	var returnArray []*proto.MessageBlock_ClientRequestBatch
@@ -89,8 +103,8 @@ func (in *Instance) proposedPreviously(hash string) (bool, int) {
 
 func (in *Instance) committedPreviously(hash string) (bool, int) {
 	// checks if this value is previously decided
-	for i := 0; i < len(in.replicatedLog); i++ {
-		if in.replicatedLog[i].decision.id == hash {
+	for i := 0; i < len(in.proposerReplicatedLog); i++ {
+		if in.proposerReplicatedLog[i].decision.Id == hash {
 			return true, i
 		}
 	}
@@ -98,10 +112,10 @@ func (in *Instance) committedPreviously(hash string) (bool, int) {
 }
 
 /*
-	returns a fixed leader (strawman 1)
+	Util: returns a fixed leader (strawman 1)
 */
 
-func (in *Instance) getDeterministicLeader1() int {
+func (in *Instance) getDeterministicLeader1() int64 {
 	return 0 // node 0 is the default leader
 }
 
@@ -127,4 +141,40 @@ func GetReplicaAddressList(cfg *configuration.InstanceConfig) []string {
 		replicas = append(replicas, cfg.Peers[i].Address)
 	}
 	return replicas
+}
+
+/*
+	A util function to support set union, item wise, for proto value
+*/
+
+func (in *Instance) setUnionProtoValue(array []*proto.GenericConsensusValue, protoValue *proto.GenericConsensusValue) []*proto.GenericConsensusValue {
+	for i := 0; i < len(array); i++ {
+		if array[i].Id == protoValue.Id && array[i].Fit == protoValue.Fit {
+			return array
+		}
+	}
+	array = append(array, protoValue)
+	return array
+}
+
+/*
+	A util function to support set union, set wise, for proto value
+*/
+
+func (in *Instance) setUnionProtoValues(array []*proto.GenericConsensusValue, protoValue []*proto.GenericConsensusValue) []*proto.GenericConsensusValue {
+
+	for i := 0; i < len(protoValue); i++ {
+		found := false
+		for j := 0; j < len(array); j++ {
+			if array[j].Id == protoValue[i].Id && array[j].Fit == protoValue[i].Fit {
+				found = true
+				break
+			}
+		}
+		if found == false {
+			array = append(array, protoValue[i])
+		}
+	}
+
+	return array
 }

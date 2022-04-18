@@ -28,7 +28,7 @@ type GenericConsensus struct {
 	Sender      int64                    `protobuf:"varint,1,opt,name=sender,proto3" json:"sender,omitempty"`
 	Receiver    int64                    `protobuf:"varint,2,opt,name=receiver,proto3" json:"receiver,omitempty"`
 	Index       int64                    `protobuf:"varint,3,opt,name=index,proto3" json:"index,omitempty"`
-	M           int64                    `protobuf:"varint,4,opt,name=M,proto3" json:"M,omitempty"` // propose=1 , spreadE=2 , spreadC=3, gather=4, decide=5, commit=6
+	M           int64                    `protobuf:"varint,4,opt,name=M,proto3" json:"M,omitempty"` // propose=1 , spreadE=2 , spreadCgatherE=3, gatherC=4, decide=5, commit=6
 	S           int64                    `protobuf:"varint,5,opt,name=S,proto3" json:"S,omitempty"` // step
 	P           *GenericConsensusValue   `protobuf:"bytes,6,opt,name=P,proto3" json:"P,omitempty"`
 	E           []*GenericConsensusValue `protobuf:"bytes,7,rep,name=E,proto3" json:"E,omitempty"`
@@ -36,7 +36,7 @@ type GenericConsensus struct {
 	D           bool                     `protobuf:"varint,9,opt,name=D,proto3" json:"D,omitempty"`
 	DS          *GenericConsensusValue   `protobuf:"bytes,10,opt,name=DS,proto3" json:"DS,omitempty"`
 	PR          int64                    `protobuf:"varint,11,opt,name=PR,proto3" json:"PR,omitempty"`                   // id of the proposer who decided this index
-	Destination int64                    `protobuf:"varint,12,opt,name=destination,proto3" json:"destination,omitempty"` // 1 for the proposer and 2 for the recorder
+	Destination int64                    `protobuf:"varint,12,opt,name=destination,proto3" json:"destination,omitempty"` // 0 for the proposer and 1 for the recorder, and 2 for both (decision messages)
 }
 
 func (x *GenericConsensus) Reset() {
@@ -155,19 +155,82 @@ func (x *GenericConsensus) GetDestination() int64 {
 	return 0
 }
 
+type ConsensusRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Sender   int64  `protobuf:"varint,1,opt,name=sender,proto3" json:"sender,omitempty"`
+	Receiver int64  `protobuf:"varint,2,opt,name=receiver,proto3" json:"receiver,omitempty"`
+	Hash     string `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty"`
+}
+
+func (x *ConsensusRequest) Reset() {
+	*x = ConsensusRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_consensus_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ConsensusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConsensusRequest) ProtoMessage() {}
+
+func (x *ConsensusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_consensus_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConsensusRequest.ProtoReflect.Descriptor instead.
+func (*ConsensusRequest) Descriptor() ([]byte, []int) {
+	return file_proto_consensus_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ConsensusRequest) GetSender() int64 {
+	if x != nil {
+		return x.Sender
+	}
+	return 0
+}
+
+func (x *ConsensusRequest) GetReceiver() int64 {
+	if x != nil {
+		return x.Receiver
+	}
+	return 0
+}
+
+func (x *ConsensusRequest) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
+}
+
 type GenericConsensusValue struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	Id  string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Fit int64  `protobuf:"varint,2,opt,name=fit,proto3" json:"fit,omitempty"`
+	Fit string `protobuf:"bytes,2,opt,name=fit,proto3" json:"fit,omitempty"`
 }
 
 func (x *GenericConsensusValue) Reset() {
 	*x = GenericConsensusValue{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_consensus_proto_msgTypes[1]
+		mi := &file_proto_consensus_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -180,7 +243,7 @@ func (x *GenericConsensusValue) String() string {
 func (*GenericConsensusValue) ProtoMessage() {}
 
 func (x *GenericConsensusValue) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_consensus_proto_msgTypes[1]
+	mi := &file_proto_consensus_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -203,11 +266,11 @@ func (x *GenericConsensusValue) GetId() string {
 	return ""
 }
 
-func (x *GenericConsensusValue) GetFit() int64 {
+func (x *GenericConsensusValue) GetFit() string {
 	if x != nil {
 		return x.Fit
 	}
-	return 0
+	return ""
 }
 
 var File_proto_consensus_proto protoreflect.FileDescriptor
@@ -238,8 +301,14 @@ var file_proto_consensus_proto_rawDesc = []byte{
 	0x01, 0x28, 0x03, 0x52, 0x0b, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e,
 	0x1a, 0x29, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x10, 0x0a, 0x03, 0x66, 0x69, 0x74,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x03, 0x66, 0x69, 0x74, 0x42, 0x08, 0x5a, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x66, 0x69, 0x74, 0x22, 0x5a, 0x0a, 0x10, 0x63,
+	0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
+	0x16, 0x0a, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52,
+	0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x12, 0x1a, 0x0a, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69,
+	0x76, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69,
+	0x76, 0x65, 0x72, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x42, 0x08, 0x5a, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x2f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -254,16 +323,17 @@ func file_proto_consensus_proto_rawDescGZIP() []byte {
 	return file_proto_consensus_proto_rawDescData
 }
 
-var file_proto_consensus_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_consensus_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_proto_consensus_proto_goTypes = []interface{}{
 	(*GenericConsensus)(nil),      // 0: GenericConsensus
-	(*GenericConsensusValue)(nil), // 1: GenericConsensus.value
+	(*ConsensusRequest)(nil),      // 1: consensusRequest
+	(*GenericConsensusValue)(nil), // 2: GenericConsensus.value
 }
 var file_proto_consensus_proto_depIdxs = []int32{
-	1, // 0: GenericConsensus.P:type_name -> GenericConsensus.value
-	1, // 1: GenericConsensus.E:type_name -> GenericConsensus.value
-	1, // 2: GenericConsensus.C:type_name -> GenericConsensus.value
-	1, // 3: GenericConsensus.DS:type_name -> GenericConsensus.value
+	2, // 0: GenericConsensus.P:type_name -> GenericConsensus.value
+	2, // 1: GenericConsensus.E:type_name -> GenericConsensus.value
+	2, // 2: GenericConsensus.C:type_name -> GenericConsensus.value
+	2, // 3: GenericConsensus.DS:type_name -> GenericConsensus.value
 	4, // [4:4] is the sub-list for method output_type
 	4, // [4:4] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
@@ -290,6 +360,18 @@ func file_proto_consensus_proto_init() {
 			}
 		}
 		file_proto_consensus_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ConsensusRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_consensus_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GenericConsensusValue); i {
 			case 0:
 				return &v.state
@@ -308,7 +390,7 @@ func file_proto_consensus_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_proto_consensus_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

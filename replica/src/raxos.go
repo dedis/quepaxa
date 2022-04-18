@@ -18,6 +18,7 @@ const incomingRequestBufferSize = 100000 // size of the buffer that collects inc
 const numOutgoingThreads = 200           // number of wire writers: since the I/O writing is expensive we delegate that task to a thread pool and separate from the critical path
 const incomingBufferSize = 1000000       // the size of the buffer which receives all the incoming messages
 const outgoingBufferSize = 1000000       // size of the buffer that collects messages to be written to the wire
+const hashChannelSize = 10000            // size of the buffer that collects hashes to be sent to the leader
 
 type Instance struct {
 	nodeName    int64 // unique node identifier as defined in the configuration.yml
@@ -26,13 +27,11 @@ type Instance struct {
 
 	//lock sync.Mutex // todo for the moment we don't need this because the shared state is accessed only by the single main thread, but have to verify this
 
-	replicaAddrList []string // array with the IP:port address of every replica
-	//replicaConnections     []net.Conn // cache of replica connections to all other replicas
+	replicaAddrList        []string // array with the IP:port address of every replica
 	incomingReplicaReaders []*bufio.Reader
 	outgoingReplicaWriters []*bufio.Writer
 
-	clientAddrList []string // array with the IP:port address of every client
-	//clientConnections     []net.Conn // cache of client connections to all other clients
+	clientAddrList        []string // array with the IP:port address of every client
 	incomingClientReaders []*bufio.Reader
 	outgoingClientWriters []*bufio.Writer
 
@@ -51,12 +50,14 @@ type Instance struct {
 	clientStatusRequestRpc  uint8
 	clientStatusResponseRpc uint8
 	messageBlockAckRpc      uint8
+	consensusRequestRpc     uint8
 
-	replicatedLog []Slot         // the replicated log
-	stateMachine  *benchmark.App // the application
+	recorderReplicatedLog []Slot         // the replicated log of the recorder
+	proposerReplicatedLog []Slot         // the replicated log of the proposer
+	stateMachine          *benchmark.App // the application
 
 	committedIndex int64 // last index for which a request was committed and the result was sent to client
-	proposedIndex  int64 // last index for which a request was proposed //todo think about the relationship between committed index and the proposed index
+	proposedIndex  int64 // last index for which a request was proposed
 
 	proposed []string // assigns the proposed request to the slot
 
@@ -66,7 +67,7 @@ type Instance struct {
 	responseSize   int64  // fixed response size (might not be useful if the replica doesn't send fixed sized responses)
 	responseString string // fixed response string to use if the response size is fixed (might not be used)
 
-	batchSize int64 // maximum server side batch size
+	batchSize int64 // maximum replica side batch size
 	batchTime int64 // maximum replica side batch time in micro seconds
 
 	pipelineLength      int64 // maximum number of inflight consensus instances
@@ -82,17 +83,34 @@ type Instance struct {
 	lastSeenTime  []time.Time // time each replica was last seen
 
 	debugOn       bool // if turned on, the debug messages will be print on the console
+	debugLevel    int  // debug level
 	serverStarted bool // true if the first status message with operation type 1 received
+
+	proposeMessage        int64
+	spreadEMessage        int64
+	spreadCgatherEMessage int64
+	gatherCMessage        int64
+	decideMessage         int64
+	commitMessage         int64
+
+	consensusMessageRecorderDestination int64
+	consensusMessageProposerDestination int64
+	consensusMessageCommonDestination   int64
+
+	Hi int64 // highest priority for the consensus proposals
+
+	hashProposalsIn chan string // buffer collecting hash values that should be sent to the leader to get proposed
+	hashBatchTime   int
+	hashBatchSize   int
 }
 
 /*
 
-	Instantiate a new Instance object, allocates the buffers
-	Initializes the message store
+	Instantiate a new Instance object, allocates the buffers and initialize the message store
 
 */
 
-func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serviceTime int64, responseSize int64, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmarkNumber int64, numKeys int64) *Instance {
+func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serviceTime int64, responseSize int64, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmarkNumber int64, numKeys int64, hashBatchSize int64, hashBatchTime int64, debugOn bool, debugLevel int) *Instance {
 	in := Instance{
 		nodeName:                name,
 		numReplicas:             int64(len(cfg.Peers)),
@@ -115,34 +133,49 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 		clientStatusRequestRpc:  6,
 		clientStatusResponseRpc: 7,
 		messageBlockAckRpc:      8,
+		consensusRequestRpc:     9,
 		//replicatedLog:           nil,
 		stateMachine:   benchmark.InitApp(benchmarkNumber, serviceTime, numKeys),
 		committedIndex: -1,
 		proposedIndex:  -1,
 		//proposed:                nil,
-		logFilePath:         logFilePath,
-		serviceTime:         serviceTime,
-		responseSize:        responseSize,
-		responseString:      getStringOfSizeN(int(responseSize)),
-		batchSize:           batchSize,
-		batchTime:           batchTime,
-		pipelineLength:      pipelineLength,
-		numInflightRequests: 0,
-		outgoingMessageChan: make(chan *OutgoingRPC, outgoingBufferSize),
-		requestsIn:          make(chan *proto.ClientRequestBatch, incomingRequestBufferSize),
-		messageStore:        MessageStore{},
-		blockCounter:        0,
-		leaderTimeout:       leaderTimeout,
-		lastSeenTime:        make([]time.Time, len(cfg.Peers)),
-		debugOn:             false,
-		serverStarted:       false,
+		logFilePath:                         logFilePath,
+		serviceTime:                         serviceTime,
+		responseSize:                        responseSize,
+		responseString:                      getStringOfSizeN(int(responseSize)),
+		batchSize:                           batchSize,
+		batchTime:                           batchTime,
+		pipelineLength:                      pipelineLength,
+		numInflightRequests:                 0,
+		outgoingMessageChan:                 make(chan *OutgoingRPC, outgoingBufferSize),
+		requestsIn:                          make(chan *proto.ClientRequestBatch, incomingRequestBufferSize),
+		messageStore:                        MessageStore{},
+		blockCounter:                        0,
+		leaderTimeout:                       leaderTimeout,
+		lastSeenTime:                        make([]time.Time, len(cfg.Peers)),
+		debugOn:                             debugOn,
+		debugLevel:                          debugLevel, // manually set the debug level
+		serverStarted:                       false,
+		proposeMessage:                      0,
+		spreadEMessage:                      1,
+		spreadCgatherEMessage:               2,
+		gatherCMessage:                      3,
+		decideMessage:                       4,
+		commitMessage:                       5,
+		consensusMessageRecorderDestination: 0,
+		consensusMessageProposerDestination: 1,
+		consensusMessageCommonDestination:   2,
+		Hi:                                  100000,
+		hashProposalsIn:                     make(chan string, hashChannelSize),
+		hashBatchSize:                       int(hashBatchSize), // todo this might have to be changed in the WAN
+		hashBatchTime:                       int(hashBatchTime),
 	}
 
 	for i := 0; i < len(cfg.Peers)+len(cfg.Clients); i++ {
 		in.buffioWriterMutexes[i] = sync.Mutex{}
 	}
 
-	in.debug("Initialized a new instance")
+	in.debug("Initialized a new instance", 0)
 
 	rand.Seed(time.Now().UTC().UnixNano())
 	in.messageStore.Init()
@@ -155,6 +188,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 	in.RegisterRPC(new(proto.ClientStatusRequest), in.clientStatusRequestRpc)
 	in.RegisterRPC(new(proto.ClientStatusResponse), in.clientStatusResponseRpc)
 	in.RegisterRPC(new(proto.MessageBlockAck), in.messageBlockAckRpc)
+	in.RegisterRPC(new(proto.ConsensusRequest), in.consensusRequestRpc)
 
 	pid := os.Getpid()
 	fmt.Printf("initialized Raxos with process id: %v \n", pid)

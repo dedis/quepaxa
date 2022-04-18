@@ -6,6 +6,7 @@ import (
 	"os"
 	"raxos/proto"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -14,7 +15,7 @@ import (
 */
 
 /*
-	This is an infinite thread
+	This is an infinite loop
 	It collects a batch of client requests batches (a 2d array of requests), creates a new block and broadcasts it to all the replicas
 */
 
@@ -22,7 +23,7 @@ func (in *Instance) BroadcastBlock() {
 
 	go func() {
 		lastSent := time.Now() // used to get how long to wait
-		for true {             // this runs forever
+		for true {
 			numRequests := int64(0)
 			var requests []*proto.ClientRequestBatch
 			// this loop collects requests until the minimum batch time is met OR the batch time is timeout
@@ -32,9 +33,9 @@ func (in *Instance) BroadcastBlock() {
 				numRequests++
 			}
 
-			in.debug("Sent " + strconv.Itoa(int(in.nodeName)) + "." + strconv.Itoa(int(in.blockCounter)) + " batch size " + strconv.Itoa(len(requests)))
 			in.blockCounter++
 
+			// create a new mem block
 			messageBlock := proto.MessageBlock{
 				Sender:   in.nodeName,
 				Receiver: 0,
@@ -42,14 +43,16 @@ func (in *Instance) BroadcastBlock() {
 				Requests: in.convertToMessageBlockRequests(requests),
 			}
 
+			// add the new message block to the store
 			in.messageStore.Add(&messageBlock)
 
+			// broadcast a new mem pool block
 			for i := int64(0); i < in.numReplicas; i++ {
 				messageBlock := proto.MessageBlock{
-					Sender:   in.nodeName,
-					Receiver: i,
-					Hash:     strconv.Itoa(int(in.nodeName)) + "." + strconv.Itoa(int(in.blockCounter)), // unique block sequence number
-					Requests: in.convertToMessageBlockRequests(requests),
+					Sender:   messageBlock.Sender,
+					Receiver: messageBlock.Receiver,
+					Hash:     messageBlock.Hash, // unique block sequence number
+					Requests: messageBlock.Requests,
 				}
 				rpcPair := RPCPair{
 					Code: in.messageBlockRpc,
@@ -57,7 +60,7 @@ func (in *Instance) BroadcastBlock() {
 				}
 				in.sendMessage(i, rpcPair)
 			}
-
+			in.debug("Sent a new mem block with hash "+strconv.Itoa(int(in.nodeName))+"."+strconv.Itoa(int(in.blockCounter))+" and with batch size "+strconv.Itoa(len(requests)), 0)
 			lastSent = time.Now()
 		}
 
@@ -67,7 +70,7 @@ func (in *Instance) BroadcastBlock() {
 
 /*
 	handler for new client requests received, the requests are sent to a channel for batching
-	we allow clients to send requests in an open loop with an arbitrary passion arrival rate. To avoid buffer overflows, some client requests will be dropped
+	we allow clients to send requests in an open loop with an arbitrary passion arrival rate. To avoid chanel blocking, some client requests will be dropped
 */
 
 func (in *Instance) handleClientRequestBatch(batch *proto.ClientRequestBatch) {
@@ -76,21 +79,13 @@ func (in *Instance) handleClientRequestBatch(batch *proto.ClientRequestBatch) {
 	select {
 	case in.requestsIn <- batch:
 		// Success: the server side buffers are not full
-		in.debug("Successful pushing into server batching")
+		in.debug("Successful pushing into server batching", 0)
 	default:
 		//Unsuccessful
 		// if the buffer is full, then this request will be dropped (failed request)
-		in.debug("Unsuccessful pushing into server batching")
+		in.debug("Unsuccessful pushing into server batching", 2)
 	}
 
-}
-
-/*
-	At the moment a replica does not receive client response batches
-*/
-
-func (in *Instance) handleClientResponseBatch(batch *proto.ClientResponseBatch) {
-	// the proposer doesn't receive any client responses
 }
 
 /*
@@ -99,8 +94,8 @@ func (in *Instance) handleClientResponseBatch(batch *proto.ClientResponseBatch) 
 
 func (in *Instance) handleMessageBlock(block *proto.MessageBlock) {
 	// add this block to the MessageStore
-	in.messageStore.Add(block)
-	in.debug("Added a message block from " + strconv.Itoa(int(block.Sender)))
+	in.messageStore.Add(block) // duplicates are handled internaly
+	in.debug("Added a message block from "+strconv.Itoa(int(block.Sender)), 0)
 	messageBlockAck := proto.MessageBlockAck{
 		Sender:   in.nodeName,
 		Receiver: block.Sender,
@@ -113,7 +108,8 @@ func (in *Instance) handleMessageBlock(block *proto.MessageBlock) {
 	}
 
 	in.sendMessage(block.Sender, rpcPair)
-	in.debug("Send block ack to " + strconv.Itoa(int(block.Sender)))
+	in.debug("Send block ack to "+strconv.Itoa(int(block.Sender)), 0)
+	in.updateStateMachine() // this is an exception case that is invoked when a block was missing when committing and requested
 }
 
 /*
@@ -124,7 +120,7 @@ func (in *Instance) handleMessageBlockRequest(request *proto.MessageBlockRequest
 	messageBlock, ok := in.messageStore.Get(request.Hash)
 	if ok {
 		// the block exists
-		in.debug("Sending the requested block to " + strconv.Itoa(int(request.Sender)))
+		in.debug("Sending the requested block to "+strconv.Itoa(int(request.Sender)), 0)
 		messageBlock.Receiver = request.Sender
 		rpcPair := RPCPair{
 			Code: in.messageBlockRpc,
@@ -147,10 +143,28 @@ func (in *Instance) sendMessageBlockRequest(hash string) {
 		Code: in.messageBlockRequestRpc,
 		Obj:  &messageBlockRequest,
 	}
-	in.debug("sending a message block request to " + strconv.Itoa(int(randomPeer)))
+	in.debug("sending a message block request to "+strconv.Itoa(int(randomPeer)), 0)
 
 	in.sendMessage(int64(randomPeer), rpcPair)
 
+}
+
+/*
+	Decision message is applicable to both proposer and the recorder
+	Upon receiving a decision message, both proposer log and the recorder log should be updated
+*/
+
+func (in *Instance) handleDecision(consensusMessage *proto.GenericConsensus) {
+
+	in.recorderReplicatedLog = in.initializeSlot(in.recorderReplicatedLog, consensusMessage.Index) // create the slot if not already created
+	in.proposerReplicatedLog = in.initializeSlot(in.proposerReplicatedLog, consensusMessage.Index) // create the slot if not already created
+
+	if consensusMessage.M == in.decideMessage && in.proposerReplicatedLog[consensusMessage.Index].decided == false {
+		in.recordProposerDecide(consensusMessage)
+	}
+	if in.recorderReplicatedLog[consensusMessage.Index].decided == false && consensusMessage.M == in.decideMessage && consensusMessage.D == true {
+		in.recordRecorderDecide(consensusMessage)
+	}
 }
 
 /*
@@ -158,11 +172,13 @@ func (in *Instance) sendMessageBlockRequest(hash string) {
 */
 
 func (in *Instance) handleGenericConsensus(consensus *proto.GenericConsensus) {
-	// 1 for the proposer and 2 for the recorder
-	if consensus.Destination == 1 {
+
+	if consensus.Destination == in.consensusMessageProposerDestination {
 		in.handleProposerConsensusMessage(consensus)
-	} else if consensus.Destination == 2 {
+	} else if consensus.Destination == in.consensusMessageRecorderDestination {
 		in.handleRecorderConsensusMessage(consensus)
+	} else if consensus.Destination == in.consensusMessageCommonDestination {
+		in.handleDecision(consensus)
 	}
 
 }
@@ -175,16 +191,15 @@ func (in *Instance) handleClientStatusRequest(request *proto.ClientStatusRequest
 	if request.Operation == 1 {
 		in.startServer()
 	} else if request.Operation == 2 {
-		//in.printLog() //todo uncomment this once the consensus layer is creater
-		// todo remove the message store printing, its only for testing purposes
-		in.messageStore.printStore(in.logFilePath, in.nodeName)
+		in.printLog()
+		//in.messageStore.printStore(in.logFilePath, in.nodeName) //this is for the testing purposes
 	}
 
 	/*send a status response back to the client*/
 	statusResponse := proto.ClientStatusResponse{
 		Sender:    in.nodeName,
 		Receiver:  request.Sender,
-		Operation: 0,
+		Operation: request.Operation,
 		Message:   "Status Response from " + strconv.Itoa(int(in.nodeName)),
 	}
 	rpcPair := RPCPair{
@@ -193,7 +208,7 @@ func (in *Instance) handleClientStatusRequest(request *proto.ClientStatusRequest
 	}
 
 	in.sendMessage(request.Sender, rpcPair)
-	in.debug("Sent status response")
+	in.debug("Sent status response", 0)
 
 }
 
@@ -238,7 +253,7 @@ func (in *Instance) sendSampleClientResponse(ack *proto.MessageBlockAck) {
 		}
 
 		in.sendMessage(clientRequestBatch.Sender, rpcPair)
-		in.debug("Sent client response batch to " + strconv.Itoa(int(clientRequestBatch.Sender)))
+		in.debug("Sent client response batch to "+strconv.Itoa(int(clientRequestBatch.Sender)), 0)
 
 	}
 }
@@ -253,21 +268,11 @@ func (in *Instance) handleMessageBlockAck(ack *proto.MessageBlockAck) {
 	in.messageStore.addAck(ack.Hash)
 	acks := in.messageStore.getAcks(ack.Hash)
 	if acks != nil && int64(len(acks)) == in.numReplicas/2+1 {
-		in.debug("-----Received majority block acks for ---" + ack.Hash)
+		in.debug("-----Received majority block acks for ---"+ack.Hash, 0)
 		// note that this block is guaranteed to be present in f+1 replicas, so its persistent
-		// todo remove the following invocation is only for testing purposes of the overlay
-		in.sendSampleClientResponse(ack)
-		// todo invoke to send to leader
-		in.sendConsensusRequest(ack.Hash)
+		//in.sendSampleClientResponse(ack) //  this is only to test the overlay
+		in.hashProposalsIn <- ack.Hash
 	}
-}
-
-/*
-	Handler for client status responses, currently the replica does not receive client status responses, only for testing purposes
-*/
-
-func (in *Instance) handleClientStatusResponse(response *proto.ClientStatusResponse) {
-	// replica doesn't receive a client status response
 }
 
 /*
@@ -292,23 +297,35 @@ func (in *Instance) printLog() {
 	}
 	defer f.Close()
 	choiceNum := 0
-	for _, entry := range in.replicatedLog {
+	for _, entry := range in.proposerReplicatedLog {
 		// a single entry contains a 2D sequence of commands
 		if entry.committed {
-			// if an entry is committed, then it should contain the block in the message store
-			block, ok := in.messageStore.Get(entry.decision.id)
+			// if an entry is committed, then it should contain the blocks in the message store
+			decision := entry.decision.Id
+			hashes := strings.Split(decision, ":")
+			for i := 0; i < len(hashes); i++ {
+				hashes[i] = strings.TrimSpace(hashes[i])
+			}
 			choiceLocalNum := 0
-			if ok {
-				for i := 0; i < len(block.Requests); i++ {
-					for j := 0; j < len(block.Requests[i].Requests); j++ {
-						_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(choiceLocalNum) + ":")
-						_, _ = f.WriteString(block.Requests[i].Requests[j].Message + ",")
-						choiceLocalNum++
-					}
+			for i := 0; i < len(hashes); i++ {
+				if len(hashes[i]) == 0 {
+					continue
 				}
-			} else {
-				_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(choiceLocalNum) + ":")
-				_, _ = f.WriteString("no-op" + ",")
+
+				block, ok := in.messageStore.Get(hashes[i])
+				if ok {
+					for k := 0; k < len(block.Requests); k++ {
+						for j := 0; j < len(block.Requests[k].Requests); j++ {
+							_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(choiceLocalNum) + ":")
+							_, _ = f.WriteString(block.Requests[k].Requests[j].Message + "\n")
+							choiceLocalNum++
+						}
+					}
+				} else {
+					_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(choiceLocalNum) + ":")
+					_, _ = f.WriteString("no-op" + "\n")
+					choiceLocalNum++
+				}
 			}
 
 		} else {
@@ -316,8 +333,73 @@ func (in *Instance) printLog() {
 			// in theory this execution path should not execute
 
 			_, _ = f.WriteString(strconv.Itoa(choiceNum) + "." + strconv.Itoa(0) + ":")
-			_, _ = f.WriteString("no-op" + ",")
+			_, _ = f.WriteString("no-op" + "\n")
 		}
 		choiceNum++
 	}
+}
+
+/*
+	Common: Add slots upto index 'index'
+*/
+
+func (in *Instance) initializeSlot(log []Slot, index int64) []Slot {
+
+	for i := int64(len(log)); i < index+1000; i++ {
+		log = append(log, Slot{
+			index:     i,
+			S:         0,
+			P:         &proto.GenericConsensusValue{},
+			E:         []*proto.GenericConsensusValue{},
+			C:         []*proto.GenericConsensusValue{},
+			U:         []*proto.GenericConsensusValue{},
+			committed: false,
+			decided:   false,
+			decision:  &proto.GenericConsensusValue{},
+			proposer:  -1,
+		})
+	}
+	return log
+}
+
+/*
+	This is an infinite thread
+	It collects hashes of the blocks which are ready to be sent to the leader node
+*/
+
+func (in *Instance) CollectAndProposeHashes() {
+
+	go func() {
+		lastSent := time.Now() // used to get how long to wait
+		for true {             // this runs forever
+			numRequests := int(0)
+			requestString := ""
+			// this loop collects requests until the minimum batch time is met OR the batch time is timeout
+			for !(numRequests >= in.hashBatchSize || (time.Now().Sub(lastSent).Microseconds() > int64(in.hashBatchTime) && numRequests > 0)) {
+				newRequest := <-in.hashProposalsIn // keep collecting new requests for the next batch
+				requestString = requestString + ":" + newRequest
+				numRequests++
+			}
+
+			in.debug("Collected a batch of hashes to propose "+requestString, 1)
+
+			leader := in.getDeterministicLeader1() //todo change this when adding the optimizations
+			consensusRequest := proto.ConsensusRequest{
+				Sender:   in.nodeName,
+				Receiver: leader,
+				Hash:     requestString,
+			}
+			rpcPair := RPCPair{
+				Code: in.consensusRequestRpc,
+				Obj:  &consensusRequest,
+			}
+			in.debug("sending a consensus request to "+strconv.Itoa(int(leader))+" for the hash "+requestString, 0)
+
+			in.sendMessage(leader, rpcPair)
+
+			lastSent = time.Now()
+		}
+
+	}()
+
 }

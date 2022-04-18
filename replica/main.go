@@ -21,6 +21,10 @@ func main() {
 	pipelineLength := flag.Int64("pipelineLength", 50, "pipeline length maximum number of outstanding proposals")
 	benchmark := flag.Int64("benchmark", 0, "Benchmark: 0 for echo service, 1 for KV store and 2 for Redis ")
 	numKeys := flag.Int64("numKeys", 1000, "Number of keys in the key value store")
+	hashBatchSize := flag.Int64("hashBatchSize", 10, "replica hash batch size")
+	hashBatchTime := flag.Int64("hashBatchTime", 1000, "maximum time to wait for collecting a batch of hashes in micro seconds")
+	debugOn := flag.Bool("debugOn", false, "true / false")
+	debugLevel := flag.Int("debugLevel", 0, "debug level")
 	flag.Parse()
 
 	cfg, err := configuration.NewInstanceConfig(*configFile, *name)
@@ -29,10 +33,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	in := raxos.New(cfg, *name, *logFilePath, *serviceTime, *responseSize, *batchSize, *batchTime, *leaderTimeout, *pipelineLength, *benchmark, *numKeys)
+	in := raxos.New(cfg, *name, *logFilePath, *serviceTime, *responseSize, *batchSize, *batchTime, *leaderTimeout, *pipelineLength, *benchmark, *numKeys, *hashBatchSize, *hashBatchTime, *debugOn, *debugLevel)
 
 	in.Run()
 	in.StartOutgoingLinks()
+	in.CollectAndProposeHashes()
 	in.BroadcastBlock()
 	go in.WaitForConnections()
 

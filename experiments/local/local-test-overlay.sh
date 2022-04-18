@@ -32,6 +32,9 @@ rm ${output_path}8.txt
 rm ${output_path}8.log
 rm ${output_path}9.txt
 rm ${output_path}9.log
+rm ${output_path}local-overlay-test.log
+rm ${output_path}status1.log
+rm ${output_path}status2.log
 
 echo "Removed old log files"
 
@@ -48,11 +51,11 @@ pkill client
 
 echo "Killed previously running instances"
 
-nohup ./${raxos_path} --name 0 >${output_path}0.log &
-nohup ./${raxos_path} --name 1 >${output_path}1.log &
-nohup ./${raxos_path} --name 2 >${output_path}2.log &
-nohup ./${raxos_path} --name 3 >${output_path}3.log &
-nohup ./${raxos_path} --name 4 >${output_path}4.log &
+nohup ./${raxos_path} --name 0 --debugOn --debugLevel 3 >${output_path}0.log &
+nohup ./${raxos_path} --name 1 --debugOn --debugLevel 3 >${output_path}1.log &
+nohup ./${raxos_path} --name 2 --debugOn --debugLevel 3 >${output_path}2.log &
+nohup ./${raxos_path} --name 3 --debugOn --debugLevel 3 >${output_path}3.log &
+nohup ./${raxos_path} --name 4 --debugOn --debugLevel 3 >${output_path}4.log &
 
 echo "Started 5 servers"
 
@@ -62,7 +65,7 @@ sleep 10
 
 echo "Sent initial status to bootstrap"
 
-sleep 20
+sleep 10
 
 echo "Starting client[s]"
 
