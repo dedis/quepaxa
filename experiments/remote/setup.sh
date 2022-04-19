@@ -10,6 +10,30 @@ echo "Removed old binaries"
 mage generate && mage build
 echo "Built Raxos"
 
+logs_path="logs/"
+rm ${logs_path}0.log
+rm ${logs_path}0.txt
+rm ${logs_path}1.log
+rm ${logs_path}1.txt
+rm ${logs_path}2.log
+rm ${logs_path}2.txt
+rm ${logs_path}3.log
+rm ${logs_path}3.txt
+rm ${logs_path}4.log
+rm ${logs_path}4.txt
+rm ${logs_path}5.log
+rm ${logs_path}5.txt
+rm ${logs_path}6.log
+rm ${logs_path}6.txt
+rm ${logs_path}7.log
+rm ${logs_path}7.txt
+rm ${logs_path}8.log
+rm ${logs_path}8.txt
+rm ${logs_path}9.log
+rm ${logs_path}9.txt
+rm ${logs_path}status1.log
+rm ${logs_path}status2.log
+
 reset_directory="rm -r /home/pasindu/raxos; mkdir /home/pasindu/raxos"
 kill_insstances="pkill replica ; pkill client"
 unzip_raxos="cd /home/pasindu/raxos && unzip raxos.zip"

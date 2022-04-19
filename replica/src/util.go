@@ -178,3 +178,20 @@ func (in *Instance) setUnionProtoValues(array []*proto.GenericConsensusValue, pr
 
 	return array
 }
+
+/*
+	A util function to remove empty values from a slice
+*/
+
+func (in *Instance) removeEmptyValues(array []*proto.GenericConsensusValue) []*proto.GenericConsensusValue {
+	returnArray := make([]*proto.GenericConsensusValue, 0)
+	for i := 0; i < len(array); i++ {
+		if array[i].Id != "" {
+			returnArray = append(returnArray, array[i])
+		} else {
+			panic("Empty slot found")
+		}
+	}
+
+	return returnArray
+}

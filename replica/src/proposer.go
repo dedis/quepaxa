@@ -15,9 +15,10 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 
 	// case 2: a propose reply message from a recorder
 
-	if consensusMessage.M == in.proposeMessage && in.proposerReplicatedLog[consensusMessage.Index].S == consensusMessage.S {
+	if consensusMessage.M == in.proposeMessage && in.proposerReplicatedLog[consensusMessage.Index].S == consensusMessage.S && in.proposerReplicatedLog[consensusMessage.Index].S%4 == 1 {
 		in.proposerReplicatedLog[consensusMessage.Index].E = in.setUnionProtoValue(in.proposerReplicatedLog[consensusMessage.Index].E, consensusMessage.P)
-
+		in.debug("Received propose response from recorder has id = "+consensusMessage.P.Id+" and fit = "+consensusMessage.P.Fit, 0)
+		in.proposerReplicatedLog[consensusMessage.Index].E = in.removeEmptyValues(in.proposerReplicatedLog[consensusMessage.Index].E)
 		in.proposerReplicatedLog[consensusMessage.Index].proposeResponses = append(in.proposerReplicatedLog[consensusMessage.Index].proposeResponses, consensusMessage)
 
 		// case 2.1: on receiving quorum of propose replies
@@ -43,7 +44,7 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 	}
 
 	// case 3: a spreadE response
-	if consensusMessage.M == in.spreadEMessage && in.proposerReplicatedLog[consensusMessage.Index].S == consensusMessage.S {
+	if consensusMessage.M == in.spreadEMessage && in.proposerReplicatedLog[consensusMessage.Index].S == consensusMessage.S && in.proposerReplicatedLog[consensusMessage.Index].S%4 == 2 {
 		in.proposerReplicatedLog[consensusMessage.Index].spreadEResponses = append(in.proposerReplicatedLog[consensusMessage.Index].spreadEResponses, consensusMessage)
 
 		// case 3.1 upon receiving a f+1 spreadE message
@@ -59,6 +60,7 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 			// case 3.1.2 no hash has f+1 Hi
 			if hiValue.Id == "" || hiValue.Fit == "" {
 				in.proposerReplicatedLog[consensusMessage.Index].C = in.proposerReplicatedLog[consensusMessage.Index].E
+				in.proposerReplicatedLog[consensusMessage.Index].C = in.removeEmptyValues(in.proposerReplicatedLog[consensusMessage.Index].C)
 				in.proposerReplicatedLog[consensusMessage.Index].S = in.proposerReplicatedLog[consensusMessage.Index].S + 1
 				in.proposerSendSpreadCGatherE(consensusMessage.Index)
 				return
@@ -70,10 +72,10 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 	}
 
 	// case 4: a SpreadCGatherE response
-	if consensusMessage.M == in.spreadCgatherEMessage && in.proposerReplicatedLog[consensusMessage.Index].S == consensusMessage.S {
+	if consensusMessage.M == in.spreadCgatherEMessage && in.proposerReplicatedLog[consensusMessage.Index].S == consensusMessage.S && in.proposerReplicatedLog[consensusMessage.Index].S%4 == 3 {
 		// copy the E set
 		in.proposerReplicatedLog[consensusMessage.Index].E = in.setUnionProtoValues(in.proposerReplicatedLog[consensusMessage.Index].E, consensusMessage.E)
-
+		in.proposerReplicatedLog[consensusMessage.Index].E = in.removeEmptyValues(in.proposerReplicatedLog[consensusMessage.Index].E)
 		in.proposerReplicatedLog[consensusMessage.Index].spreadCGatherEResponses = append(in.proposerReplicatedLog[consensusMessage.Index].spreadCGatherEResponses, consensusMessage)
 
 		// case 4.1: upon receiving a majority SpreadCGatherE responses
@@ -81,6 +83,9 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 		if len(in.proposerReplicatedLog[consensusMessage.Index].spreadCGatherEResponses) == int(in.numReplicas)/2+1 {
 			in.proposerReplicatedLog[consensusMessage.Index].S = in.proposerReplicatedLog[consensusMessage.Index].S + 1
 			in.proposerReplicatedLog[consensusMessage.Index].U = in.proposerReplicatedLog[consensusMessage.Index].C
+
+			in.proposerReplicatedLog[consensusMessage.Index].U = in.removeEmptyValues(in.proposerReplicatedLog[consensusMessage.Index].U)
+			in.proposerReplicatedLog[consensusMessage.Index].E = in.removeEmptyValues(in.proposerReplicatedLog[consensusMessage.Index].E)
 			E_Best := in.getBestProposal(in.proposerReplicatedLog[consensusMessage.Index].E)
 			//C_Best := in.getBestProposal(in.proposerReplicatedLog[consensusMessage.Index].C)
 			U_Best := in.getBestProposal(in.proposerReplicatedLog[consensusMessage.Index].U)
@@ -102,10 +107,10 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 	}
 
 	// case 5: a GatherC response
-	if consensusMessage.M == in.gatherCMessage && in.proposerReplicatedLog[consensusMessage.Index].S == consensusMessage.S {
+	if consensusMessage.M == in.gatherCMessage && in.proposerReplicatedLog[consensusMessage.Index].S == consensusMessage.S && in.proposerReplicatedLog[consensusMessage.Index].S%4 == 0 {
 		// update the C set
 		in.proposerReplicatedLog[consensusMessage.Index].C = in.setUnionProtoValues(in.proposerReplicatedLog[consensusMessage.Index].C, consensusMessage.C)
-
+		in.proposerReplicatedLog[consensusMessage.Index].C = in.removeEmptyValues(in.proposerReplicatedLog[consensusMessage.Index].C)
 		in.proposerReplicatedLog[consensusMessage.Index].gatherCResponses = append(in.proposerReplicatedLog[consensusMessage.Index].gatherCResponses, consensusMessage)
 
 		// case 5.1: upon receiving majority GatherC
@@ -133,8 +138,8 @@ func (in *Instance) consensusCatchUp(consensusMessage *proto.GenericConsensus) {
 	in.proposerReplicatedLog[consensusMessage.Index].S = consensusMessage.S
 	in.proposerReplicatedLog[consensusMessage.Index].P = consensusMessage.P
 
-	in.proposerReplicatedLog[consensusMessage.Index].E = consensusMessage.E
-	in.proposerReplicatedLog[consensusMessage.Index].C = consensusMessage.C
+	in.proposerReplicatedLog[consensusMessage.Index].E = in.removeEmptyValues(consensusMessage.E)
+	in.proposerReplicatedLog[consensusMessage.Index].C = in.removeEmptyValues(consensusMessage.C)
 
 	in.proposerReplicatedLog[consensusMessage.Index].U = []*proto.GenericConsensusValue{}
 
@@ -176,7 +181,7 @@ func (in *Instance) proposerSendSpreadE(index int64) {
 			M:           in.spreadEMessage,
 			S:           in.proposerReplicatedLog[index].S,
 			P:           nil,
-			E:           in.proposerReplicatedLog[index].E,
+			E:           in.removeEmptyValues(in.proposerReplicatedLog[index].E),
 			C:           nil,
 			D:           false,
 			DS:          nil,
@@ -426,15 +431,17 @@ func (in *Instance) executeAndSendResponse(block *proto.MessageBlock) {
 */
 
 func (in *Instance) handleConsensusRequest(request *proto.ConsensusRequest) {
-	//if in.nodeName == in.getDeterministicLeader1() {
-	if true { // for testing purpose
-		if true { //todo in.numInflightRequests <= in.pipelineLength { // this should be changed to not drop requests
-			in.updateProposedIndex(request.Hash)
-			in.propose(in.proposedIndex, request.Hash)
-			in.numInflightRequests++
-			in.debug("Proposed "+request.Hash+" to "+strconv.Itoa(int(in.proposedIndex)), 0)
-		} else {
-			in.debug("Proposed failed due to inflight requests"+request.Hash+" to "+strconv.Itoa(int(in.proposedIndex)), 1)
+	if len([]rune(request.Hash)) > 0 {
+		//if in.nodeName == in.getDeterministicLeader1() {
+		if true { // for testing purpose
+			if true { //todo in.numInflightRequests <= in.pipelineLength { // this should be changed to not drop requests
+				in.updateProposedIndex(request.Hash)
+				in.propose(in.proposedIndex, request.Hash)
+				in.numInflightRequests++
+				in.debug("Proposed "+request.Hash+" to "+strconv.Itoa(int(in.proposedIndex)), 0)
+			} else {
+				in.debug("Proposed failed due to inflight requests"+request.Hash+" to "+strconv.Itoa(int(in.proposedIndex)), 1)
+			}
 		}
 	}
 }
@@ -548,7 +555,7 @@ func (in *Instance) proposerSendSpreadCGatherE(index int64) {
 			S:           in.proposerReplicatedLog[index].S,
 			P:           nil,
 			E:           nil,
-			C:           in.proposerReplicatedLog[index].C,
+			C:           in.removeEmptyValues(in.proposerReplicatedLog[index].C),
 			D:           false,
 			DS:          nil,
 			PR:          -1,
@@ -596,7 +603,7 @@ func (in *Instance) hasHigherPriority(value1 *proto.GenericConsensusValue, value
 		f1 := strings.Split(fit1, ".")
 		f2 := strings.Split(fit2, ".")
 		if len(f1) < 3 || len(f2) < 3 {
-			in.debug("error in priorities:value 1: "+value1.Fit+", value 2: "+value2.Fit+" EOF ", 3)
+			panic("error in priorities:value 1: " + value1.Id + "-" + value1.Fit + ", value 2: " + value2.Id + "-" + value2.Fit)
 			//os.Exit(255)
 		}
 	}
@@ -624,7 +631,7 @@ func (in *Instance) hasHigherPriority(value1 *proto.GenericConsensusValue, value
 			} else if rec_2 < rec_1 {
 				return false
 			} else if rec_2 == rec_1 {
-				in.debug("Found equal priorities: "+fit1+" and "+fit2, 4)
+				panic("Found equal priorities: " + fit1 + " and " + fit2)
 			}
 		}
 	}

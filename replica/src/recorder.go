@@ -51,6 +51,15 @@ func (in *Instance) handleRecorderConsensusMessage(consensusMessage *proto.Gener
 
 	// send the response back to proposer
 
+	//if in.debugOn {
+	//	if consensusMessage.M == in.proposeMessage {
+	//		if in.recorderReplicatedLog[consensusMessage.Index].P.Id == "" || in.recorderReplicatedLog[consensusMessage.Index].P.Fit == "" {
+	//			panic("found error in recorder propose response. Consensus message is  " + fmt.Sprintf("%v", consensusMessage) + " recorder state is " + fmt.Sprintf("%v", in.recorderReplicatedLog[consensusMessage.Index]))
+	//
+	//		}
+	//	}
+	//}
+
 	consensusReply := proto.GenericConsensus{
 		Sender:      in.nodeName,
 		Receiver:    consensusMessage.Sender,
@@ -58,8 +67,8 @@ func (in *Instance) handleRecorderConsensusMessage(consensusMessage *proto.Gener
 		M:           consensusMessage.M,
 		S:           in.recorderReplicatedLog[consensusMessage.Index].S,
 		P:           in.recorderReplicatedLog[consensusMessage.Index].P,
-		E:           in.recorderReplicatedLog[consensusMessage.Index].E,
-		C:           in.recorderReplicatedLog[consensusMessage.Index].C,
+		E:           in.removeEmptyValues(in.recorderReplicatedLog[consensusMessage.Index].E),
+		C:           in.removeEmptyValues(in.recorderReplicatedLog[consensusMessage.Index].C),
 		D:           in.recorderReplicatedLog[consensusMessage.Index].decided,
 		DS:          in.recorderReplicatedLog[consensusMessage.Index].decision,
 		PR:          in.recorderReplicatedLog[consensusMessage.Index].proposer,
@@ -82,7 +91,7 @@ func (in *Instance) handleRecorderConsensusMessage(consensusMessage *proto.Gener
 
 func (in *Instance) handleRecorderSpreadCGatherEMessage(consensusMessage *proto.GenericConsensus) {
 	in.recorderReplicatedLog[consensusMessage.Index].C = in.setUnionProtoValues(in.recorderReplicatedLog[consensusMessage.Index].C, consensusMessage.C)
-
+	in.recorderReplicatedLog[consensusMessage.Index].C = in.removeEmptyValues(in.recorderReplicatedLog[consensusMessage.Index].C)
 	in.debug("Recorder processed a SpreadCGatherE message and updated the C set", 1)
 }
 
@@ -92,7 +101,7 @@ func (in *Instance) handleRecorderSpreadCGatherEMessage(consensusMessage *proto.
 
 func (in *Instance) handleRecorderSpreadEMessage(consensusMessage *proto.GenericConsensus) {
 	in.recorderReplicatedLog[consensusMessage.Index].E = in.setUnionProtoValues(in.recorderReplicatedLog[consensusMessage.Index].E, consensusMessage.E)
-
+	in.recorderReplicatedLog[consensusMessage.Index].E = in.removeEmptyValues(in.recorderReplicatedLog[consensusMessage.Index].E)
 	in.debug("Recorder processed a spreadE message and added the E set to its E set", 1)
 }
 
@@ -128,6 +137,7 @@ func (in *Instance) handleRecorderProposeMessage(consensusMessage *proto.Generic
 	in.recorderReplicatedLog[consensusMessage.Index].C = make([]*proto.GenericConsensusValue, 0)
 
 	in.recorderReplicatedLog[consensusMessage.Index].E = in.setUnionProtoValue(in.recorderReplicatedLog[consensusMessage.Index].E, in.recorderReplicatedLog[consensusMessage.Index].P)
+	in.recorderReplicatedLog[consensusMessage.Index].E = in.removeEmptyValues(in.recorderReplicatedLog[consensusMessage.Index].E)
 	in.debug("Recorder assigned the priority to the proposal and appended to E set", 1)
 }
 

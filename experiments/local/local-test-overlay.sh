@@ -1,3 +1,4 @@
+arrivalRate=$1
 # A local test that
 #     1. Build the project
 #     2. Spawn 5 replicas
@@ -69,11 +70,11 @@ sleep 10
 
 echo "Starting client[s]"
 
-nohup ./${ctl_path} --name 5 --defaultReplica 0 --requestType request >${output_path}5.log &
-nohup ./${ctl_path} --name 6 --defaultReplica 1 --requestType request >${output_path}6.log &
-nohup ./${ctl_path} --name 7 --defaultReplica 2 --requestType request >${output_path}7.log &
-nohup ./${ctl_path} --name 8 --defaultReplica 3 --requestType request >${output_path}8.log &
-./${ctl_path} --name 9 --defaultReplica 4 --requestType request >${output_path}9.log # last client is synced
+nohup ./${ctl_path} --name 5 --defaultReplica 0 --requestType request  --arrivalRate ${arrivalRate}>${output_path}5.log &
+nohup ./${ctl_path} --name 6 --defaultReplica 1 --requestType request  --arrivalRate ${arrivalRate}>${output_path}6.log &
+nohup ./${ctl_path} --name 7 --defaultReplica 2 --requestType request  --arrivalRate ${arrivalRate}>${output_path}7.log &
+nohup ./${ctl_path} --name 8 --defaultReplica 3 --requestType request  --arrivalRate ${arrivalRate}>${output_path}8.log &
+./${ctl_path} --name 9 --defaultReplica 4 --requestType request  --arrivalRate ${arrivalRate}>${output_path}9.log # last client is synced
 
 sleep 60
 

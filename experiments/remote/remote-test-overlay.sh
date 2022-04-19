@@ -89,11 +89,11 @@ echo "killed previous running instances"
 
 sleep 5
 
-nohup sshpass ssh -i ${replica1_cert} -n -f ${replica1} ".${remote_algo_path} --name 0 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500 " >${output_path}0.log &
-nohup sshpass ssh -i ${replica2_cert} -n -f ${replica2} ".${remote_algo_path} --name 1 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500 " >${output_path}1.log &
-nohup sshpass ssh -i ${replica3_cert} -n -f ${replica3} ".${remote_algo_path} --name 2 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500 " >${output_path}2.log &
-nohup sshpass ssh -i ${replica4_cert} -n -f ${replica4} ".${remote_algo_path} --name 3 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500 " >${output_path}3.log &
-nohup sshpass ssh -i ${replica5_cert} -n -f ${replica5} ".${remote_algo_path} --name 4 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500 " >${output_path}4.log &
+nohup sshpass ssh -i ${replica1_cert} -n -f ${replica1} ".${remote_algo_path} --name 0 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500  " >${output_path}0.log &
+nohup sshpass ssh -i ${replica2_cert} -n -f ${replica2} ".${remote_algo_path} --name 1 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500  " >${output_path}1.log &
+nohup sshpass ssh -i ${replica3_cert} -n -f ${replica3} ".${remote_algo_path} --name 2 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500  " >${output_path}2.log &
+nohup sshpass ssh -i ${replica4_cert} -n -f ${replica4} ".${remote_algo_path} --name 3 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500  " >${output_path}3.log &
+nohup sshpass ssh -i ${replica5_cert} -n -f ${replica5} ".${remote_algo_path} --name 4 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500  " >${output_path}4.log &
 echo "Started servers"
 
 sleep 20
