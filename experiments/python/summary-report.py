@@ -14,7 +14,7 @@ for i in range(1, num_clients + 1):
 # best case
 records = [headers]
 
-for arrivalrate in [1000, 5000, 10000, 20000, 40000, 60000, 80000, 100000, 110000]:
+for arrivalrate in [100, 200, 500, 600, 700, 800, 1000, 1200, 1500, 1800, 2000, 2200, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000]:
     newRecord = [str(arrivalrate)]
     throughputs = []
     latency = []
@@ -22,7 +22,7 @@ for arrivalrate in [1000, 5000, 10000, 20000, 40000, 60000, 80000, 100000, 11000
     errors = []
 
     for client in range(5, num_clients + 5):
-        file_name = "/home/pasindu/Desktop/Test/" + str(arrivalrate) + "/logs/" + str(client) + ".log"
+        file_name = "/home/pasindu/Desktop/Test/Non_Batch/" + str(arrivalrate) + "/logs/" + str(client) + ".log"
         with open(file_name) as f:
             content = f.readlines()
 
@@ -55,6 +55,6 @@ for arrivalrate in [1000, 5000, 10000, 20000, 40000, 60000, 80000, 100000, 11000
 
 import csv
 
-with open("/home/pasindu/Desktop/Test/best_case.csv", "w", newline="") as f:
+with open("/home/pasindu/Desktop/Test/Non_Batch/non_leader.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerows(records)

@@ -89,11 +89,11 @@ echo "killed previous running instances"
 
 sleep 5
 
-nohup sshpass ssh -i ${replica1_cert} -n -f ${replica1} ".${remote_algo_path} --name 0 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500  " >${output_path}0.log &
-nohup sshpass ssh -i ${replica2_cert} -n -f ${replica2} ".${remote_algo_path} --name 1 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500  " >${output_path}1.log &
-nohup sshpass ssh -i ${replica3_cert} -n -f ${replica3} ".${remote_algo_path} --name 2 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500  " >${output_path}2.log &
-nohup sshpass ssh -i ${replica4_cert} -n -f ${replica4} ".${remote_algo_path} --name 3 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500  " >${output_path}3.log &
-nohup sshpass ssh -i ${replica5_cert} -n -f ${replica5} ".${remote_algo_path} --name 4 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500  " >${output_path}4.log &
+nohup sshpass ssh -i ${replica1_cert} -n -f ${replica1} ".${remote_algo_path} --name 0 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500 " >${output_path}0.log &
+nohup sshpass ssh -i ${replica2_cert} -n -f ${replica2} ".${remote_algo_path} --name 1 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500 " >${output_path}1.log &
+nohup sshpass ssh -i ${replica3_cert} -n -f ${replica3} ".${remote_algo_path} --name 2 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500 " >${output_path}2.log &
+nohup sshpass ssh -i ${replica4_cert} -n -f ${replica4} ".${remote_algo_path} --name 3 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500 " >${output_path}3.log &
+nohup sshpass ssh -i ${replica5_cert} -n -f ${replica5} ".${remote_algo_path} --name 4 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize 50 --batchTime 500 " >${output_path}4.log &
 echo "Started servers"
 
 sleep 20
@@ -109,7 +109,7 @@ nohup sshpass ssh -i ${client1_cert} ${client1} ".${remote_ctl_path} --name 5 --
 nohup sshpass ssh -i ${client2_cert} ${client2} ".${remote_ctl_path} --name 6 --defaultReplica 1 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType request --arrivalRate ${arrivalRate}" >${output_path}6.log &
 nohup sshpass ssh -i ${client3_cert} ${client3} ".${remote_ctl_path} --name 7 --defaultReplica 2 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType request --arrivalRate ${arrivalRate}" >${output_path}7.log &
 nohup sshpass ssh -i ${client4_cert} ${client4} ".${remote_ctl_path} --name 8 --defaultReplica 3 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType request --arrivalRate ${arrivalRate}" >${output_path}8.log &
-sshpass ssh -i ${client5_cert} ${client5} ".${remote_ctl_path} --name 9 --defaultReplica 4 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType request --arrivalRate ${arrivalRate} " >${output_path}9.log
+sshpass ssh -i ${client5_cert} ${client5} ".${remote_ctl_path} --name 9 --defaultReplica 4 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType request --arrivalRate ${arrivalRate}" >${output_path}9.log
 
 sleep 60
 
@@ -140,7 +140,7 @@ sleep 5
 
 python3 /home/pasindu/Documents/Raxos/experiments/python/overlay-test.py ${output_path}0.txt ${output_path}1.txt ${output_path}2.txt ${output_path}3.txt ${output_path}4.txt >${output_path}pythonreport.log
 
-dst_directory="/home/pasindu/Desktop/Test/${arrivalRate}/"
+dst_directory="/home/pasindu/Desktop/Test/Non_Batch/${arrivalRate}/"
 mkdir -p "${dst_directory}"
 cp -r ${output_path} "${dst_directory}"
 
