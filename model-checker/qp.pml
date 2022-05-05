@@ -4,12 +4,12 @@
 #define F		1	// number of failures tolerated
 #define T		(N-F)	// consensus threshold required
 
-#define M		3	// number of proposers (clients)
+#define M		2	// number of proposers (clients)
 
-#define ROUNDS		3	// number of consensus rounds to run
-#define RAND		3	// random part of fitness space is 1..RAND
+#define ROUNDS		2	// number of consensus rounds to run
+#define RAND		2	// random part of fitness space is 1..RAND
 #define HI		(RAND*N+N+1) // top priority for proposals by leader
-#define VALS		3	// space of preferred values is 1..VALS
+#define VALS		2	// space of preferred values is 1..VALS
 
 // A proposal is a <fitness, value> pair.
 typedef Prop {
@@ -38,12 +38,12 @@ typedef Rec {
 
 Rec rec[1+N];			// state of recorder nodes 1..N
 byte decided;			// proposed value that we've decided on
-//byte leader;			// which proposer is the well-known leader
+byte leader;			// which proposer is the well-known leader
 
-#define DECIDE(j, s, v)	atomic {					\
-				assert(decided == 0 || decided == v);	\
-				decided = v;				\
-				printf("%d step %d decided %d", j, s, v); \
+#define DECIDE(j, s, p)	atomic {					\
+				printf("%d step %d decided <%d,%d>", j, s, p.fit, p.val); \
+				assert(decided == 0 || decided == p.val); \
+				decided = p.val;			\
 			}
 
 
@@ -52,6 +52,7 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 	byte s, t;
 	Prop p, e, c, g;
 	byte i, recs, mask;	// recorders we've interacted with
+	bit done;		// for detecting early-decision opportunities
 
 	// Choose the arbitrary initial "preferred value" of this proposer
 	s = 4;
@@ -69,6 +70,7 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 		recs = 0;	// number of recorders we've heard from
 		mask = 0;	// bit mask of those recorders
 		ZERO(g);	// gather best response proposer saw so far
+		done = true;
 		select (i : 1 .. N);	// first recorder to interact with
 		do		// interact with the recorders in any order
 		:: recs < T && (mask & (1 << i)) == 0 ->
@@ -85,13 +87,13 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 					if
 					:: (s & 3) == 0 ->
 						// Choose a fitness/priority
-					//	if
-					//	:: j == leader ->
-					//		rec[i].p.fit = HI;
-					//	:: else ->
+						if
+						:: j == leader ->
+							rec[i].p.fit = HI;
+						:: else ->
 							select(t : 1 .. RAND);
 							rec[i].p.fit = t*N + i;
-					//	fi
+						fi
 					:: else -> skip
 					fi
 
@@ -136,7 +138,7 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 				:: s == rec[i].s && (s & 3) == 0 ->
 					BEST(g, rec[i].p);	// gather P
 					assert(g.fit > 0 && g.val > 0);
-					// XXX detect if all are HI priority
+					done = done && (rec[i].p.fit == HI);
 
 				:: s == rec[i].s && (s & 3) == 1 ->
 					skip
@@ -176,6 +178,13 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 				assert(g.fit > 0 && g.val > 0);
 				COPY(p, g);	// best of some E set
 
+				// Decide early if all proposals were HI fit
+				if
+				:: done ->
+					DECIDE(j, s, p);
+				:: else -> skip
+				fi
+
 			:: (s & 3) == 1 ->
 				skip
 
@@ -186,7 +195,7 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 				if
 				:: p.fit == g.fit ->
 					assert(p.val == g.val);
-					DECIDE(j, s, p.val);
+					DECIDE(j, s, p);
 				:: else -> skip
 				fi
 
@@ -210,8 +219,10 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 init {
 	decided = 0;				// we haven't decided yet
 
-	// first choose the "well-known" leader
-	//select (leader : 1 .. M);
+	// first choose the "well-known" leader, or 0 for no leader
+	//leader = 0;				// no leader
+	leader = 1;				// fixed leader
+	//select (leader : 0 .. M);		// any (or no) leader
 
 	atomic {
 		int i;

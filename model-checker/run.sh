@@ -1,5 +1,11 @@
 #!/bin/sh
-# Exhaustively analyze the QSC model using the Spin model checker.
-spin -a qp.pml || exit 1
-gcc -O2 -DSAFETY -DBITSTATE -o pan pan.c || exit 1
-./pan -m50000
+# Analyze the consensus model using the Spin model checker.
+
+# Exhaustive verification.
+# MEMLIMIT is the memory-usage limit in megabytes.
+spin -search -O2 -safety -DMEMLIM=60000 qp.pml
+
+# Bitstate verification - most aggressive state compression.
+# -w defines the power of two of the hash table size in bits.
+#spin -search -O2 -safety -bitstate -w28 qp.pml
+
