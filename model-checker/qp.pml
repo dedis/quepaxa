@@ -141,11 +141,13 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 					done = done && (rec[i].p.fit == HI);
 
 				:: s == rec[i].s && (s & 3) == 1 ->
-					skip
+					done = done && (rec[i].e.fit == HI);
+					BEST(g, rec[i].e);	// pre-gather E
+					printf("%d step %d spreadE got <%d,%d> from %d done %d\n", j, s, rec[i].e.fit, rec[i].e.val, i, done);
 
 				:: s == rec[i].s && (s & 3) == 2 ->
 					BEST(g, rec[i].e);	// gather E
-					// XXX detect early decide condition
+					printf("%d step %d gatherEspreadC got <%d,%d> from %d\n", j, s, rec[i].e.fit, rec[i].e.val, i);
 
 				:: s == rec[i].s && (s & 3) == 3 ->
 					BEST(g, rec[i].c);	// gather C
@@ -186,7 +188,16 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 				fi
 
 			:: (s & 3) == 1 ->
-				skip
+
+				// Decide if all E sets include HI fit proposal
+				// THIS OPTIMIZATION IS BROKEN, to be removed,
+				// but remains for the moment for playing with.
+				// (Just uncomment the DECIDE to try it.)
+				if
+				:: done ->
+					//DECIDE(j, s, g);
+				:: else -> skip
+				fi
 
 			:: (s & 3) == 2 ->	// gatherEspreadC phase
 				// p is now the best of a U set;
