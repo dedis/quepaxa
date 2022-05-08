@@ -8,32 +8,28 @@
 
 #define ROUNDS		2	// number of consensus rounds to run
 #define RAND		2	// random part of fitness space is 1..RAND
-#define HI		(RAND*N+N+1) // top priority for proposals by leader
+#define HI		(RAND+1) // top priority for proposals by leader
 #define VALS		2	// space of preferred values is 1..VALS
 
-// A proposal is a <fitness, value> pair.
-typedef Prop {
-	byte fit;		// proposal priority: random*N+node#, or HI
-	byte val;		// proposed value
-}
+// A proposal is an integer divided into three bit-fields: FIT, CLI, VAL.
+#define	VALBITS		4
+#define FITBITS		4
+#define VALSHIFT	(0)
+#define FITSHIFT	(VALBITS)
+#define PROP(f,v)	(((f)<<FITSHIFT) | ((v)<<VALSHIFT))
+#define VAL(p)		(((p) >> VALSHIFT) & ((1 << VALBITS)-1))
+#define FIT(p)		(((p) >> FITSHIFT) & ((1 << FITBITS)-1))
 
-#define ZERO(d)		d.fit = 0; d.val = 0;
-#define COPY(d, s)	d.fit = s.fit; d.val = s.val;
-#define BEST(d, s)	if						\
-			:: s.fit > d.fit -> 				\
-				d.fit = s.fit;				\
-				d.val = s.val;				\
-			:: s.fit == d.fit ->				\
-				assert(s.val == d.val);			\
-			:: else -> skip					\
-			fi
+#define MAX(a, b)	((a) > (b) -> (a) : (b))
 
-// Recorder state
+// Recorder state: implements an epoch summary primitive (ESP),
+// which returns the first value submitted in this epoch
+// and the maximum of all values submitted in the prior epoch.
 typedef Rec {
-	byte s;			// step number
-	Prop p;			// (best) proposal from proposer this round
-	Prop e;			// best existent proposal seen this round
-	Prop c;			// best common proposal seen this round
+	byte s;			// step/epoch number
+	byte f;			// first value submitted in this epoch
+	byte a;			// maximum value seen so far in this epoch
+	byte m;			// maximum value seen in prior epoch (s-1)
 }
 
 Rec rec[1+N];			// state of recorder nodes 1..N
@@ -41,26 +37,24 @@ byte decided;			// proposed value that we've decided on
 byte leader;			// which proposer is the well-known leader
 
 #define DECIDE(j, s, p)	atomic {					\
-				printf("%d step %d decided <%d,%d>", j, s, p.fit, p.val); \
-				assert(decided == 0 || decided == p.val); \
-				decided = p.val;			\
-			}
+	printf("%d step %d decided <%d,%d>", j, s, FIT(p), VAL(p));	\
+	assert(decided == 0 || decided == VAL(p));			\
+	decided = VAL(p);						\
+}
 
 
 // We model one process per proposer.
 proctype Proposer(byte j) {			// We're proposer j in 1..M
 	byte s, t;
-	Prop p, e, c, g;
+	byte p, g;
 	byte i, recs, mask;	// recorders we've interacted with
 	bit done;		// for detecting early-decision opportunities
 
 	// Choose the arbitrary initial "preferred value" of this proposer
 	s = 4;
 	select (t : 1 .. VALS);	// select a "random" value into temporary
-	p.val = t;
+	p = PROP(HI, t);
 	printf("%d proposing %d\n", j, t);
-	ZERO(e);		// best of no proposals so far
-	ZERO(c);		// best of no proposals so far
 
 	do			// iterate over time-steps
 	:: s <= ROUNDS*4 ->
@@ -69,65 +63,38 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 		// Send <s,p,e,c> and get reply from threshold of recorders
 		recs = 0;	// number of recorders we've heard from
 		mask = 0;	// bit mask of those recorders
-		ZERO(g);	// gather best response proposer saw so far
+		g = 0;		// gather best response proposer saw so far
 		done = true;
 		select (i : 1 .. N);	// first recorder to interact with
 		do		// interact with the recorders in any order
 		:: recs < T && (mask & (1 << i)) == 0 ->
 
 			atomic {
-				// enter the recorder's role (via "RPC").
+				// Randomize fitnesses if we're not the leader
+				if
+				:: (s & 3) == 0 && j != leader ->
+					select(t : 1 .. RAND);
+					p = PROP(t, VAL(p));
+				:: else -> skip
+				fi
+				assert(FIT(p) > 0 && VAL(p) > 0);
+
+				// enter the recorder/ESP role (via "RPC").
+				printf("%d step %d ESP <%d,%d> to %d\n",
+					j, s, FIT(p), VAL(p), i);
 
 				// first catch up the recorder if appropriate
 				if
 				:: s > rec[i].s ->
-
-					// determine proposal to adopt
-					COPY(rec[i].p, p);
-					if
-					:: (s & 3) == 0 ->
-						// Choose a fitness/priority
-						if
-						:: j == leader ->
-							rec[i].p.fit = HI;
-						:: else ->
-							select(t : 1 .. RAND);
-							rec[i].p.fit = t*N + i;
-						fi
-					:: else -> skip
-					fi
-
-					// determine E state to adopt
-					if
-					:: (s & 3) == 2 && s == rec[i].s+1 ->
-						BEST(rec[i].e, e);
-					:: else ->
-						COPY(rec[i].e, e);
-					fi
-
-					// determine C state to adopt
-					if
-					:: (s & 3) == 3 && s == rec[i].s+1 ->
-						BEST(rec[i].c, c);
-					:: else ->
-						COPY(rec[i].c, c);
-					fi
-
+					rec[i].m = ((s == (rec[i].s+1)) ->
+							rec[i].a : 0);
 					rec[i].s = s;
+					rec[i].f = p;
+					rec[i].a = p;
 
-				:: else -> skip
-				fi
-				assert(rec[i].p.val > 0 && rec[i].p.fit > 0);
+				:: s == rec[i].s ->
+					rec[i].a = MAX(rec[i].a, p);
 
-				// accumulate best proposals in recorder
-				if
-				:: s == rec[i].s && (s & 3) == 1 ->
-					assert(p.fit > 0 && p.val > 0);
-					BEST(rec[i].e, p);	// spread E
-					assert(rec[i].e.fit > 0 && rec[i].e.val > 0);
-				:: s == rec[i].s && (s & 3) == 2 ->
-					assert(p.fit > 0 && p.val > 0);
-					BEST(rec[i].c, p);	// spread C
 				:: else -> skip
 				fi
 
@@ -136,27 +103,18 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 				assert(s <= rec[i].s);
 				if
 				:: s == rec[i].s && (s & 3) == 0 ->
-					BEST(g, rec[i].p);	// gather P
-					assert(g.fit > 0 && g.val > 0);
-					done = done && (rec[i].p.fit == HI);
+					g = MAX(g, rec[i].f);	// gather props
+					done = done && (FIT(rec[i].f) == HI);
 
-				:: s == rec[i].s && (s & 3) == 1 ->
-					done = done && (rec[i].e.fit == HI);
-					BEST(g, rec[i].e);	// pre-gather E
-					printf("%d step %d spreadE got <%d,%d> from %d done %d\n", j, s, rec[i].e.fit, rec[i].e.val, i, done);
+				:: s == rec[i].s && (s & 3) == 1 -> skip
 
-				:: s == rec[i].s && (s & 3) == 2 ->
-					BEST(g, rec[i].e);	// gather E
-					printf("%d step %d gatherEspreadC got <%d,%d> from %d\n", j, s, rec[i].e.fit, rec[i].e.val, i);
-
-				:: s == rec[i].s && (s & 3) == 3 ->
-					BEST(g, rec[i].c);	// gather C
+				:: s == rec[i].s && (s & 3) >= 2 ->
+					printf("%d step %d got <%d,%d> from %d\n", j, s, FIT(rec[i].m), VAL(rec[i].m), i);
+					g = MAX(g, rec[i].m);	// gather E/C
 
 				:: s < rec[i].s ->	// catch up proposer
 					s = rec[i].s;
-					COPY(p, rec[i].p);
-					COPY(e, rec[i].e);
-					COPY(c, rec[i].c);
+					p = rec[i].f;
 					break;
 				fi
 				assert(s == rec[i].s);
@@ -177,8 +135,8 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 
 			if
 			:: (s & 3) == 0 ->	// propose phase
-				assert(g.fit > 0 && g.val > 0);
-				COPY(p, g);	// best of some E set
+				assert(FIT(g) > 0 && VAL(g) > 0);
+				p = g;		// pick best of some E set
 
 				// Decide early if all proposals were HI fit
 				if
@@ -187,25 +145,14 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 				:: else -> skip
 				fi
 
-			:: (s & 3) == 1 ->
-
-				// Decide if all E sets include HI fit proposal
-				// THIS OPTIMIZATION IS BROKEN, to be removed,
-				// but remains for the moment for playing with.
-				// (Just uncomment the DECIDE to try it.)
-				if
-				:: done ->
-					//DECIDE(j, s, g);
-				:: else -> skip
-				fi
+			:: (s & 3) == 1 -> skip	// spreadE phase
 
 			:: (s & 3) == 2 ->	// gatherEspreadC phase
 				// p is now the best of a U set;
 				// g is the best of all gathered E sets
-				assert(g.fit > 0 && g.val > 0);
+				assert(FIT(g) > 0 && VAL(g) > 0);
 				if
-				:: p.fit == g.fit ->
-					assert(p.val == g.val);
+				:: p == g ->
 					DECIDE(j, s, p);
 				:: else -> skip
 				fi
@@ -213,10 +160,8 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 			:: (s & 3) == 3 ->	// gatherC phase
 				// g is the best of all gathered C sets.
 				// this is our proposal for the next round.
-				assert(g.fit > 0 && g.val > 0);
-				COPY(p, g);
-				ZERO(e);	// start fresh E sets
-				ZERO(c);	// start fresh C sets
+				assert(FIT(g) > 0 && VAL(g) > 0);
+				p = g;
 			fi
 			s = s + 1;
 			break;
@@ -228,6 +173,9 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 }
 
 init {
+	assert(HI < 1 << FITBITS);
+	assert(VALS < 1 << VALBITS);
+
 	decided = 0;				// we haven't decided yet
 
 	// first choose the "well-known" leader, or 0 for no leader
