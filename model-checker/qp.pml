@@ -1,4 +1,5 @@
-// Simple model of Que Paxa consensus
+// Simple model of Que Paxa consensus.
+// Recorder logic runs atomically in-line within the proposer code.
 
 #define N		3	// total number of recorder (state) nodes
 #define F		1	// number of failures tolerated
@@ -60,7 +61,7 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 	:: s <= ROUNDS*4 ->
 		printf("%d step %d\n", j, s);
 
-		// Send <s,p,e,c> and get reply from threshold of recorders
+		// Send <s,p> and get reply from threshold of recorders
 		recs = 0;	// number of recorders we've heard from
 		mask = 0;	// bit mask of those recorders
 		g = 0;		// gather best response proposer saw so far
