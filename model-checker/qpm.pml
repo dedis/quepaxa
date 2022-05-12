@@ -7,7 +7,7 @@
 
 #define M		2	// number of proposers (clients)
 
-#define STEPS		5	// max number of time steps to run
+#define STEPHI		11	// highest step number to simulate
 #define RAND		2	// random part of fitness space is 1..RAND
 #define HI		(RAND+1) // top priority for proposals by leader
 #define VALS		2	// space of preferred values is 1..VALS
@@ -66,7 +66,7 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 		sent = sent | (1 << i);		// successfully sent
 		i = 0;				// now we have no target again
 
-	:: s <= STEPS && recs < T ->		// choose a recorder to send to
+	:: s <= STEPHI && recs < T ->		// choose a recorder to send to
 
 		// randomize fitness in phase 0 if we're not the leader
 		if
@@ -122,7 +122,7 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 		rfn = 0;
 		rmn = 0;
 
-	:: s <= STEPS && recs >= T ->	// got a quorum of replies
+	:: s <= STEPHI && recs >= T ->	// got a quorum of replies
 
 		// handle the proposer's completion of this round
 		if
@@ -166,7 +166,7 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 		g = 0;		// best response proposer saw so far
 		done = true;
 
-	:: s > STEPS ->		// we've simulated enough time-steps
+	:: s > STEPHI ->		// we've simulated enough time-steps
 		break;
 	od
 

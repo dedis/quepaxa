@@ -1,0 +1,242 @@
+qp.pml verification:
+
+Bitstate verification using spin -search -O2 -safety -DMEMLIM=60000 $1
+Results from running on Bryan's 2019 MacBook Pro M1 Max.
+
+---
+7 steps (1 full consensus round in steps 4-7):
+
+Depth=     180 States=  1.4e+07 Transitions= 2.51e+07 Memory=  1088.105	t=     5.64 R=   2e+06
+
+(Spin Version 6.5.2 -- 6 December 2019)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 60 byte, depth reached 180, errors: 0
+ 14561376 states, stored
+ 11554544 states, matched
+ 26115920 transitions (= stored+matched)
+ 14444193 atomic steps
+hash conflicts:   3406143 (resolved)
+
+Stats on memory usage (in Megabytes):
+ 1222.039	equivalent memory usage for states (stored*(State-vector + overhead))
+  998.371	actual memory usage for states (compression: 81.70%)
+         	state-vector as stored = 44 byte + 28 byte overhead
+  128.000	memory used for hash table (-w24)
+    0.534	memory used for DFS stack (-m10000)
+ 1126.581	total actual memory usage
+
+
+unreached in proctype Proposer
+	(0 of 114 states)
+unreached in init
+	(0 of 16 states)
+
+pan: elapsed time 5.92 seconds
+pan: rate 2459691.9 states/second
+
+
+---
+8 steps:
+
+Depth=     220 States=  4.3e+07 Transitions= 7.36e+07 Memory=  3559.675	t=     22.4 R=   2e+06
+
+(Spin Version 6.5.2 -- 6 December 2019)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 60 byte, depth reached 220, errors: 0
+ 43443684 states, stored
+ 31011944 states, matched
+ 74455628 transitions (= stored+matched)
+ 38765865 atomic steps
+hash conflicts:  24394276 (resolved)
+
+Stats on memory usage (in Megabytes):
+ 3645.939	equivalent memory usage for states (stored*(State-vector + overhead))
+ 3078.502	actual memory usage for states (compression: 84.44%)
+         	state-vector as stored = 46 byte + 28 byte overhead
+  512.000	memory used for hash table (-w26)
+    0.534	memory used for DFS stack (-m10000)
+ 3590.144	total actual memory usage
+
+
+unreached in proctype Proposer
+	(0 of 114 states)
+unreached in init
+	(0 of 16 states)
+
+pan: elapsed time 22.6 seconds
+pan: rate 1919738.6 states/second
+
+
+---
+9 steps: 
+
+Depth=     262 States= 1.17e+08 Transitions= 2.12e+08 Memory=  8642.683	t=     67.9 R=   2e+06
+
+(Spin Version 6.5.2 -- 6 December 2019)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 60 byte, depth reached 262, errors: 0
+1.1701493e+08 states, stored
+ 95266996 states, matched
+2.1228193e+08 transitions (= stored+matched)
+1.3433094e+08 atomic steps
+hash conflicts:  80036981 (resolved)
+
+Stats on memory usage (in Megabytes):
+ 9820.284	equivalent memory usage for states (stored*(State-vector + overhead))
+ 8133.282	actual memory usage for states (compression: 82.82%)
+         	state-vector as stored = 45 byte + 28 byte overhead
+  512.000	memory used for hash table (-w26)
+    0.534	memory used for DFS stack (-m10000)
+    2.157	memory lost to fragmentation
+ 8643.659	total actual memory usage
+
+
+unreached in proctype Proposer
+	(0 of 114 states)
+unreached in init
+	(0 of 16 states)
+
+pan: elapsed time 67.9 seconds
+pan: rate 1722834.7 states/second
+
+
+---
+10 steps: 
+
+Depth=     302 States= 1.93e+08 Transitions= 3.66e+08 Memory= 15855.624	t=      121 R=   2e+06
+
+(Spin Version 6.5.2 -- 6 December 2019)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 60 byte, depth reached 302, errors: 0
+1.9397366e+08 states, stored
+1.7384229e+08 states, matched
+3.6781595e+08 transitions (= stored+matched)
+2.374664e+08 atomic steps
+hash conflicts: 1.350289e+08 (resolved)
+
+Stats on memory usage (in Megabytes):
+16278.918	equivalent memory usage for states (stored*(State-vector + overhead))
+13877.107	actual memory usage for states (compression: 85.25%)
+         	state-vector as stored = 47 byte + 28 byte overhead
+ 2048.000	memory used for hash table (-w28)
+    0.534	memory used for DFS stack (-m10000)
+    3.122	memory lost to fragmentation
+15922.519	total actual memory usage
+
+
+unreached in proctype Proposer
+	(0 of 114 states)
+unreached in init
+	(0 of 16 states)
+
+pan: elapsed time 122 seconds
+pan: rate   1595047 states/second
+
+
+---
+11 steps (2 full consensus rounds: steps 4-7 and 8-11):
+
+Depth=     338 States= 2.45e+08 Transitions= 4.68e+08 Memory= 19425.351	t=      153 R=   2e+06
+
+(Spin Version 6.5.2 -- 6 December 2019)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 60 byte, depth reached 338, errors: 0
+2.4529035e+08 states, stored
+2.2295857e+08 states, matched
+4.6824892e+08 transitions (= stored+matched)
+3.0213691e+08 atomic steps
+hash conflicts: 1.5778641e+08 (resolved)
+
+Stats on memory usage (in Megabytes):
+20585.585	equivalent memory usage for states (stored*(State-vector + overhead))
+17400.834	actual memory usage for states (compression: 84.53%)
+         	state-vector as stored = 46 byte + 28 byte overhead
+ 2048.000	memory used for hash table (-w28)
+    0.534	memory used for DFS stack (-m10000)
+    4.096	memory lost to fragmentation
+19445.272	total actual memory usage
+
+
+unreached in proctype Proposer
+	(0 of 114 states)
+unreached in init
+	(0 of 16 states)
+
+pan: elapsed time 153 seconds
+pan: rate 1600380.7 states/second
+
+
+---
+12 steps:
+
+Depth=     378 States= 3.85e+08 Transitions= 7.09e+08 Memory= 28987.069	t=      244 R=   2e+06
+
+(Spin Version 6.5.2 -- 6 December 2019)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 60 byte, depth reached 378, errors: 0
+3.8578596e+08 states, stored
+3.2452935e+08 states, matched
+7.1031531e+08 transitions (= stored+matched)
+4.3387088e+08 atomic steps
+hash conflicts: 2.5898853e+08 (resolved)
+
+Stats on memory usage (in Megabytes):
+32376.446	equivalent memory usage for states (stored*(State-vector + overhead))
+26998.934	actual memory usage for states (compression: 83.39%)
+         	state-vector as stored = 45 byte + 28 byte overhead
+ 2048.000	memory used for hash table (-w28)
+    0.534	memory used for DFS stack (-m10000)
+    6.396	memory lost to fragmentation
+29041.073	total actual memory usage
+
+
+unreached in proctype Proposer
+	(0 of 114 states)
+unreached in init
+	(0 of 16 states)
+
+pan: elapsed time 244 seconds
+pan: rate 1579665.7 states/second
+

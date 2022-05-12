@@ -7,7 +7,7 @@
 
 #define M		2	// number of proposers (clients)
 
-#define ROUNDS		2	// number of consensus rounds to run
+#define STEPHI		11	// highest step number to simulate
 #define RAND		2	// random part of fitness space is 1..RAND
 #define HI		(RAND+1) // top priority for proposals by leader
 #define VALS		2	// space of preferred values is 1..VALS
@@ -58,7 +58,7 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 	printf("%d proposing %d\n", j, t);
 
 	do			// iterate over time-steps
-	:: s <= ROUNDS*4 ->
+	:: s <= STEPHI ->
 		printf("%d step %d\n", j, s);
 
 		// Send <s,p> and get reply from threshold of recorders
@@ -168,7 +168,7 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 			break;
 		od
 
-	:: s > ROUNDS*4 ->	// we've simulated enough time-steps
+	:: s > STEPHI ->	// we've simulated enough time-steps
 			break;
 	od
 }

@@ -1,0 +1,286 @@
+qpm.pml verification:
+
+Bitstate verification using spin -search -O2 -safety -bitstate -w38 $1
+(32GB state hash table).
+Results from running on Bryan's 2019 MacBook Pro M1 Max.
+
+---
+4 steps: 
+
+Depth=    1007 States=    3e+06 Transitions= 4.93e+06 Memory= 32768.925	t=     3.14 R=   1e+06
+
+(Spin Version 6.5.2 -- 6 December 2019)
+	+ Partial Order Reduction
+
+Bit statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 168 byte, depth reached 1007, errors: 0
+  3871180 states, stored
+  2503227 states, matched
+  6374407 transitions (= stored+matched)
+       20 atomic steps
+
+hash factor: 71006.2 (best if > 100.)
+
+bits set per state: 3 (-k3)
+
+Stats on memory usage (in Megabytes):
+  694.067	equivalent memory usage for states (stored*(State-vector + overhead))
+32768.000	memory used for hash array (-w38)
+    0.076	memory used for bit stack
+    0.534	memory used for DFS stack (-m10000)
+32768.925	total actual memory usage
+
+
+unreached in proctype Proposer
+	qpm.pml:115, state 58, "recs = (recs+1)"
+	qpm.pml:140, state 81, "(1)"
+	qpm.pml:148, state 87, "decided = ((p>>0)&((1<<4)-1))"
+	qpm.pml:149, state 90, "(1)"
+	qpm.pml:147, state 91, "((p==g))"
+	qpm.pml:147, state 91, "else"
+	qpm.pml:156, state 95, "p = g"
+	(6 of 111 states)
+unreached in proctype Recorder
+	(0 of 26 states)
+unreached in init
+	(0 of 26 states)
+
+pan: elapsed time 3.96 seconds
+pan: rate 977570.71 states/second
+
+
+---
+5 steps:
+
+Depth=    1743 States= 2.13e+08 Transitions= 3.74e+08 Memory= 32769.120	t=      213 R=   1e+06
+
+(Spin Version 6.5.2 -- 6 December 2019)
+	+ Partial Order Reduction
+
+Bit statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 168 byte, depth reached 1743, errors: 0
+2.1362823e+08 states, stored
+1.6166948e+08 states, matched
+3.7529772e+08 transitions (= stored+matched)
+       20 atomic steps
+
+hash factor: 1286.71 (best if > 100.)
+
+bits set per state: 3 (-k3)
+
+Stats on memory usage (in Megabytes):
+38301.571	equivalent memory usage for states (stored*(State-vector + overhead))
+32768.000	memory used for hash array (-w38)
+    0.076	memory used for bit stack
+    0.534	memory used for DFS stack (-m10000)
+32769.120	total actual memory usage
+
+
+unreached in proctype Proposer
+	qpm.pml:148, state 87, "decided = ((p>>0)&((1<<4)-1))"
+	qpm.pml:149, state 90, "(1)"
+	qpm.pml:147, state 91, "((p==g))"
+	qpm.pml:147, state 91, "else"
+	qpm.pml:156, state 95, "p = g"
+	(4 of 111 states)
+unreached in proctype Recorder
+	(0 of 26 states)
+unreached in init
+	(0 of 26 states)
+
+pan: elapsed time 213 seconds
+pan: rate 1001116.4 states/second
+
+---
+6 steps:
+
+Depth=    2323 States= 1.19e+09 Transitions= 2.14e+09 Memory= 32769.218	t= 1.11e+03 R=   1e+06
+
+(Spin Version 6.5.2 -- 6 December 2019)
+	+ Partial Order Reduction
+
+Bit statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 168 byte, depth reached 2323, errors: 0
+1.1925986e+09 states, stored
+9.5240049e+08 states, matched
+2.1449991e+09 transitions (= stored+matched)
+       20 atomic steps
+
+hash factor: 230.487 (best if > 100.)
+
+bits set per state: 3 (-k3)
+
+Stats on memory usage (in Megabytes):
+213821.928	equivalent memory usage for states (stored*(State-vector + overhead))
+32768.000	memory used for hash array (-w38)
+    0.076	memory used for bit stack
+    0.534	memory used for DFS stack (-m10000)
+32769.218	total actual memory usage
+
+
+unreached in proctype Proposer
+	qpm.pml:156, state 95, "p = g"
+	(1 of 111 states)
+unreached in proctype Recorder
+	(0 of 26 states)
+unreached in init
+	(0 of 26 states)
+
+pan: elapsed time 1.11e+03 seconds
+pan: rate 1070699.5 states/second
+
+---
+7 steps:
+
+Depth=    3018 States= 3.57e+09 Transitions= 6.48e+09 Memory= 32769.315	t= 3.44e+03 R=   1e+06
+
+(Spin Version 6.5.2 -- 6 December 2019)
+	+ Partial Order Reduction
+
+Bit statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 168 byte, depth reached 3018, errors: 0
+3.5701183e+09 states, stored
+2.9060201e+09 states, matched
+6.4761385e+09 transitions (= stored+matched)
+       20 atomic steps
+
+hash factor: 76.9941 (best if > 100.)
+
+bits set per state: 3 (-k3)
+
+Stats on memory usage (in Megabytes):
+640089.267	equivalent memory usage for states (stored*(State-vector + overhead))
+32768.000	memory used for hash array (-w38)
+    0.076	memory used for bit stack
+    0.534	memory used for DFS stack (-m10000)
+32769.315	total actual memory usage
+
+
+unreached in proctype Proposer
+	(0 of 111 states)
+unreached in proctype Recorder
+	(0 of 26 states)
+unreached in init
+	(0 of 26 states)
+
+pan: elapsed time 3.44e+03 seconds
+pan: rate 1037038.3 states/second
+
+
+---
+8 steps:
+
+Depth=    3741 States= 1.55e+10 Transitions=  2.7e+10 Memory= 32769.511	t=  1.6e+04 R=   1e+06
+
+(Spin Version 6.5.2 -- 6 December 2019)
+	+ Partial Order Reduction
+
+Bit statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 168 byte, depth reached 3741, errors: 0
+1.5529605e+10 states, stored
+1.1502249e+10 states, matched
+2.7031855e+10 transitions (= stored+matched)
+       20 atomic steps
+
+hash factor: 17.7003 (best if > 100.)
+
+bits set per state: 3 (-k3)
+
+Stats on memory usage (in Megabytes):
+2784314.887	equivalent memory usage for states (stored*(State-vector + overhead))
+32768.000	memory used for hash array (-w38)
+    0.076	memory used for bit stack
+    0.534	memory used for DFS stack (-m10000)
+32769.511	total actual memory usage
+
+
+unreached in proctype Proposer
+	(0 of 111 states)
+unreached in proctype Recorder
+	(0 of 26 states)
+unreached in init
+	(0 of 26 states)
+
+pan: elapsed time 1.6e+04 seconds
+pan: rate 969476.33 states/second
+
+---
+10 steps:
+
+Depth=    4912 States=  6.2e+10 Transitions=  1.1e+11 Memory= 32769.706	t= 1.06e+05 R=   6e+05
+
+(Spin Version 6.5.2 -- 6 December 2019)
+	+ Partial Order Reduction
+
+Bit statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 168 byte, depth reached 4912, errors: 0
+6.1979144e+10 states, stored
+4.7682823e+10 states, matched
+1.0966197e+11 transitions (= stored+matched)
+       20 atomic steps
+
+hash factor: 4.43501 (best if > 100.)
+
+bits set per state: 3 (-k3)
+
+Stats on memory usage (in Megabytes):
+11112288.506	equivalent memory usage for states (stored*(State-vector + overhead))
+32768.000	memory used for hash array (-w38)
+    0.076	memory used for bit stack
+    0.534	memory used for DFS stack (-m10000)
+    1.014	other (proc and chan stacks)
+32769.706	total actual memory usage
+
+
+unreached in proctype Proposer
+	(0 of 111 states)
+unreached in proctype Recorder
+	(0 of 26 states)
+unreached in init
+	(0 of 26 states)
+
+pan: elapsed time 1.06e+05 seconds
+pan: rate 583824.35 states/second
+
+
+---
+11 steps:
+
+<to be done>
+
+
+---
+12 steps:
+
+<to be done>
+
