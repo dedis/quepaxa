@@ -11,21 +11,20 @@ message GenericConsensus {
   int64 receiver = 2;
 
   int64 index = 3;
-  int64 M = 4;  // propose=1 , spreadE=2 , spreadCgatherE=3, gatherC=4, decide=5, commit=6
-  int64 S = 5;  // step
+  int64 S = 4;  // step
 
   message value {
     string id = 1;
     string fit = 2;
   }
 
-  value P = 6;
-  repeated value E = 7;
-  repeated value    C = 8;
-  bool D = 9;
-  value DS = 10;
-  int64 PR = 11; // id of the proposer who decided this index
-  int64 destination = 12 ; // 0 for the proposer and 1 for the recorder, and 2 for both (decision messages)
+  repeated value P = 5;
+  repeated value E = 6;
+  repeated value C = 7;
+  bool D = 8;
+  value DS = 9;
+  int64 PR = 10; // id of the proposer who decided this index
+  int64 destination = 11 ; // 0 for the proposer and 1 for the recorder, and 2 for both (decision messages)
 }
 
 /*

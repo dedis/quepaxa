@@ -9,7 +9,7 @@ import (
 )
 
 /*
-	If enabled, print the messages to stdout
+	if enabled, print the messages to stdout
 */
 
 func (in *Instance) debug(message string, level int) {
@@ -21,7 +21,7 @@ func (in *Instance) debug(message string, level int) {
 }
 
 /*
-	Returns the size of any type of object in bytes
+	returns the size of any type of object in bytes
 */
 
 func getRealSizeOf(v interface{}) (int, error) {
@@ -57,7 +57,7 @@ func (in *Instance) convertClientRequest(request *proto.ClientRequestBatch_Singl
 }
 
 /*
-	a util function to convert between client request and mem pool client request batch
+	a util function to convert between client request batch and mem pool client request batch
 */
 
 func (in *Instance) convertToClientRequestBatch(batch *proto.ClientRequestBatch) *proto.MessageBlock_ClientRequestBatch {
@@ -71,7 +71,7 @@ func (in *Instance) convertToClientRequestBatch(batch *proto.ClientRequestBatch)
 }
 
 /*
-	A util function to convert different client request batch array
+	a util function to convert different client request batch array
 */
 
 func (in *Instance) convertToMessageBlockRequests(requests []*proto.ClientRequestBatch) []*proto.MessageBlock_ClientRequestBatch {
@@ -84,35 +84,7 @@ func (in *Instance) convertToMessageBlockRequests(requests []*proto.ClientReques
 }
 
 /*
-	Checks if this block was previous proposed
-*/
-
-func (in *Instance) proposedPreviously(hash string) (bool, int) {
-	// checks if this value appears in the proposed array
-	for i := 0; i < len(in.proposed); i++ {
-		if in.proposed[i] == hash {
-			return true, i
-		}
-	}
-	return false, -1
-}
-
-/*
-	checks of this value has been previously committed
-*/
-
-func (in *Instance) committedPreviously(hash string) (bool, int) {
-	// checks if this value is previously decided
-	for i := 0; i < len(in.proposerReplicatedLog); i++ {
-		if in.proposerReplicatedLog[i].decision.Id == hash {
-			return true, i
-		}
-	}
-	return false, -1
-}
-
-/*
-	Util: returns a fixed leader (strawman 1)
+	returns a fixed leader (straw-man 1)
 */
 
 func (in *Instance) getDeterministicLeader1() int64 {
@@ -144,7 +116,7 @@ func GetReplicaAddressList(cfg *configuration.InstanceConfig) []string {
 }
 
 /*
-	A util function to support set union, item wise, for proto value
+	a util function to support set union, item wise, for proto value
 */
 
 func (in *Instance) setUnionProtoValue(array []*proto.GenericConsensusValue, protoValue *proto.GenericConsensusValue) []*proto.GenericConsensusValue {
@@ -158,7 +130,7 @@ func (in *Instance) setUnionProtoValue(array []*proto.GenericConsensusValue, pro
 }
 
 /*
-	A util function to support set union, set wise, for proto value
+	a util function to support set union, set wise, for proto value
 */
 
 func (in *Instance) setUnionProtoValues(array []*proto.GenericConsensusValue, protoValue []*proto.GenericConsensusValue) []*proto.GenericConsensusValue {
@@ -180,7 +152,7 @@ func (in *Instance) setUnionProtoValues(array []*proto.GenericConsensusValue, pr
 }
 
 /*
-	A util function to remove empty values from a slice
+	a util function to remove empty values from a slice
 */
 
 func (in *Instance) removeEmptyValues(array []*proto.GenericConsensusValue) []*proto.GenericConsensusValue {

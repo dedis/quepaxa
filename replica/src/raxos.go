@@ -56,10 +56,9 @@ type Instance struct {
 	proposerReplicatedLog []Slot         // the replicated log of the proposer
 	stateMachine          *benchmark.App // the application
 
-	committedIndex int64 // last index for which a request was committed and the result was sent to client
-	proposedIndex  int64 // last index for which a request was proposed
-
-	proposed []string // assigns the proposed request to the slot
+	committedIndex   int64 // last index for which a request was committed and the result was sent to client
+	lastDecidedIndex int64 // last index decided
+	awaitingDecision bool  // is waiting for the last proposed index to be decided
 
 	logFilePath string // the path to write the replicated log, used for sanity checks
 	serviceTime int64  // artificial service time for the no-op app
@@ -70,8 +69,7 @@ type Instance struct {
 	batchSize int64 // maximum replica side batch size
 	batchTime int64 // maximum replica side batch time in micro seconds
 
-	pipelineLength      int64 // maximum number of inflight consensus instances
-	numInflightRequests int64 // current numInflight requests
+	pipelineLength int64 // maximum number of inflight consensus instances
 
 	outgoingMessageChan chan *OutgoingRPC // buffer for messages that are written to the wire
 
@@ -85,13 +83,6 @@ type Instance struct {
 	debugOn       bool // if turned on, the debug messages will be print on the console
 	debugLevel    int  // debug level
 	serverStarted bool // true if the first status message with operation type 1 received
-
-	proposeMessage        int64
-	spreadEMessage        int64
-	spreadCgatherEMessage int64
-	gatherCMessage        int64
-	decideMessage         int64
-	commitMessage         int64
 
 	consensusMessageRecorderDestination int64
 	consensusMessageProposerDestination int64
@@ -135,33 +126,28 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 		messageBlockAckRpc:      8,
 		consensusRequestRpc:     9,
 		//replicatedLog:           nil,
-		stateMachine:   benchmark.InitApp(benchmarkNumber, serviceTime, numKeys),
-		committedIndex: -1,
-		proposedIndex:  -1,
+		stateMachine:     benchmark.InitApp(benchmarkNumber, serviceTime, numKeys),
+		committedIndex:   -1,
+		lastDecidedIndex: -1,
+		awaitingDecision: false,
 		//proposed:                nil,
-		logFilePath:                         logFilePath,
-		serviceTime:                         serviceTime,
-		responseSize:                        responseSize,
-		responseString:                      getStringOfSizeN(int(responseSize)),
-		batchSize:                           batchSize,
-		batchTime:                           batchTime,
-		pipelineLength:                      pipelineLength,
-		numInflightRequests:                 0,
-		outgoingMessageChan:                 make(chan *OutgoingRPC, outgoingBufferSize),
-		requestsIn:                          make(chan *proto.ClientRequestBatch, incomingRequestBufferSize),
-		messageStore:                        MessageStore{},
-		blockCounter:                        0,
-		leaderTimeout:                       leaderTimeout,
-		lastSeenTime:                        make([]time.Time, len(cfg.Peers)),
-		debugOn:                             debugOn,
-		debugLevel:                          debugLevel, // manually set the debug level
-		serverStarted:                       false,
-		proposeMessage:                      0,
-		spreadEMessage:                      1,
-		spreadCgatherEMessage:               2,
-		gatherCMessage:                      3,
-		decideMessage:                       4,
-		commitMessage:                       5,
+		logFilePath:         logFilePath,
+		serviceTime:         serviceTime,
+		responseSize:        responseSize,
+		responseString:      getStringOfSizeN(int(responseSize)),
+		batchSize:           batchSize,
+		batchTime:           batchTime,
+		pipelineLength:      pipelineLength,
+		outgoingMessageChan: make(chan *OutgoingRPC, outgoingBufferSize),
+		requestsIn:          make(chan *proto.ClientRequestBatch, incomingRequestBufferSize),
+		messageStore:        MessageStore{},
+		blockCounter:        0,
+		leaderTimeout:       leaderTimeout,
+		lastSeenTime:        make([]time.Time, len(cfg.Peers)),
+		debugOn:             debugOn,
+		debugLevel:          debugLevel, // manually set the debug level
+		serverStarted:       false,
+
 		consensusMessageRecorderDestination: 0,
 		consensusMessageProposerDestination: 1,
 		consensusMessageCommonDestination:   2,
