@@ -1,6 +1,7 @@
 package raxos
 
 import (
+	"fmt"
 	"math"
 	"raxos/proto"
 	"strconv"
@@ -57,7 +58,7 @@ func (in *Instance) updateStateMachine() { // from here
 	for i := in.committedIndex + 1; i < in.lastDecidedIndex+1; i++ {
 
 		decision := in.proposerReplicatedLog[i].decision.Id
-		in.debug("committing instance "+strconv.Itoa(int(i))+" with decision "+decision, 1)
+		decision = strings.Split(decision, "-")[0]
 		// if the decision is a sequence of hashes, then invoke the following for each hash: check if all the hashes exist and succeed only if everything exists
 		blocks := make([]*proto.MessageBlock, 0)
 		hashes := strings.Split(decision, ":")
@@ -92,7 +93,7 @@ func (in *Instance) updateStateMachine() { // from here
 
 		in.proposerReplicatedLog[i].committed = true
 		in.committedIndex++
-		in.debug("Committed "+strconv.Itoa(int(i)), 2)
+		in.debug("committing instance "+strconv.Itoa(int(i))+" with decision "+decision, 4)
 	}
 }
 
@@ -143,6 +144,10 @@ func (in *Instance) handleConsensusRequest(request *proto.ConsensusRequest) {
 				in.awaitingDecision = true
 				in.debug("Proposed "+request.Hash+" to "+strconv.Itoa(int(in.lastDecidedIndex+1)), 0)
 			} else {
+				for strings.HasPrefix(request.Hash, ":") {
+					request.Hash = request.Hash[1:]
+				}
+
 				in.hashProposalsIn <- request.Hash
 			}
 		}
@@ -158,10 +163,11 @@ func (in *Instance) propose(index int64, hash string) {
 	in.proposerReplicatedLog[index].S = 4
 	in.proposerReplicatedLog[index].P = make([]*proto.GenericConsensusValue, 1)
 	in.proposerReplicatedLog[index].P[0] = &proto.GenericConsensusValue{
-		Id:  hash,
+		Id:  hash + "-" + strconv.Itoa(int(in.nodeName)) + "." + strconv.Itoa(in.proposeCounter), // for unique proposer id
 		Fit: "",
 	}
-	in.proposerReplicatedLog[index].proposedValue = hash
+	in.proposerReplicatedLog[index].proposedValue = hash + "-" + strconv.Itoa(int(in.nodeName)) + "." + strconv.Itoa(in.proposeCounter)
+	in.proposeCounter++
 
 	in.proposerReplicatedLog[index].E = make([]*proto.GenericConsensusValue, 0)
 	in.proposerReplicatedLog[index].C = make([]*proto.GenericConsensusValue, 0)
@@ -237,11 +243,13 @@ func (in *Instance) handleProposerConsensusMessage(consensusMessage *proto.Gener
 				// case 2.1.1 a majority of the proposals responses have Hi and I am not decided yet
 				if majorityValue.Id != "" && majorityValue.Fit != "" && in.proposerReplicatedLog[consensusMessage.Index].decided == false {
 					in.proposerReceivedMajorityProposeWithHi(consensusMessage, majorityValue)
+					in.debug("decided in the fast path "+fmt.Sprintf(" %v ", consensusMessage.Index), 4)
 					return
 				}
 
 				// case 2.1.2 no proposal with majority Hi
 				if majorityValue.Id == "" && majorityValue.Fit == "" {
+					in.debug("no proposal with majority high "+fmt.Sprintf(" %v ", in.proposerReplicatedLog[consensusMessage.Index]), 4)
 					in.proposerReplicatedLog[consensusMessage.Index].S = in.proposerReplicatedLog[consensusMessage.Index].S + 1
 					in.proposerSendMessage(consensusMessage.Index)
 					return
@@ -330,11 +338,11 @@ func (in *Instance) getProposalWithMajorityHi(e []*proto.GenericConsensus) *prot
 	ValueCount = make(map[string]int64)
 	for i := 0; i < len(e); i++ {
 		if strings.HasPrefix(e[i].P[0].Fit, strconv.FormatInt(in.Hi, 10)) {
-			_, ok := ValueCount[e[i].P[0].Id+e[i].P[0].Fit] // note that this is a unique key
+			_, ok := ValueCount[e[i].P[0].Id] // note that this is a unique key
 			if !ok {
-				ValueCount[e[i].P[0].Id+e[i].P[0].Fit] = 1 // note that each proposal has a unique id
+				ValueCount[e[i].P[0].Id] = 1 // note that each proposal has a unique id
 			} else {
-				ValueCount[e[i].P[0].Id+e[i].P[0].Fit] = ValueCount[e[i].P[0].Id+e[i].P[0].Fit] + 1
+				ValueCount[e[i].P[0].Id] = ValueCount[e[i].P[0].Id] + 1
 			}
 		}
 	}
@@ -344,12 +352,14 @@ func (in *Instance) getProposalWithMajorityHi(e []*proto.GenericConsensus) *prot
 	for key, element := range ValueCount {
 		if element >= in.numReplicas/2+1 {
 			for i := 0; i < len(e); i++ {
-				if e[i].P[0].Id+e[i].P[0].Fit == key {
+				if e[i].P[0].Id == key {
 					return e[i].P[0]
 				}
 			}
 		}
 	}
+
+	in.debug(fmt.Sprintf("\n%v\n", ValueCount), 4)
 
 	return &proto.GenericConsensusValue{
 		Id:  "",
@@ -377,7 +387,13 @@ func (in *Instance) proposerReceivedMajorityProposeWithHi(consensusMessage *prot
 
 	if in.proposerReplicatedLog[consensusMessage.Index].proposedValue != "" && in.proposerReplicatedLog[consensusMessage.Index].proposedValue != majorityValue.Id {
 		// the decided item is different from what I proposed: retry proposing
-		in.hashProposalsIn <- in.proposerReplicatedLog[consensusMessage.Index].proposedValue
+		in.debug("decided a different value than proposed", 4)
+		proposedValue := strings.Split(in.proposerReplicatedLog[consensusMessage.Index].proposedValue, "-")[0]
+		for strings.HasPrefix(proposedValue, ":") {
+			proposedValue = proposedValue[1:]
+		}
+		in.hashProposalsIn <- proposedValue
+
 	}
 
 	// clean the memory

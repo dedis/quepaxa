@@ -149,7 +149,7 @@ func (cl *Client) startFailureDetector() {
 			if time.Now().Sub(cl.lastSeenTimeReplica).Seconds() > float64(cl.replicaTimeout) {
 
 				// change the default replica
-				cl.debug("Changing the default replica", 2)
+				cl.debug("Changing the default replica", 4)
 				cl.defaultReplica = (cl.defaultReplica + 1) % cl.numReplicas
 				cl.lastSeenTimeReplica = time.Now()
 			}

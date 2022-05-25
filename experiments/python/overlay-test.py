@@ -42,7 +42,7 @@ def checkMaps(files):
                     tarName = sys.argv[j + 1]
                     if key in files[j].keys():
                         if not equals(files[j][key], map[key]):
-                            print("Mismatch in log position " + str(key) + " in " + mapName + ":" + map[
+                            print("mismatch in log position " + str(key) + " in " + mapName + ":" + map[
                                 key] + " and " + tarName + ":" + files[j][key])
                             misMatch = misMatch + 1
                         else:

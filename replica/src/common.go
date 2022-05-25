@@ -324,6 +324,7 @@ func (in *Instance) printLog() {
 		if entry.committed {
 			// if an entry is committed, then it should contain the blocks in the message store
 			decision := entry.decision.Id
+			decision = strings.Split(decision, "-")[0]
 			hashes := strings.Split(decision, ":")
 			for i := 0; i < len(hashes); i++ {
 				hashes[i] = strings.TrimSpace(hashes[i])
@@ -368,8 +369,10 @@ func (in *Instance) CollectAndProposeHashes() {
 			// this loop collects requests until the minimum batch time is met OR the batch time is timeout
 			for !(numRequests > in.hashBatchSize || (time.Now().Sub(lastSent).Microseconds() > int64(in.hashBatchTime) && numRequests > 0)) {
 				newRequest := <-in.hashProposalsIn // keep collecting new requests for the next batch
-				requestString = requestString + ":" + newRequest
-				numRequests++
+				if len([]rune(newRequest)) > 0 {
+					requestString = requestString + ":" + newRequest
+					numRequests++
+				}
 			}
 
 			in.debug("Collected a batch of hashes to propose "+requestString, 1)

@@ -93,6 +93,8 @@ type Instance struct {
 	hashProposalsIn chan string // buffer collecting hash values that should be sent to the leader to get proposed
 	hashBatchTime   int
 	hashBatchSize   int
+
+	proposeCounter int // counter for unique propose ids
 }
 
 /*
@@ -155,6 +157,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, serv
 		hashProposalsIn:                     make(chan string, hashChannelSize),
 		hashBatchSize:                       int(hashBatchSize), // todo this might have to be changed in the WAN
 		hashBatchTime:                       int(hashBatchTime),
+		proposeCounter:                      0,
 	}
 
 	for i := 0; i < len(cfg.Peers)+len(cfg.Clients); i++ {
