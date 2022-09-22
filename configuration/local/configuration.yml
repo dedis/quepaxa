@@ -3,23 +3,39 @@
 # to add more peers or clients: add new lines following the same structure
 peers:
   - name: 0
-    address: 0.0.0.0:9000
+    ip: 0.0.0.0
+    proxyport: 9000
+    recorderport: 9001
   - name: 1
-    address: 0.0.0.0:9001
+    ip: 0.0.0.0
+    proxyport: 9002
+    recorderport: 9003
   - name: 2
-    address: 0.0.0.0:9002
+    ip: 0.0.0.0
+    proxyport: 9004
+    recorderport: 9005
   - name: 3
-    address: 0.0.0.0:9003
+    ip: 0.0.0.0
+    proxyport: 9006
+    recorderport: 9007
   - name: 4
-    address: 0.0.0.0:9004
+    ip: 0.0.0.0
+    proxyport: 9008
+    recorderport: 9009
+
 clients:
-  - name: 5
-    address: 0.0.0.0:10000
-  - name: 6
-    address: 0.0.0.0:10001
-  - name: 7
-    address: 0.0.0.0:10002
-  - name: 8
-    address: 0.0.0.0:10003
-  - name: 9
-    address: 0.0.0.0:10004
+  - name: 21
+    ip: 0.0.0.0
+    clientport: 10000
+  - name: 22
+    ip: 0.0.0.0
+    clientport: 10001
+  - name: 23
+    ip: 0.0.0.0
+    clientport: 10002
+  - name: 24
+    ip: 0.0.0.0
+    clientport: 10003
+  - name: 25
+    ip: 0.0.0.0
+    clientport: 10004
