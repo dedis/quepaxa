@@ -1,40 +1,38 @@
 syntax = "proto3";
 option go_package = "proto/";
 
+// ClientRequestBatch defines the message from client to all replicas
+
 message ClientRequestBatch {
-
   int64 sender = 1;
-  int64 receiver = 2;
-
   message SingleClientRequest {
-    string message = 1;
+    string id = 1;
+    string message = 2;
   }
-
-  repeated SingleClientRequest requests = 3;
-  string id = 4; // unique identifier for a batch of requests
+  repeated SingleClientRequest requests = 2;
+  string id = 3; // unique identifier for a batch of requests
 }
+
+// clientResponseBatch defines the committed response from replicas to client
 
 message ClientResponseBatch {
-  int64 sender = 1;
-  int64 receiver = 2;
   message SingleClientResponse {
-    string message = 1;
+    string id = 1;
+    string message = 2;
   }
-  repeated SingleClientResponse responses = 3;
-  string id = 4; // unique identifier for a batch of responses
+  repeated SingleClientResponse responses = 1;
+  string id = 2; // unique identifier for a batch of responses
 }
+
+// status requests/responses are sent by clients to invoke different control plane operations on replicas after bootstrap
 
 message ClientStatusRequest {
   int64 sender = 1;
-  int64 receiver = 2;
-  int64 operation = 3;
-  string message = 4;
+  int64 operation = 2;
+  string message = 3;
 }
 
 message ClientStatusResponse {
-  int64 sender = 1;
-  int64 receiver = 2;
-  int64 operation = 3;
-  string message = 4;
+  int64 operation = 1;
+  string message = 2;
 }
-
