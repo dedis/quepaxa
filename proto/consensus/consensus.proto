@@ -1,0 +1,61 @@
+syntax = "proto3";
+option go_package = "proto/consensus";
+
+/*
+  ProposerMessage is the message type that is used for proposer-to-recorder
+*/
+
+message ProposerMessage {
+
+  message ClientBatch {
+    int64 sender = 1;
+    message SingleMessage {
+      string id = 1;
+      string message = 2;
+    }
+    repeated SingleMessage messages = 2;
+    string id = 3; // unique identifier for a batch
+  }
+    
+  message Proposal {
+    int64 priority = 1;
+    int64 proposer_id = 2;
+    int64 thread_id = 3;
+    repeated string ids = 4; // client batch ids in the fast path
+    repeated ClientBatch client_batches = 5; // client batches in the slow path
+  }
+
+  int64 sender = 1; // sender id
+  int64 index = 2; // replicated slot index
+  int64 S = 3;  // step
+  Proposal P = 4; // proposal
+
+  message DecidedSlot{
+    int64 index = 1; // replicated slot
+    repeated string ids = 2; // in the fast path
+    repeated ClientBatch client_batches = 3; // slow path
+    int64 proposer = 4; // proposer who decided this index
+  }
+  
+  repeated DecidedSlot decidedSlots = 5;
+}
+
+message RecorderResponse {
+  int64 S = 1;  // step
+  
+  message Proposal {
+    int64 priority = 1;
+    int64 proposer_id = 2;
+    int64 thread_id = 3;
+    repeated string ids = 4;
+  }
+  
+  Proposal F = 2; // first proposal
+  Proposal M = 3; // the maximum of all values (v) proposed in the prior epoch for s’-1  
+}
+
+// define the Consensus gRPC service
+
+service Consensus {
+  rpc ESP (ProposerMessage) returns (RecorderResponse);
+}
