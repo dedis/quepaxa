@@ -37,7 +37,6 @@ type Client struct {
 	logFilePath string // the path to write the requests and responses, used for sanity checks
 
 	batchSize int64 // maximum client side batch size
-	batchTime int64 // maximum client side batch time in micro seconds
 
 	outgoingMessageChan chan *common.OutgoingRPC // buffer for messages that are written to the wire
 
@@ -87,7 +86,7 @@ const arrivalBufferSize = 1000000     // size of the buffer that collects new re
 	Instantiate a new Client instance, allocate the buffers
 */
 
-func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batchSize int64, batchTime int64, requestSize int64, testDuration int64, arrivalRate int64, benchmark int64, requestType string, operationType int64, debugLevel int, debugOn bool) *Client {
+func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batchSize int64, requestSize int64, testDuration int64, arrivalRate int64, benchmark int64, requestType string, operationType int64, debugLevel int, debugOn bool) *Client {
 	cl := Client{
 		clientName:             name,
 		numReplicas:            int64(len(cfg.Peers)),
@@ -102,7 +101,6 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		clientStatusRpc:        1,
 		logFilePath:            logFilePath,
 		batchSize:              batchSize,
-		batchTime:              batchTime,
 		outgoingMessageChan:    make(chan *common.OutgoingRPC, outgoingBufferSize),
 		debugOn:                debugOn,
 		debugLevel:             debugLevel,
