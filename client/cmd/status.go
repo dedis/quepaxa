@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"raxos/common"
 	"raxos/proto"
-	raxos "raxos/replica/src"
 	"strconv"
 	"time"
 )
@@ -12,7 +12,7 @@ import (
 	When a status response is received, print it to console
 */
 
-func (cl *Client) handleClientStatusResponse(response *proto.ClientStatusResponse) {
+func (cl *Client) handleClientStatusResponse(response *proto.ClientStatus) {
 	fmt.Print("Status response from " + strconv.Itoa(int(response.Sender)) + " \n")
 }
 
@@ -21,22 +21,19 @@ func (cl *Client) handleClientStatusResponse(response *proto.ClientStatusRespons
 */
 
 func (cl *Client) SendStatus(operationType int64) {
-	cl.debug("Sending status request to all replicas", 0)
-	for i := int64(0); i < cl.numReplicas; i++ {
 
-		/*
-			Since send Message doesn't expect broadcast, create a message for each replica
-		*/
+	cl.debug("Sending status request to all proxies", 0)
 
-		statusRequest := proto.ClientStatusRequest{
+	for i, _ := range cl.replicaAddrList {
+
+		statusRequest := proto.ClientStatus{
 			Sender:    cl.clientName,
-			Receiver:  i,
 			Operation: operationType,
 			Message:   "",
 		}
 
-		rpcPair := raxos.RPCPair{
-			Code: cl.clientStatusRequestRpc,
+		rpcPair := common.RPCPair{
+			Code: cl.clientStatusRpc,
 			Obj:  &statusRequest,
 		}
 
