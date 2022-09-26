@@ -21,6 +21,8 @@ func main() {
 	requestType := flag.String("requestType", "status", "request type: [status , request]")
 	operationType := flag.Int64("operationType", 1, "Type of operation for a status request: 1 (bootstrap server, 2: print log)")
 	debugLevel := flag.Int64("debugLevel", 0, "debug level")
+	keyLen := flag.Int64("keyLen", 8, "length of key")
+	valLen := flag.Int64("valLen", 8, "length of value")
 	debugOn := flag.Bool("debugOn", false, "turn on/off debug")
 
 	flag.Parse()
@@ -32,7 +34,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cl := cmd.New(*name, cfg, *logFilePath, *batchSize, *requestSize, *testDuration, *arrivalRate, *benchmark, *requestType, *operationType, int(*debugLevel), *debugOn)
+	cl := cmd.New(*name, cfg, *logFilePath, *batchSize, *requestSize, *testDuration, *arrivalRate, *benchmark, *requestType, *operationType, int(*debugLevel), *debugOn, int(*keyLen), int(*valLen))
 
 	cl.StartOutgoingLinks()
 	go cl.WaitForConnections()

@@ -57,6 +57,9 @@ type Client struct {
 	startTime         time.Time            // test start time
 
 	clientListenAddress string // ip:port of the listening port
+
+	keyLen int // length of keys
+	valLen int // length of values
 }
 
 /*
@@ -88,7 +91,7 @@ const arrivalBufferSize = 1000000     // size of the buffer that collects new re
 	Instantiate a new Client instance, allocate the buffers
 */
 
-func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batchSize int64, requestSize int64, testDuration int64, arrivalRate int64, benchmark int64, requestType string, operationType int64, debugLevel int, debugOn bool) *Client {
+func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batchSize int64, requestSize int64, testDuration int64, arrivalRate int64, benchmark int64, requestType string, operationType int64, debugLevel int, debugOn bool, keyLen int, valLen int) *Client {
 	cl := Client{
 		clientName:             name,
 		numReplicas:            int64(len(cfg.Peers)),
@@ -118,6 +121,8 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		receivedResponses:      sync.Map{},
 		startTime:              time.Time{},
 		clientListenAddress:    "0.0.0.0:" + cfg.Clients[name].CLIENTPORT,
+		keyLen:                 keyLen,
+		valLen:                 valLen,
 	}
 
 	// initialize the replicaAddrList

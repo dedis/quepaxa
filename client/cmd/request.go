@@ -4,38 +4,35 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"raxos/common"
 	"raxos/proto"
-	raxos "raxos/replica/src"
 	"strconv"
 	"time"
+	"unsafe"
 )
 
 /*
-	Upon receiving a client response, add the request to the received requests array
+	Upon receiving a client response batch, add the batch to the received requests map
 */
 
-func (cl *Client) handleClientResponseBatch(batch *proto.ClientResponseBatch) {
-	cl.receivedResponses[batch.Id] = receivedResponseBatch{
+func (cl *Client) handleClientResponseBatch(batch *proto.ClientBatch) {
+	cl.receivedResponses.Store(batch.Id, receivedResponseBatch{
 		batch: *batch,
 		time:  time.Now(), // record the time when the response was received
-	}
-	cl.lastSeenTimeReplica = time.Now() // mark the last time a response was received
-	cl.debug("Added response Batch from "+strconv.Itoa(int(batch.Sender))+" to received array", 0)
+	})
+	cl.debug("Added response Batch from "+strconv.Itoa(int(batch.Sender))+" to received map", 0)
 }
 
 /*
 	start the poisson arrival process (put arrivals to arrivalTimeChan) in a separate thread
-	start request generation processes  (get arrivals from arrivalTimeChan and generate batches and send them) in separate threads, and send them to the leader proposer, and write batch to the correct array in sentRequests
-	start failure detector that checks the time since the last response was received, and update the default proposer
+	start request generation processes  (get arrivals from arrivalTimeChan and generate batches and send them) in separate threads, and send them to all the proxies, and write batch to the correct array in sentRequests
 	start the scheduler that schedules new requests
 	the thread sleeps for test duration + delta and then starts processing the responses
-
 */
 
 func (cl *Client) SendRequests() {
 	cl.generateArrivalTimes()
 	cl.startRequestGenerators()
-	cl.startFailureDetector()
 	cl.startScheduler() // this is sync, main thread waits for this to finish
 
 	// end of test
@@ -46,49 +43,100 @@ func (cl *Client) SendRequests() {
 }
 
 /*
+	random string generation adapted from the Rabia SOSP 2021 code base https://github.com/haochenpan/rabia/
+*/
+
+const (
+	letterBytes   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" // low conflict
+	letterIdxBits = 6                                                      // 6 bits to represent a letter index
+	letterIdxMask = 1<<letterIdxBits - 1                                   // All 1-bits, as many as letterIdxBits
+	letterIdxMax  = 63 / letterIdxBits                                     // # of letter indices fitting in 63 bits
+)
+
+/*
+	generate a random string of length n
+*/
+
+func (cl *Client) RandString(n int) string {
+	b := make([]byte, n)
+	for i, cache, remain := n-1, rand.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = rand.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+			b[i] = letterBytes[idx]
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+
+	return *(*string)(unsafe.Pointer(&b))
+}
+
+/*
 	Each request generator generates requests by generating string requests, forming batches, send batches and add them to the correct sent array
 */
 
 func (cl *Client) startRequestGenerators() {
+
 	for i := 0; i < numRequestGenerationThreads; i++ { // i is the thread number
 		go func(threadNumber int) {
 			localCounter := 0
-			lastSent := time.Now() // used to get how long to wait
-			for true {             // this runs forever
+
+			for true {
+
 				numRequests := int64(0)
-				sampleRequest := "Request" //todo this is only for testing purposes, should be replaced by KV Store / Redis accordingly
-				var requests []*proto.ClientRequestBatch_SingleClientRequest
-				// this loop collects requests until the minimum batch size is met OR the batch time is timeout
-				for !(numRequests >= cl.batchSize || (time.Now().Sub(lastSent).Microseconds() > cl.batchTime && numRequests > 0)) {
-					_ = <-cl.arrivalChan                                                                                                                                                                                                                                     // keep collecting new requests arrivals
-					requests = append(requests, &proto.ClientRequestBatch_SingleClientRequest{Message: strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter) + "." + strconv.Itoa(int(numRequests)) + "." + sampleRequest}) //todo for actual benchmarks the same request should be replaced with redis op or kvstore op
+				var requests []*proto.ClientBatch_SingleMessage
+				// this loop collects requests until the minimum batch size is met
+				for numRequests < cl.batchSize {
+					_ = <-cl.arrivalChan // keep collecting new requests arrivals
+					requests = append(requests, &proto.ClientBatch_SingleMessage{
+						Id: strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter) + "." + strconv.Itoa(int(numRequests)),
+						Message: fmt.Sprintf("%d%v%v", rand.Intn(2),
+							cl.RandString(cl.keyLen),
+							cl.RandString(cl.valLen)),
+					})
 					numRequests++
 				}
 
-				batch := proto.ClientRequestBatch{
+				for i, _ := range cl.replicaAddrList {
+
+					var requests_i []*proto.ClientBatch_SingleMessage
+
+					for j := 0; j < len(requests); j++ {
+						requests_i = append(requests_i, requests[j])
+					}
+
+					batch := proto.ClientBatch{
+						Sender:   cl.clientName,
+						Messages: requests_i,
+						Id:       strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id,
+					}
+
+					rpcPair := common.RPCPair{
+						Code: cl.clientBatchRpc,
+						Obj:  &batch,
+					}
+
+					cl.sendMessage(i, rpcPair)
+				}
+
+				cl.debug("Sent "+strconv.Itoa(int(cl.clientName))+"."+strconv.Itoa(threadNumber)+"."+strconv.Itoa(localCounter), 0)
+
+				batch := proto.ClientBatch{
 					Sender:   cl.clientName,
-					Receiver: cl.defaultReplica,
-					Requests: requests,
-					Id:       strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id
+					Messages: requests,
+					Id:       strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id,
 				}
 
-				cl.debug("Sent "+strconv.Itoa(int(cl.clientName))+"."+strconv.Itoa(threadNumber)+"."+strconv.Itoa(localCounter)+" batch size "+strconv.Itoa(len(requests)), 0)
-
-				localCounter++
-
-				rpcPair := raxos.RPCPair{
-					Code: cl.clientRequestBatchRpc,
-					Obj:  &batch,
-				}
-
-				cl.sendMessage(cl.defaultReplica, rpcPair)
-				lastSent = time.Now()
 				cl.sentRequests[threadNumber] = append(cl.sentRequests[threadNumber], sentRequestBatch{
 					batch: batch,
 					time:  time.Now(),
 				})
-			}
 
+				localCounter++
+			}
 		}(i)
 	}
 
@@ -131,28 +179,6 @@ func (cl *Client) generateArrivalTimes() {
 			arrivalTime = arrivalTime + interArrivalTime
 
 			cl.arrivalTimeChan <- int64(arrivalTime)
-		}
-	}()
-}
-
-/*
-	Monitors the time the last response was received. If the default replica fails to send a response before a timeout, change the default replica
-	Since the failure detector is anyway eventually correct, we don't use a Mutex to protect the lastSeenTime and the defaultReplica variables
-*/
-
-func (cl *Client) startFailureDetector() {
-	go func() {
-		cl.debug("Starting failure detector", 0)
-		for true {
-
-			time.Sleep(time.Duration(cl.replicaTimeout) * time.Second)
-			if time.Now().Sub(cl.lastSeenTimeReplica).Seconds() > float64(cl.replicaTimeout) {
-
-				// change the default replica
-				cl.debug("Changing the default replica", 4)
-				cl.defaultReplica = (cl.defaultReplica + 1) % cl.numReplicas
-				cl.lastSeenTimeReplica = time.Now()
-			}
 		}
 	}()
 }
