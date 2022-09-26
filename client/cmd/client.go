@@ -26,7 +26,7 @@ type Client struct {
 	replicaAddrList        map[int64]string        // a map with the IP:port of every proxy
 	incomingReplicaReaders map[int64]*bufio.Reader // socket readers for each replica
 	outgoingReplicaWriters map[int64]*bufio.Writer // socket writer for each replica
-	socketMutexs           map[int64]sync.Mutex    // for mutual exclusion for each buffio.writer outgoingReplicaWriters
+	socketMutexs           map[int64]*sync.Mutex   // for mutual exclusion for each buffio.writer outgoingReplicaWriters
 
 	rpcTable     map[uint8]*common.RPCPair // map each RPC type (message type) to its unique number
 	incomingChan chan *common.RPCPair      // used to collect ClientBatch messages and ClientStatus messages (basically all the incoming messages)
@@ -55,6 +55,8 @@ type Client struct {
 	sentRequests      [][]sentRequestBatch // generator i updates sentRequests[i] :this is to avoid concurrent access to the same array
 	receivedResponses sync.Map             // set of received client response batches from replicas
 	startTime         time.Time            // test start time
+
+	clientListenAddress string // ip:port of the listening port
 }
 
 /*
@@ -94,7 +96,7 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		replicaAddrList:        make(map[int64]string),
 		incomingReplicaReaders: make(map[int64]*bufio.Reader),
 		outgoingReplicaWriters: make(map[int64]*bufio.Writer),
-		socketMutexs:           make(map[int64]sync.Mutex),
+		socketMutexs:           make(map[int64]*sync.Mutex),
 		rpcTable:               make(map[uint8]*common.RPCPair),
 		incomingChan:           make(chan *common.RPCPair, incomingBufferSize),
 		clientBatchRpc:         0,
@@ -115,6 +117,7 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		sentRequests:           make([][]sentRequestBatch, numRequestGenerationThreads),
 		receivedResponses:      sync.Map{},
 		startTime:              time.Time{},
+		clientListenAddress:    "0.0.0.0:" + cfg.Clients[name].CLIENTPORT,
 	}
 
 	// initialize the replicaAddrList
@@ -126,7 +129,7 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 	// initialize the socketMutexs
 	for i := 0; i < len(cfg.Peers); i++ {
 		intName, _ := strconv.Atoi(cfg.Peers[i].Name)
-		cl.socketMutexs[int64(intName)] = sync.Mutex{}
+		cl.socketMutexs[int64(intName)] = &sync.Mutex{}
 	}
 
 	// initialize sentRequests
