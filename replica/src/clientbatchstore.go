@@ -76,9 +76,9 @@ func (cb *ClientBatchStore) printStore(logFilePath string, nodeName int64) {
 
 	messageBlocks := cb.convertToRegularMap(cb.clientBatches)
 
-	for _, block := range messageBlocks {
+	for id, block := range messageBlocks {
 		for j := 0; j < len(block.Messages); j++ {
-			_, _ = f.WriteString(block.Messages[j].Id + ":" + block.Messages[j].Message + "\n")
+			_, _ = f.WriteString(id + "." + strconv.Itoa(j) + ":" + block.Messages[j].Message + "\n")
 		}
 
 	}

@@ -92,7 +92,6 @@ func (cl *Client) startRequestGenerators() {
 				for numRequests < cl.batchSize {
 					_ = <-cl.arrivalChan // keep collecting new requests arrivals
 					requests = append(requests, &proto.ClientBatch_SingleMessage{
-						Id: strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter) + "." + strconv.Itoa(int(numRequests)),
 						Message: fmt.Sprintf("%d%v%v", rand.Intn(2),
 							cl.RandString(cl.keyLen),
 							cl.RandString(cl.valLen)),

@@ -9,9 +9,8 @@ message ProposerMessage {
 
   message ClientBatch {
     int64 sender = 1;
-    message SingleMessage {
-      string id = 1;
-      string message = 2;
+    message SingleMessage { 
+      string message = 1;
     }
     repeated SingleMessage messages = 2;
     string id = 3; // unique identifier for a batch
