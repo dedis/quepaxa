@@ -2,6 +2,7 @@ package raxos
 
 import (
 	"raxos/configuration"
+	"raxos/proto"
 	"time"
 )
 
@@ -21,7 +22,10 @@ type Server struct {
 // ProposeRequest is the message type sent from proxy to proposer
 
 type ProposeRequest struct {
-	//todo
+	instance int64 // slot index
+	proposalStr []string // fast path client batch ids
+	proposalBtch []*proto.ClientBatch // client batches for slow path
+	msWait int // number of milliseconds to wait before proposing 
 }
 
 // ProposeResponse is the message type sent from proposer to proxy
@@ -41,6 +45,11 @@ func (s Server) NetworkInit() {
 
 func (s Server) Run() {
 	go s.ProxyInstance.Run()
+}
+
+// start the set of gRPC connections and initiate the set of Proposers
+func (s Server) StartgRPC(){
+	
 }
 
 /*

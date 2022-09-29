@@ -49,20 +49,19 @@ type Proxy struct {
 
 	replicatedLog []Slot // the replicated log of the proposer
 
-	exec              bool  // if true the response is sent after execution, if not response is sent after total order
-	committedIndex    int64 // last index for which a request was committed and the result was sent to client
-	lastProposedIndex int64 // last index proposed
+	exec              bool      // if true the response is sent after execution, if not response is sent after total order
+	committedIndex    int64     // last index for which a request was committed and the result was sent to client
+	lastProposedIndex int64     // last index proposed
+	lastTimeCommitted time.Time // last committed time
 
 	logFilePath string // the path to write the replicated log, used for sanity checks
 
-	batchSize int64 // maximum replica side batch size
-	batchTime int64 // maximum replica side batch time in micro seconds
+	batchSize int // maximum replica side batch size
+	batchTime int // maximum replica side batch time in micro seconds
 
 	pipelineLength int64 // maximum number of inflight consensus instances
 
 	clientBatchStore ClientBatchStore // message store that stores the client batches
-
-	leaderSequence []int64 // most recent leader sequence to use
 
 	leaderTimeout int64 // in milliseconds
 
@@ -70,11 +69,15 @@ type Proxy struct {
 	debugLevel int  // debug level
 
 	serverStarted bool // true if the first status message with operation type 1 received
+
+	server *Server // server instance to call the replica wide functions
+
+	toBeProposed []string // set of client batches that are yet be proposed
 }
 
 // instantiate a new proxy
 
-func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, exec bool, logFilePath string, batchSize int64, batchTime int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int) *Proxy {
+func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, exec bool, logFilePath string, batchSize int64, batchTime int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server) *Proxy {
 
 	pr := Proxy{
 		name:                  name,
@@ -98,15 +101,16 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		committedIndex:        -1,
 		lastProposedIndex:     -1,
 		logFilePath:           logFilePath,
-		batchSize:             batchSize,
-		batchTime:             batchTime,
+		batchSize:             int(batchSize),
+		batchTime:             int(batchTime),
 		pipelineLength:        pipelineLength,
 		clientBatchStore:      ClientBatchStore{},
-		leaderSequence:        make([]int64, len(cfg.Peers)),
 		leaderTimeout:         leaderTimeout,
 		debugOn:               debugOn,
 		debugLevel:            debugLevel,
 		serverStarted:         false,
+		server:                server,
+		toBeProposed:          make([]string, 0),
 	}
 
 	// initialize the clientAddrList
@@ -128,12 +132,6 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		if pr.name == int64(intName) {
 			pr.serverAddress = "0.0.0.0:" + cfg.Peers[i].PROXYPORT
 		}
-	}
-
-	// leaderSequence
-	for i := 0; i < pr.numReplicas; i++ {
-		intName, _ := strconv.Atoi(cfg.Peers[i].Name)
-		pr.leaderSequence[i] = int64(intName)
 	}
 
 	// register rpcs
@@ -168,7 +166,7 @@ func (pr *Proxy) Run() {
 					break
 
 				case pr.clientStatusRpc:
-					clientStatus :=clientMessage.Obj.(*proto.ClientStatus)
+					clientStatus := clientMessage.Obj.(*proto.ClientStatus)
 					pr.debug("Client status  ", 1)
 					pr.handleClientStatus(clientStatus)
 					break
@@ -192,20 +190,14 @@ func (pr *Proxy) debug(message string, level int) {
 	}
 }
 
-// handler for new client batches
+// return the pre-agreed, non changing waiting time for the instance by the proposer
 
-func (pr Proxy) ClientBatch(batch *proto.ClientBatch) {
-	
-}
+func (pr *Proxy) getLeaderWait(instance int) int {
+	// todo
 
-// handler for client status request
-
-func (pr Proxy) handleClientStatus(status *proto.ClientStatus) {
-	
-}
-
-// handler for propose response
-
-func (pr Proxy) handleProposeResponse(message ProposeResponse) {
-	
+	if pr.name == 0 {
+		return 0
+	} else {
+		return 10
+	}
 }
