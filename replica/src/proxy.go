@@ -16,7 +16,10 @@ import (
 // slot defines a single instance in the replicated log
 
 type Slot struct {
-	// todo
+	// slot index is implied by the array position
+	proposedBatch []string // client batch ids proposed
+	decidedBatch  []string // decided client batch ids
+	uniqueId      string   // unique id of the set of proposed items
 }
 
 /*Proxy saves the state of the proxy which handles client batches, creates replica batches and invokes proposer. Also the proxy executes the SMR and send responses back to client*/
@@ -73,6 +76,12 @@ type Proxy struct {
 	server *Server // server instance to call the replica wide functions
 
 	toBeProposed []string // set of client batches that are yet be proposed
+
+	proposalId int // counter for generating unique proposal ids
+
+	lastDecidedIndexes   []int      //slots that were previously decided
+	lastDecidedDecisions [][]string // for each lastDecidedIndex, the string array of client batches decided
+	lastDecidedUniqueIds []string   // unique id of last decided ids
 }
 
 // instantiate a new proxy
@@ -111,6 +120,10 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		serverStarted:         false,
 		server:                server,
 		toBeProposed:          make([]string, 0),
+		proposalId:            int(name * 1000000000),
+		lastDecidedIndexes:    make([]int, 0),
+		lastDecidedDecisions:  make([][]string, 0),
+		lastDecidedUniqueIds:  make([]string, 0),
 	}
 
 	// initialize the clientAddrList

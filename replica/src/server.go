@@ -26,12 +26,16 @@ type ProposeRequest struct {
 	proposalStr []string // fast path client batch ids
 	proposalBtch []*proto.ClientBatch // client batches for slow path
 	msWait int // number of milliseconds to wait before proposing 
+	uniqueID string // unique id of the proposal
+	lastDecidedIndexes []int //slots that were previously decided
+	lastDecidedDecisions [][]string // for each lastDecidedIndex, the string array of client batches decided 
+	lastDecidedUniqueIds []string // unique id of last decided ids
 }
 
 // ProposeResponse is the message type sent from proposer to proxy
 
 type ProposeResponse struct {
-	//todo
+	//todo start from here
 }
 
 // listen to proxy tcp connections, listen to recorder gRPC connections
