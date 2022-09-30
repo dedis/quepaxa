@@ -64,7 +64,7 @@ type Proxy struct {
 
 	pipelineLength int64 // maximum number of inflight consensus instances
 
-	clientBatchStore ClientBatchStore // message store that stores the client batches
+	clientBatchStore *ClientBatchStore // message store that stores the client batches
 
 	leaderTimeout int64 // in milliseconds
 
@@ -113,7 +113,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		batchSize:             int(batchSize),
 		batchTime:             int(batchTime),
 		pipelineLength:        pipelineLength,
-		clientBatchStore:      ClientBatchStore{},
+		clientBatchStore:      &ClientBatchStore{},
 		leaderTimeout:         leaderTimeout,
 		debugOn:               debugOn,
 		debugLevel:            debugLevel,

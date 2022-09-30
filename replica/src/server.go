@@ -13,8 +13,9 @@ type Server struct {
 	ProposerInstances []*Proposer
 	RecorderInstance  *Recorder
 
-	proxyToProposerChan ProposeRequest
-	proposerToProxyChan ProposeResponse
+	proxyToProposerChan  ProposeRequest
+	proposerToProxyChan  ProposeResponse
+	recorderToServerChan Decision
 
 	lastSeenTimeProposers []time.Time // last seen times of each proposer
 }
@@ -22,38 +23,70 @@ type Server struct {
 // ProposeRequest is the message type sent from proxy to proposer
 
 type ProposeRequest struct {
-	instance int64 // slot index
-	proposalStr []string // fast path client batch ids
-	proposalBtch []*proto.ClientBatch // client batches for slow path
-	msWait int // number of milliseconds to wait before proposing 
-	uniqueID string // unique id of the proposal
-	lastDecidedIndexes []int //slots that were previously decided
-	lastDecidedDecisions [][]string // for each lastDecidedIndex, the string array of client batches decided 
-	lastDecidedUniqueIds []string // unique id of last decided ids
+	instance             int64                // slot index
+	proposalStr          []string             // fast path client batch ids
+	proposalBtch         []*proto.ClientBatch // client batches for slow path
+	msWait               int                  // number of milliseconds to wait before proposing
+	uniqueID             string               // unique id of the proposal
+	lastDecidedIndexes   []int                //slots that were previously decided
+	lastDecidedDecisions [][]string           // for each lastDecidedIndex, the string array of client batches decided
+	lastDecidedUniqueIds []string             // unique id of last decided ids
 }
 
 // ProposeResponse is the message type sent from proposer to proxy
 
 type ProposeResponse struct {
-	//todo start from here
+	index     int // log instance
+	decisions []string
+	uniqueId  string
+}
+
+type Decision struct {
+	indexes   []int      // decided indexes
+	uniqueIDs []string   // unique ids of decided indexes
+	decisions [][]string // for each index the set of decided entries
 }
 
 // listen to proxy tcp connections, listen to recorder gRPC connections
 
-func (s Server) NetworkInit() {
+func (s *Server) NetworkInit() {
 	s.ProxyInstance.NetworkInit()
 	s.RecorderInstance.NetworkInit()
 }
 
 // run the main proxy thread which handles all the channels
 
-func (s Server) Run() {
+func (s *Server) Run() {
 	go s.ProxyInstance.Run()
 }
 
 // start the set of gRPC connections and initiate the set of Proposers
-func (s Server) StartgRPC(){
-	
+func (s *Server) StartProposers() {
+	// create N gRPC connections, save the references in Server instance
+	s.setupgRPC()
+	// create M number of the Proposers. each have a pointer to the gRPC connections
+	s.createProposers()
+	// run each proposer in a separate thread
+	s.startProposers()
+}
+
+// setup gRPC clients to all recorders and return the connection pointers
+func (s *Server) setupgRPC() {
+	// todo
+}
+
+// create M number of proposers
+
+func (s *Server) createProposers() []*Proposer {
+	// todo
+	return nil
+}
+
+// start M number of proposers
+
+func (s *Server) startProposers() {
+	// todo
+	// start proposers in seperate threads
 }
 
 /*

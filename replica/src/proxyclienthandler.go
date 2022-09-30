@@ -7,7 +7,7 @@ import (
 
 // handler for new client batches
 
-func (pr Proxy) ClientBatch(batch *proto.ClientBatch) {
+func (pr *Proxy) ClientBatch(batch *proto.ClientBatch) {
 	// put the client batch to the store
 	pr.clientBatchStore.Add(batch)
 	// add the batch id to the toBeProposed array
@@ -31,21 +31,21 @@ func (pr Proxy) ClientBatch(batch *proto.ClientBatch) {
 			uniqueId := pr.proposalId
 
 			newProposalRequest := ProposeRequest{
-				instance:     proposeIndex,
-				proposalStr:  strProposals,
-				proposalBtch: btchProposals,
-				msWait:       pr.getLeaderWait(int(proposeIndex)),
-				uniqueID:     strconv.Itoa(uniqueId)+"."+strconv.Itoa(int(pr.name)),
-				lastDecidedIndexes: pr.lastDecidedIndexes,
-				lastDecidedDecisions:pr.lastDecidedDecisions,
-				lastDecidedUniqueIds:pr.lastDecidedUniqueIds,
-				
+				instance:             proposeIndex,
+				proposalStr:          strProposals,
+				proposalBtch:         btchProposals,
+				msWait:               pr.getLeaderWait(int(proposeIndex)),
+				uniqueID:             strconv.Itoa(uniqueId) + "." + strconv.Itoa(int(pr.name)),
+				lastDecidedIndexes:   pr.lastDecidedIndexes,
+				lastDecidedDecisions: pr.lastDecidedDecisions,
+				lastDecidedUniqueIds: pr.lastDecidedUniqueIds,
 			}
 
 			pr.proxyToProposerChan <- newProposalRequest
 			pr.replicatedLog[proposeIndex] = Slot{
 				proposedBatch: strProposals,
 				decidedBatch:  nil,
+				uniqueId:      strconv.Itoa(uniqueId) + "." + strconv.Itoa(int(pr.name)),
 			}
 
 			pr.lastProposedIndex++
@@ -60,11 +60,11 @@ func (pr Proxy) ClientBatch(batch *proto.ClientBatch) {
 
 // handler for client status request
 
-func (pr Proxy) handleClientStatus(status *proto.ClientStatus) {
+func (pr *Proxy) handleClientStatus(status *proto.ClientStatus) {
 	if status.Operation == 1 {
 		if pr.serverStarted == false {
 			// initiate gRPC connections
-			pr.server.StartgRPC()
+			pr.server.StartProposers()
 			pr.serverStarted = true
 		}
 	}

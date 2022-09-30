@@ -1,6 +1,8 @@
 package raxos
 
 type Recorder struct {
+	// gRPC listener variables
+	// pointer to the time array
 }
 
 // instantiate a new Recorder
@@ -14,6 +16,6 @@ func NewRecorder() *Recorder {
 
 // start listening to gRPC connection
 
-func (r Recorder) NetworkInit() {
+func (r *Recorder) NetworkInit() {
 
 }

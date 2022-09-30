@@ -13,7 +13,7 @@ import (
 
 // start listening to the proxy tcp connection, and setup all outgoing setting (without making connections)
 
-func (pr Proxy) NetworkInit() {
+func (pr *Proxy) NetworkInit() {
 	go pr.WaitForConnections()
 	pr.StartOutgoingLinks()
 }
