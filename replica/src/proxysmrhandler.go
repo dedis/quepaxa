@@ -25,3 +25,9 @@ func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 func (pr *Proxy) printConsensusLog() {
 	//todo
 }
+
+// mark the entries in the replicated log, and if possible execute
+
+func (pr *Proxy) handleRecorderResponse(message Decision) {
+	// todo 
+}

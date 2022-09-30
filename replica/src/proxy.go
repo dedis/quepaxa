@@ -46,6 +46,7 @@ type Proxy struct {
 
 	proxyToProposerChan chan ProposeRequest  // proxy to proposer channel
 	proposerToProxyChan chan ProposeResponse // proposer to proxy channel
+	recorderToProxyChan chan Decision        // recorder to proxy channel
 
 	clientBatchRpc  uint8 // 0
 	clientStatusRpc uint8 // 1
@@ -86,7 +87,7 @@ type Proxy struct {
 
 // instantiate a new proxy
 
-func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, exec bool, logFilePath string, batchSize int64, batchTime int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server) *Proxy {
+func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, exec bool, logFilePath string, batchSize int64, batchTime int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server) *Proxy {
 
 	pr := Proxy{
 		name:                  name,
@@ -103,6 +104,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		outgoingMessageChan:   make(chan common.OutgoingRPC),
 		proxyToProposerChan:   proxyToProposerChan,
 		proposerToProxyChan:   proposerToProxyChan,
+		recorderToProxyChan:   recorderToProxyChan,
 		clientBatchRpc:        0,
 		clientStatusRpc:       1,
 		replicatedLog:         make([]Slot, 0),
@@ -185,9 +187,16 @@ func (pr *Proxy) Run() {
 					break
 
 				}
+				break
 			case proposerMessage := <-pr.proposerToProxyChan:
 				pr.debug("Received proposer message", 0)
 				pr.handleProposeResponse(proposerMessage)
+				break
+				
+			case recorderMessage := <-pr.recorderToProxyChan:
+				pr.debug("Received recorder message", 0)
+				pr.handleRecorderResponse(recorderMessage)
+				break
 			}
 		}
 	}()
