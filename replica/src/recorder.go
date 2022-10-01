@@ -33,7 +33,7 @@ func (re *Recorder) ESP(ctx context.Context, req *consensus.ProposerMessage) (*c
 	
 	// todo
 	
-	// send the last decided index details to the proxy
+	// send the last decided index details to the proxy, if available
 	
 	// if there are only hashes, then check if all the client batches are available in the shared pool. if yes send a positive response depending on the consensus rules
 	

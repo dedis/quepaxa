@@ -22,6 +22,7 @@ func ( prop *Proposer) runProposer() {
 	go func(){
 		for true{
 			// get a new request
+			// wait for the time to pass
 			// propose for the fast path
 			// wait for the responses
 			// if needed start the slow path

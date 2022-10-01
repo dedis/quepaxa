@@ -20,6 +20,7 @@ func main() {
 	benchmark := flag.Int64("benchmark", 0, "Benchmark: 0 for echo service, 1 for KV store and 2 for Redis ")
 	debugOn := flag.Bool("debugOn", false, "true / false")
 	debugLevel := flag.Int("debugLevel", 0, "debug level")
+	leaderMode := flag.Int("leaderMode", 0, "mode of leader change: 0 for fixed leader order, 1 for fixed MAB and 2 for dynamic MAB")
 	flag.Parse()
 
 	cfg, err := configuration.NewInstanceConfig(*configFile, *name)
@@ -28,7 +29,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	serverInstance := raxos.New(cfg, *name, *logFilePath, *batchSize, *batchTime, *leaderTimeout, *pipelineLength, *benchmark, *debugOn, *debugLevel) // create a new server instance
+	serverInstance := raxos.New(cfg, *name, *logFilePath, *batchSize, *batchTime, *leaderTimeout, *pipelineLength, *benchmark, *debugOn, *debugLevel, *leaderMode) // create a new server instance
 
 	serverInstance.NetworkInit()
 	serverInstance.Run()

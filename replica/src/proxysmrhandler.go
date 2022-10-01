@@ -17,6 +17,7 @@ func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 		// re-propose to a new index
 		//todo
 	}
+	// add the decided value to proxy's lastDecidedIndexes, lastDecidedDecisions and lastDecidedUniqueIds
 
 }
 

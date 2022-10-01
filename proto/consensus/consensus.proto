@@ -22,18 +22,20 @@ message ProposerMessage {
     int64 thread_id = 3;
     repeated string ids = 4; // client batch ids in the fast path
     repeated ClientBatch client_batches = 5; // client batches in the slow path
+    string uniqueId = 6; // unique id of the proposal 
   }
 
   int64 sender = 1; // sender id
   int64 index = 2; // replicated slot index
-  int64 S = 3;  // step
-  Proposal P = 4; // proposal
-
+  Proposal P = 3; // proposal
+  int64 S = 4;  // step
+  
   message DecidedSlot{
     int64 index = 1; // replicated slot
     repeated string ids = 2; // in the fast path
     repeated ClientBatch client_batches = 3; // slow path
     int64 proposer = 4; // proposer who decided this index
+    string uniqueId = 5; // unique id of the proposal
   }
   
   repeated DecidedSlot decidedSlots = 5;
@@ -47,10 +49,13 @@ message RecorderResponse {
     int64 proposer_id = 2;
     int64 thread_id = 3;
     repeated string ids = 4;
+    string uniqueId = 5;
   }
   
   Proposal F = 2; // first proposal
   Proposal M = 3; // the maximum of all values (v) proposed in the prior epoch for s’-1  
+  
+  bool HasClientBacthes = 4; // if all the client batches from the proposer message exists
 }
 
 // define the Consensus gRPC service
