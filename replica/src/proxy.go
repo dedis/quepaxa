@@ -21,6 +21,7 @@ type Slot struct {
 	decidedBatch     []string // decided client batch ids
 	proposedUniqueId string   // unique id of the set of proposed items
 	decidedUniqueId  string   // unique id of the set of decided items
+	decided          bool     // true if decided
 }
 
 /*Proxy saves the state of the proxy and handles client batches, creates replica batches and sends to proposers. Also the proxy executes the SMR and send responses back to client*/
@@ -179,13 +180,13 @@ func (pr *Proxy) Run() {
 				case pr.clientBatchRpc:
 					clientBatch := clientMessage.Obj.(*proto.ClientBatch)
 					pr.debug("Client message  "+fmt.Sprintf("%#v", clientBatch), 0)
-					pr.handleClientBatch(clientBatch)
+					pr.handleClientBatch(*clientBatch)
 					break
 
 				case pr.clientStatusRpc:
 					clientStatus := clientMessage.Obj.(*proto.ClientStatus)
 					pr.debug("Client status  ", 1)
-					pr.handleClientStatus(clientStatus)
+					pr.handleClientStatus(*clientStatus)
 					break
 
 				}
@@ -220,10 +221,10 @@ func (pr *Proxy) getLeaderWait(instance int) int {
 
 	if pr.leaderMode == 0 {
 		// fixed order
-		//todo implement non-leader order
 		if pr.name == 0 {
 			return 0
 		} else {
+			//todo implement non-leader order
 			return 10
 		}
 	} else if pr.leaderMode == 1 {
@@ -235,7 +236,5 @@ func (pr *Proxy) getLeaderWait(instance int) int {
 		// dynamic MAB
 		return 0
 	}
-	
 	return 0
-
 }

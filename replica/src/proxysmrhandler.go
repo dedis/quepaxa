@@ -3,7 +3,7 @@ package raxos
 // handler for propose response
 
 func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
-	if message.uniqueId == pr.replicatedLog[message.index].uniqueId {
+	if message.uniqueId == pr.replicatedLog[message.index].proposedUniqueId {
 		// decided the value I proposed
 		if !pr.exec {
 			// send back the response to the client if self is who decided that
@@ -19,12 +19,6 @@ func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 	}
 	// add the decided value to proxy's lastDecidedIndexes, lastDecidedDecisions and lastDecidedUniqueIds
 
-}
-
-// print the consensus log to file
-
-func (pr *Proxy) printConsensusLog() {
-	//todo
 }
 
 // mark the entries in the replicated log, and if possible execute
