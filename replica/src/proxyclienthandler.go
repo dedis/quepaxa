@@ -7,7 +7,7 @@ import (
 
 // handler for new client batches
 
-func (pr *Proxy) ClientBatch(batch *proto.ClientBatch) {
+func (pr *Proxy) handleClientBatch(batch *proto.ClientBatch) {
 	// put the client batch to the store
 	pr.clientBatchStore.Add(batch)
 	// add the batch id to the toBeProposed array

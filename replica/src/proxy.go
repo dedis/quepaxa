@@ -17,12 +17,13 @@ import (
 
 type Slot struct {
 	// slot index is implied by the array position
-	proposedBatch []string // client batch ids proposed
-	decidedBatch  []string // decided client batch ids
-	uniqueId      string   // unique id of the set of proposed items
+	proposedBatch    []string // client batch ids proposed
+	decidedBatch     []string // decided client batch ids
+	proposedUniqueId string   // unique id of the set of proposed items
+	decidedUniqueId  string   // unique id of the set of decided items
 }
 
-/*Proxy saves the state of the proxy which handles client batches, creates replica batches and invokes proposer. Also the proxy executes the SMR and send responses back to client*/
+/*Proxy saves the state of the proxy and handles client batches, creates replica batches and sends to proposers. Also the proxy executes the SMR and send responses back to client*/
 
 type Proxy struct {
 	name        int64 // unique node identifier as defined in the configuration.yml
@@ -32,15 +33,12 @@ type Proxy struct {
 	clientAddrList        map[int64]string // map with the IP:port address of every client
 	incomingClientReaders map[int64]*bufio.Reader
 	outgoingClientWriters map[int64]*bufio.Writer
+	buffioWriterMutexes   map[int64]sync.Mutex // to provide mutual exclusion for writes to the same socket connection
 
-	serverAddress string // proxy address
+	serverAddress string       // proxy address
+	Listener      net.Listener // tcp listener for clients
 
-	buffioWriterMutexes map[int64]*sync.Mutex // to provide mutual exclusion for writes to the same socket connection
-
-	Listener net.Listener // tcp listener for clients
-
-	rpcTable map[uint8]*common.RPCPair
-
+	rpcTable            map[uint8]*common.RPCPair
 	incomingChan        chan common.RPCPair     // used to collect all the client messages
 	outgoingMessageChan chan common.OutgoingRPC // buffer for messages that are written to the wire
 
@@ -51,7 +49,7 @@ type Proxy struct {
 	clientBatchRpc  uint8 // 0
 	clientStatusRpc uint8 // 1
 
-	replicatedLog []Slot // the replicated log of the proposer
+	replicatedLog []Slot // the replicated log of the proxy
 
 	exec              bool      // if true the response is sent after execution, if not response is sent after total order
 	committedIndex    int64     // last index for which a request was committed and the result was sent to client
@@ -83,11 +81,13 @@ type Proxy struct {
 	lastDecidedIndexes   []int      //slots that were previously decided
 	lastDecidedDecisions [][]string // for each lastDecidedIndex, the string array of client batches decided
 	lastDecidedUniqueIds []string   // unique id of last decided ids
+
+	leaderMode int // leader change mode
 }
 
-// instantiate a new proxy
+// instantiate a new proxy from here 16.50
 
-func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, exec bool, logFilePath string, batchSize int64, batchTime int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server) *Proxy {
+func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, exec bool, logFilePath string, batchSize int64, batchTime int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server, leaderMode int) *Proxy {
 
 	pr := Proxy{
 		name:                  name,
@@ -96,8 +96,8 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		clientAddrList:        make(map[int64]string),
 		incomingClientReaders: make(map[int64]*bufio.Reader),
 		outgoingClientWriters: make(map[int64]*bufio.Writer),
+		buffioWriterMutexes:   make(map[int64]sync.Mutex),
 		serverAddress:         "",
-		buffioWriterMutexes:   make(map[int64]*sync.Mutex),
 		Listener:              nil,
 		rpcTable:              make(map[uint8]*common.RPCPair),
 		incomingChan:          make(chan common.RPCPair),
@@ -111,6 +111,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		exec:                  exec,
 		committedIndex:        -1,
 		lastProposedIndex:     -1,
+		lastTimeCommitted:     time.Now(),
 		logFilePath:           logFilePath,
 		batchSize:             int(batchSize),
 		batchTime:             int(batchTime),
@@ -126,6 +127,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		lastDecidedIndexes:    make([]int, 0),
 		lastDecidedDecisions:  make([][]string, 0),
 		lastDecidedUniqueIds:  make([]string, 0),
+		leaderMode:            leaderMode,
 	}
 
 	// initialize the clientAddrList
@@ -138,7 +140,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 	// initialize the socketMutexs
 	for i := 0; i < len(cfg.Clients); i++ {
 		intName, _ := strconv.Atoi(cfg.Clients[i].Name)
-		pr.buffioWriterMutexes[int64(intName)] = &sync.Mutex{}
+		pr.buffioWriterMutexes[int64(intName)] = sync.Mutex{}
 	}
 
 	// serverAddress
@@ -177,7 +179,7 @@ func (pr *Proxy) Run() {
 				case pr.clientBatchRpc:
 					clientBatch := clientMessage.Obj.(*proto.ClientBatch)
 					pr.debug("Client message  "+fmt.Sprintf("%#v", clientBatch), 0)
-					pr.ClientBatch(clientBatch)
+					pr.handleClientBatch(clientBatch)
 					break
 
 				case pr.clientStatusRpc:
@@ -192,7 +194,7 @@ func (pr *Proxy) Run() {
 				pr.debug("Received proposer message", 0)
 				pr.handleProposeResponse(proposerMessage)
 				break
-				
+
 			case recorderMessage := <-pr.recorderToProxyChan:
 				pr.debug("Received recorder message", 0)
 				pr.handleRecorderResponse(recorderMessage)
@@ -215,11 +217,25 @@ func (pr *Proxy) debug(message string, level int) {
 // return the pre-agreed, non changing waiting time for the instance by the proposer
 
 func (pr *Proxy) getLeaderWait(instance int) int {
-	// todo
 
-	if pr.name == 0 {
+	if pr.leaderMode == 0 {
+		// fixed order
+		//todo implement non-leader order
+		if pr.name == 0 {
+			return 0
+		} else {
+			return 10
+		}
+	} else if pr.leaderMode == 1 {
+		// todo
+		// static MAB
 		return 0
-	} else {
-		return 10
+	} else if pr.leaderMode == 2 {
+		// todo
+		// dynamic MAB
+		return 0
 	}
+	
+	return 0
+
 }

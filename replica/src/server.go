@@ -57,7 +57,7 @@ func (s *Server) NetworkInit() {
 // run the main proxy thread which handles all the channels
 
 func (s *Server) Run() {
-	go s.ProxyInstance.Run()
+	s.ProxyInstance.Run()
 }
 
 /*
@@ -95,7 +95,7 @@ func (s *Server) startProposers() {
 	create a new server instance, inside which there are proxy instance, proposer instances and recorder instance. initialize all fields
 */
 
-func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmark int64, debugOn bool, debugLevel int, leaderMode int) *Server {
+func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmark int64, debugOn bool, debugLevel int, leaderMode int, exec bool) *Server {
 
 	sr := Server{
 		ProxyInstance:         nil, //todo
