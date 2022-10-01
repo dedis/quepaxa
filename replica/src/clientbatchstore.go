@@ -21,7 +21,7 @@ type ClientBatchStore struct {
 	Add a new client batch to the store if it is not already there
 */
 
-func (cb *ClientBatchStore) Add(batch *proto.ClientBatch) {
+func (cb *ClientBatchStore) Add(batch proto.ClientBatch) {
 	_, ok := cb.clientBatches.Load(batch.Id)
 	if !ok {
 		cb.clientBatches.Store(batch.Id, batch)
@@ -32,12 +32,12 @@ func (cb *ClientBatchStore) Add(batch *proto.ClientBatch) {
 	return an existing client batch
 */
 
-func (cb *ClientBatchStore) Get(id string) (*proto.ClientBatch, bool) {
+func (cb *ClientBatchStore) Get(id string) (proto.ClientBatch, bool) {
 	i, ok := cb.clientBatches.Load(id)
 	if ok {
-		return i.(*proto.ClientBatch), ok
+		return i.(proto.ClientBatch), ok
 	} else {
-		return nil, ok
+		return proto.ClientBatch{}, ok
 	}
 }
 
@@ -53,11 +53,11 @@ func (cb *ClientBatchStore) Remove(id string) {
 	Convert a sync.map to regular map
 */
 
-func (cb *ClientBatchStore) convertToRegularMap(batches sync.Map) map[string]*proto.ClientBatch {
-	var m map[string]*proto.ClientBatch
-	m = make(map[string]*proto.ClientBatch)
+func (cb *ClientBatchStore) convertToRegularMap(batches sync.Map) map[string]proto.ClientBatch {
+	var m map[string]proto.ClientBatch
+	m = make(map[string]proto.ClientBatch)
 	batches.Range(func(key, value interface{}) bool {
-		m[fmt.Sprint(key)] = value.(*proto.ClientBatch)
+		m[fmt.Sprint(key)] = value.(proto.ClientBatch)
 		return true
 	})
 	return m
