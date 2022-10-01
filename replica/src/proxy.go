@@ -34,7 +34,7 @@ type Proxy struct {
 	clientAddrList        map[int64]string // map with the IP:port address of every client
 	incomingClientReaders map[int64]*bufio.Reader
 	outgoingClientWriters map[int64]*bufio.Writer
-	buffioWriterMutexes   map[int64]sync.Mutex // to provide mutual exclusion for writes to the same socket connection
+	buffioWriterMutexes   map[int64]*sync.Mutex // to provide mutual exclusion for writes to the same socket connection
 
 	serverAddress string       // proxy address
 	Listener      net.Listener // tcp listener for clients
@@ -97,7 +97,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		clientAddrList:        make(map[int64]string),
 		incomingClientReaders: make(map[int64]*bufio.Reader),
 		outgoingClientWriters: make(map[int64]*bufio.Writer),
-		buffioWriterMutexes:   make(map[int64]sync.Mutex),
+		buffioWriterMutexes:   make(map[int64]*sync.Mutex),
 		serverAddress:         "",
 		Listener:              nil,
 		rpcTable:              make(map[uint8]*common.RPCPair),
@@ -141,7 +141,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 	// initialize the socketMutexs
 	for i := 0; i < len(cfg.Clients); i++ {
 		intName, _ := strconv.Atoi(cfg.Clients[i].Name)
-		pr.buffioWriterMutexes[int64(intName)] = sync.Mutex{}
+		pr.buffioWriterMutexes[int64(intName)] = &sync.Mutex{}
 	}
 
 	// serverAddress

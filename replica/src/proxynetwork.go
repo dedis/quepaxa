@@ -11,7 +11,7 @@ import (
 	"strconv"
 )
 
-// start listening to the proxy tcp connection, and setup all outgoing setting (without making connections)
+// start listening to the proxy tcp connection, and setup all outgoing wires
 
 func (pr *Proxy) NetworkInit() {
 	go pr.WaitForConnections()
@@ -19,7 +19,7 @@ func (pr *Proxy) NetworkInit() {
 }
 
 /*
-	Fill the RPC table by assigning a unique id to each message type
+	fill the RPC table by assigning a unique id to each message type
 */
 
 func (pr *Proxy) RegisterRPC(msgObj proto.Serializable, code uint8) {
@@ -36,9 +36,10 @@ func (pr *Proxy) WaitForConnections() {
 	var b [4]byte
 	bs := b[:4]
 	pr.debug("Listening to messages on "+pr.serverAddress, 0)
+	// listen to proxy port
 	pr.Listener, _ = net.Listen("tcp", pr.serverAddress)
 
-	for true {
+	for i := 0; i < pr.numClients; i++ {
 		conn, err := pr.Listener.Accept()
 		if err != nil {
 			fmt.Println("TCP accept error:", err)
@@ -89,7 +90,7 @@ func (pr *Proxy) connectionListener(reader *bufio.Reader, id int32) {
 }
 
 /*
-	Make a TCP connection to the client id
+	make a TCP connection to the client id
 */
 
 func (pr *Proxy) connectToClient(id int32) {
@@ -105,7 +106,7 @@ func (pr *Proxy) connectToClient(id int32) {
 				pr.debug("Error connecting to client "+strconv.Itoa(int(id)), 0)
 				panic(err)
 			}
-			pr.debug("Started outgoing connection to client"+strconv.Itoa(int(id)), 0)
+			pr.debug("Started outgoing tcp connection to client"+strconv.Itoa(int(id)), 0)
 			break
 		}
 	}
@@ -113,17 +114,17 @@ func (pr *Proxy) connectToClient(id int32) {
 }
 
 /*
-	Write a message to the wire, first the message type is written and then the actual message
+	write a message to the wire, first the message type is written and then the actual message
 */
 
-func (pr *Proxy) internalSendMessage(peer int64, rpcPair *common.RPCPair) {
+func (pr *Proxy) internalSendMessage(peer int64, rpcPair common.RPCPair) {
 	code := rpcPair.Code
 	msg := rpcPair.Obj
 
 	var w *bufio.Writer
 
 	w = pr.outgoingClientWriters[peer]
-	
+
 	pr.buffioWriterMutexes[peer].Lock()
 
 	err := w.WriteByte(code)
@@ -145,7 +146,7 @@ func (pr *Proxy) internalSendMessage(peer int64, rpcPair *common.RPCPair) {
 }
 
 /*
-	A set of threads that manages outgoing messages: write the message to the OS buffers
+	a set of threads that manages outgoing messages: write the message to the OS buffers
 */
 
 func (pr *Proxy) StartOutgoingLinks() {
@@ -153,7 +154,7 @@ func (pr *Proxy) StartOutgoingLinks() {
 		go func() {
 			for true {
 				outgoingMessage := <-pr.outgoingMessageChan
-				pr.internalSendMessage(outgoingMessage.Peer, outgoingMessage.RpcPair)
+				pr.internalSendMessage(outgoingMessage.Peer, *outgoingMessage.RpcPair)
 			}
 		}()
 	}
