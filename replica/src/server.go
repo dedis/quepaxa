@@ -1,8 +1,13 @@
 package raxos
 
 import (
+	"fmt"
+	"google.golang.org/grpc"
+	"os"
 	"raxos/configuration"
 	"raxos/proto"
+	"raxos/proto/consensus"
+	"strconv"
 	"time"
 )
 
@@ -18,6 +23,10 @@ type Server struct {
 	recorderToServerChan chan Decision
 
 	lastSeenTimeProposers []time.Time // last seen times of each proposer
+
+	peers        []peer                       // set of out going gRPC connections
+	cfg          configuration.InstanceConfig // configuration of clients and replicas
+	numProposers int                          // number of proposers == pipeline length
 }
 
 // ProposeRequest is the message type sent from proxy to proposer
@@ -47,6 +56,24 @@ type Decision struct {
 	decisions [][]string // for each index the set of decided client batches
 }
 
+// gRPC clients
+
+type peer struct {
+	name   int64
+	client *consensus.ConsensusClient
+}
+
+// AddPeer adds a new peer to the peer list
+func (sr *Server) AddPeer(name int64, client *consensus.ConsensusClient) error {
+
+	// add peer to the peer list
+	sr.peers = append(sr.peers, peer{
+		name:   name,
+		client: client,
+	})
+	return nil
+}
+
 // listen to proxy tcp connections, listen to recorder gRPC connections
 
 func (s *Server) NetworkInit() {
@@ -68,27 +95,37 @@ func (s *Server) StartProposers() {
 	s.setupgRPC()
 	// create M number of the Proposers. each have a pointer to the gRPC connections
 	s.ProposerInstances = s.createProposers()
-	// run each proposer in a separate thread
-	s.startProposers()
 }
 
 // setup gRPC clients to all recorders and return the connection pointers
 func (s *Server) setupgRPC() {
-	// todo
+	// add peers
+	for _, peer := range s.cfg.Peers {
+		strAddress := peer.IP + ":" + peer.RECORDERPORT
+		conn, err := grpc.Dial(strAddress, grpc.WithInsecure())
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "dial: %v", err)
+			os.Exit(1)
+		}
+		intName, _ := strconv.Atoi(peer.Name)
+		newClient := consensus.NewConsensusClient(conn)
+		err = s.AddPeer(int64(intName), &newClient)
+		if err != nil {
+			conn.Close()
+			fmt.Fprintf(os.Stderr, "add peer `%v`: %v", peer.Name, err)
+			os.Exit(1)
+		}
+	}
 }
 
 // create M number of proposers
 
 func (s *Server) createProposers() []*Proposer {
-	// todo
+	for i := 0; i < s.numProposers; i++ {
+		proposer := NewProposer(s.peers)
+		proposer.runProposer()
+	}
 	return nil
-}
-
-// start M number of proposers
-
-func (s *Server) startProposers() {
-	// todo
-	// start proposers in separate threads
 }
 
 /*
@@ -98,6 +135,7 @@ func (s *Server) startProposers() {
 func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmark int64, debugOn bool, debugLevel int, leaderMode int, exec bool) *Server {
 
 	sr := Server{
+		cfg:                   *cfg,
 		ProxyInstance:         nil, //todo
 		ProposerInstances:     nil, // todo
 		RecorderInstance:      nil, //todo
@@ -105,6 +143,8 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		proposerToProxyChan:   make(chan ProposeResponse, 10000),
 		recorderToServerChan:  make(chan Decision, 10000),
 		lastSeenTimeProposers: make([]time.Time, len(cfg.Peers)),
+		peers:                 make([]peer, 0),
+		numProposers:          int(pipelineLength),
 	}
 
 	return &sr
