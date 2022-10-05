@@ -22,6 +22,7 @@ type Slot struct {
 	proposedUniqueId string   // unique id of the set of proposed items
 	decidedUniqueId  string   // unique id of the set of decided items
 	decided          bool     // true if decided
+	committed        bool     // true if committed
 }
 
 /*Proxy saves the state of the proxy and handles client batches, creates replica batches and sends to proposers. Also the proxy executes the SMR and send responses back to client*/
@@ -53,7 +54,7 @@ type Proxy struct {
 	replicatedLog []Slot // the replicated log of the proxy
 
 	exec              bool      // if true the response is sent after execution, if not response is sent after total order
-	committedIndex    int64     // last index for which a request was committed and the result was sent to client
+	committedIndex    int64     // last index for which a request was committed and the result was sent to client, makes sense only if exec is true
 	lastProposedIndex int64     // last index proposed
 	lastTimeCommitted time.Time // last committed time
 
@@ -86,9 +87,9 @@ type Proxy struct {
 	leaderMode int // leader change mode
 }
 
-// instantiate a new proxy from here 16.50
+// instantiate a new proxy
 
-func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, exec bool, logFilePath string, batchSize int64, batchTime int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server, leaderMode int) *Proxy {
+func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, exec bool, logFilePath string, batchSize int64, batchTime int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server, leaderMode int, store *ClientBatchStore) *Proxy {
 
 	pr := Proxy{
 		name:                  name,
@@ -117,7 +118,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		batchSize:             int(batchSize),
 		batchTime:             int(batchTime),
 		pipelineLength:        pipelineLength,
-		clientBatchStore:      &ClientBatchStore{},
+		clientBatchStore:      store,
 		leaderTimeout:         leaderTimeout,
 		debugOn:               debugOn,
 		debugLevel:            debugLevel,
@@ -138,7 +139,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		pr.clientAddrList[int64(intName)] = cfg.Clients[i].IP + ":" + cfg.Clients[i].CLIENTPORT
 	}
 
-	// initialize the socketMutexs
+	// initialize the socketMutexes
 	for i := 0; i < len(cfg.Clients); i++ {
 		intName, _ := strconv.Atoi(cfg.Clients[i].Name)
 		pr.buffioWriterMutexes[int64(intName)] = &sync.Mutex{}
@@ -172,8 +173,7 @@ func (pr *Proxy) Run() {
 
 			select {
 			case clientMessage := <-pr.incomingChan:
-
-				//in.lock.Lock()
+				
 				pr.debug("Received client  message", 0)
 				code := clientMessage.Code
 				switch code {

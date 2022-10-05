@@ -18,8 +18,8 @@ type Server struct {
 	ProposerInstances []*Proposer
 	RecorderInstance  *Recorder
 
-	proxyToProposerChan  chan ProposeRequest
-	proposerToProxyChan  chan ProposeResponse
+	proxyToProposerChan chan ProposeRequest
+	proposerToProxyChan chan ProposeResponse
 	recorderToProxyChan chan Decision
 
 	lastSeenTimeProposers []time.Time // last seen times of each proposer
@@ -27,6 +27,7 @@ type Server struct {
 	peers        []peer                       // set of out going gRPC connections
 	cfg          configuration.InstanceConfig // configuration of clients and replicas
 	numProposers int                          // number of proposers == pipeline length
+	store        *ClientBatchStore            // shared client batch store
 }
 
 // ProposeRequest is the message type sent from proxy to proposer
@@ -136,17 +137,20 @@ func (s *Server) createProposers() []*Proposer {
 func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmark int64, debugOn bool, debugLevel int, leaderMode int, exec bool) *Server {
 
 	sr := Server{
-		ProxyInstance:         nil, //todo add initialization
+		ProxyInstance:         nil,
 		ProposerInstances:     nil, // this is initialized in the createProposers method, so no need to create them
 		RecorderInstance:      nil, //todo add initialization
 		proxyToProposerChan:   make(chan ProposeRequest, pipelineLength),
 		proposerToProxyChan:   make(chan ProposeResponse, 10000),
-		recorderToProxyChan:  make(chan Decision, 10000),
+		recorderToProxyChan:   make(chan Decision, 10000),
 		lastSeenTimeProposers: make([]time.Time, len(cfg.Peers)),
 		peers:                 make([]peer, 0),
 		cfg:                   *cfg,
 		numProposers:          int(pipelineLength),
+		store:                 &ClientBatchStore{},
 	}
+
+	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, exec, logFilePath, batchSize, batchTime, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store)
 
 	return &sr
 }
