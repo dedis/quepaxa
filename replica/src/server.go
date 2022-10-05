@@ -20,7 +20,7 @@ type Server struct {
 
 	proxyToProposerChan  chan ProposeRequest
 	proposerToProxyChan  chan ProposeResponse
-	recorderToServerChan chan Decision
+	recorderToProxyChan chan Decision
 
 	lastSeenTimeProposers []time.Time // last seen times of each proposer
 
@@ -47,7 +47,7 @@ type ProposeRequest struct {
 type ProposeResponse struct {
 	index     int      // log instance
 	decisions []string // ids of the client batches
-	uniqueId  string
+	uniqueId  string   // unique proposal id
 }
 
 type Decision struct {
@@ -122,8 +122,9 @@ func (s *Server) setupgRPC() {
 
 func (s *Server) createProposers() []*Proposer {
 	for i := 0; i < s.numProposers; i++ {
-		proposer := NewProposer(s.peers)
-		proposer.runProposer()
+		newProposer := NewProposer(s.peers) //todo add missing fields
+		s.ProposerInstances = append(s.ProposerInstances, newProposer)
+		s.ProposerInstances[len(s.ProposerInstances)-1].runProposer()
 	}
 	return nil
 }
@@ -135,15 +136,15 @@ func (s *Server) createProposers() []*Proposer {
 func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmark int64, debugOn bool, debugLevel int, leaderMode int, exec bool) *Server {
 
 	sr := Server{
-		cfg:                   *cfg,
-		ProxyInstance:         nil, //todo
-		ProposerInstances:     nil, // todo
-		RecorderInstance:      nil, //todo
-		proxyToProposerChan:   make(chan ProposeRequest, 10000),
+		ProxyInstance:         nil, //todo add initialization
+		ProposerInstances:     nil, // this is initialized in the createProposers method, so no need to create them
+		RecorderInstance:      nil, //todo add initialization
+		proxyToProposerChan:   make(chan ProposeRequest, pipelineLength),
 		proposerToProxyChan:   make(chan ProposeResponse, 10000),
-		recorderToServerChan:  make(chan Decision, 10000),
+		recorderToProxyChan:  make(chan Decision, 10000),
 		lastSeenTimeProposers: make([]time.Time, len(cfg.Peers)),
 		peers:                 make([]peer, 0),
+		cfg:                   *cfg,
 		numProposers:          int(pipelineLength),
 	}
 

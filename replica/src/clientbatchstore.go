@@ -68,7 +68,7 @@ func (cb *ClientBatchStore) convertToRegularMap(batches sync.Map) map[string]pro
 */
 
 func (cb *ClientBatchStore) printStore(logFilePath string, nodeName int64) {
-	f, err := os.Create(logFilePath + strconv.Itoa(int(nodeName)) + "mempool.txt")
+	f, err := os.Create(logFilePath + strconv.Itoa(int(nodeName)) + "-mempool.txt")
 	if err != nil {
 		log.Fatal(err)
 	}

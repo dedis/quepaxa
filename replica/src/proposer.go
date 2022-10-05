@@ -1,6 +1,8 @@
 package raxos
 
 type Proposer struct {
+	name int64
+	threadId int64
 	peers []peer // gRPC connection list
 	// chan from proxy
 	// chan to proxy

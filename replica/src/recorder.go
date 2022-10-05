@@ -9,10 +9,11 @@ import (
 )
 
 type Recorder struct {
-	address    string       // address to listen for gRPC connections
-	listener   net.Listener // socket for gRPC connections
-	server     *grpc.Server // gRPC server
-	connection *consensus.GRPCConnection
+	address       string       // address to listen for gRPC connections
+	listener      net.Listener // socket for gRPC connections
+	server        *grpc.Server // gRPC server
+	connection    *consensus.GRPCConnection
+	clientBatches *ClientBatchStore
 	// pointer to the time array
 }
 
@@ -21,7 +22,7 @@ type Recorder struct {
 func NewRecorder(address string) *Recorder {
 
 	re := Recorder{
-		address:  address,
+		address: address,
 	}
 
 	return &re

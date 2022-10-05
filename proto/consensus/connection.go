@@ -21,5 +21,5 @@ func (gc *GRPCConnection) ESP(ctx context.Context, req *ProposerMessage) (*Recor
 // for gRPC forward compatibility
 
 func (gc *GRPCConnection) mustEmbedUnimplementedConsensusServer() {
-
+	// no need to implement
 }
