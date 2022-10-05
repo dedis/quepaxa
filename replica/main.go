@@ -14,7 +14,6 @@ func main() {
 	name := flag.Int64("name", 1, "name of the replica")
 	logFilePath := flag.String("logFilePath", "logs/", "log file path")
 	batchSize := flag.Int64("batchSize", 50, "replica batch size")
-	batchTime := flag.Int64("batchTime", 50, "maximum time to wait for collecting a batch of requests in micro seconds")
 	leaderTimeout := flag.Int64("leaderTimeout", 50, "leader timeout in milli seconds")
 	pipelineLength := flag.Int64("pipelineLength", 50, "pipeline length maximum number of outstanding proposals")
 	benchmark := flag.Int64("benchmark", 0, "Benchmark: 0 for echo service, 1 for KV store and 2 for Redis ")
@@ -30,7 +29,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	serverInstance := raxos.New(cfg, *name, *logFilePath, *batchSize, *batchTime, *leaderTimeout, *pipelineLength, *benchmark, *debugOn, *debugLevel, *leaderMode, *exec) // create a new server instance
+	serverInstance := raxos.New(cfg, *name, *logFilePath, *batchSize, *leaderTimeout, *pipelineLength, *benchmark, *debugOn, *debugLevel, *leaderMode, *exec) // create a new server instance
 
 	serverInstance.NetworkInit()
 	serverInstance.Run()

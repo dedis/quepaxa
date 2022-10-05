@@ -54,15 +54,13 @@ type Proxy struct {
 	replicatedLog []Slot // the replicated log of the proxy
 
 	exec              bool      // if true the response is sent after execution, if not response is sent after total order
-	committedIndex    int64     // last index for which a request was committed and the result was sent to client, makes sense only if exec is true
+	committedIndex    int64     // last index for which a request was committed and the result was sent to client
 	lastProposedIndex int64     // last index proposed
 	lastTimeCommitted time.Time // last committed time
 
 	logFilePath string // the path to write the replicated log, used for sanity checks
 
-	batchSize int // maximum replica side batch size
-	batchTime int // maximum replica side batch time in micro seconds
-
+	batchSize      int   // maximum replica side batch size
 	pipelineLength int64 // maximum number of inflight consensus instances
 
 	clientBatchStore *ClientBatchStore // message store that stores the client batches
@@ -89,7 +87,7 @@ type Proxy struct {
 
 // instantiate a new proxy
 
-func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, exec bool, logFilePath string, batchSize int64, batchTime int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server, leaderMode int, store *ClientBatchStore) *Proxy {
+func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, exec bool, logFilePath string, batchSize int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server, leaderMode int, store *ClientBatchStore) *Proxy {
 
 	pr := Proxy{
 		name:                  name,
@@ -116,7 +114,6 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		lastTimeCommitted:     time.Now(),
 		logFilePath:           logFilePath,
 		batchSize:             int(batchSize),
-		batchTime:             int(batchTime),
 		pipelineLength:        pipelineLength,
 		clientBatchStore:      store,
 		leaderTimeout:         leaderTimeout,
@@ -125,7 +122,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		serverStarted:         false,
 		server:                server,
 		toBeProposed:          make([]string, 0),
-		proposalId:            int(name * 1000000000),
+		proposalId:            0,
 		lastDecidedIndexes:    make([]int, 0),
 		lastDecidedDecisions:  make([][]string, 0),
 		lastDecidedUniqueIds:  make([]string, 0),
@@ -173,7 +170,7 @@ func (pr *Proxy) Run() {
 
 			select {
 			case clientMessage := <-pr.incomingChan:
-				
+
 				pr.debug("Received client  message", 0)
 				code := clientMessage.Code
 				switch code {

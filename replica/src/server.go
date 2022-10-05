@@ -134,7 +134,7 @@ func (s *Server) createProposers() []*Proposer {
 	create a new server instance, inside which there are proxy instance, proposer instances and recorder instance. initialize all fields
 */
 
-func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, batchTime int64, leaderTimeout int64, pipelineLength int64, benchmark int64, debugOn bool, debugLevel int, leaderMode int, exec bool) *Server {
+func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, leaderTimeout int64, pipelineLength int64, benchmark int64, debugOn bool, debugLevel int, leaderMode int, exec bool) *Server {
 
 	sr := Server{
 		ProxyInstance:         nil,
@@ -150,7 +150,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		store:                 &ClientBatchStore{},
 	}
 
-	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, exec, logFilePath, batchSize, batchTime, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store)
+	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, exec, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store)
 
 	return &sr
 }
