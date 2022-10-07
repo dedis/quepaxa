@@ -150,7 +150,7 @@ func (pr *Proxy) internalSendMessage(peer int64, rpcPair common.RPCPair) {
 */
 
 func (pr *Proxy) StartOutgoingLinks() {
-	for i := 0; i < 200; i++ {
+	for i := 0; i < 200; i++ { // 200 is the number of threads
 		go func() {
 			for true {
 				outgoingMessage := <-pr.outgoingMessageChan
