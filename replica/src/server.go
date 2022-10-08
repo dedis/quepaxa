@@ -139,7 +139,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 	sr := Server{
 		ProxyInstance:         nil,
 		ProposerInstances:     nil, // this is initialized in the createProposers method, so no need to create them
-		RecorderInstance:      nil, //todo add initialization
+		RecorderInstance:      nil,
 		proxyToProposerChan:   make(chan ProposeRequest, pipelineLength),
 		proposerToProxyChan:   make(chan ProposeResponse, 10000),
 		recorderToProxyChan:   make(chan Decision, 10000),
@@ -151,6 +151,6 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 	}
 
 	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, exec, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store)
-
+	sr.RecorderInstance = NewRecorder(*cfg, sr.store, sr.lastSeenTimeProposers, sr.recorderToProxyChan, name)
 	return &sr
 }

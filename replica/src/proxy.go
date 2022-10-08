@@ -147,6 +147,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		intName, _ := strconv.Atoi(cfg.Peers[i].Name)
 		if pr.name == int64(intName) {
 			pr.serverAddress = "0.0.0.0:" + cfg.Peers[i].PROXYPORT
+			break
 		}
 	}
 

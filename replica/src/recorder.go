@@ -5,24 +5,54 @@ import (
 	"google.golang.org/grpc"
 	"net"
 	"os"
+	"raxos/configuration"
 	"raxos/proto/consensus"
+	"strconv"
+	"sync"
+	"time"
 )
 
 type Recorder struct {
-	address       string       // address to listen for gRPC connections
-	listener      net.Listener // socket for gRPC connections
-	server        *grpc.Server // gRPC server
-	connection    *consensus.GRPCConnection
-	clientBatches *ClientBatchStore
-	// pointer to the time array
+	address               string       // address to listen for gRPC connections
+	listener              net.Listener // socket for gRPC connections
+	server                *grpc.Server // gRPC server
+	connection            *consensus.GRPCConnection
+	clientBatches         *ClientBatchStore
+	lastSeenTimeProposers []*time.Time // last seen times of each proposer
+	recorderToProxyChan   chan Decision
+	name                  int64
+	slots                 []RecorderSlot // recorder side replicated log
+	cfg                   configuration.InstanceConfig
+}
+
+type RecorderSlot struct {
+	mutex *sync.Mutex
+	//todo
 }
 
 // instantiate a new Recorder
 
-func NewRecorder(address string) *Recorder {
+func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchStore, lastSeenTimeProposers []*time.Time, recorderToProxyChan chan Decision, name int64) *Recorder {
 
 	re := Recorder{
-		address: address,
+		address:               "",
+		clientBatches:         clientBatches,
+		lastSeenTimeProposers: lastSeenTimeProposers,
+		recorderToProxyChan:   recorderToProxyChan,
+		name:                  name,
+		slots:                 make([]RecorderSlot, 0),
+		cfg:                   cfg,
+	}
+
+	// initialize the address
+
+	// serverAddress
+	for i := 0; i < len(cfg.Peers); i++ {
+		intName, _ := strconv.Atoi(cfg.Peers[i].Name)
+		if re.name == int64(intName) {
+			re.address = "0.0.0.0:" + cfg.Peers[i].RECORDERPORT
+			break
+		}
 	}
 
 	return &re
@@ -37,6 +67,7 @@ func (r *Recorder) NetworkInit() {
 
 	// start listener
 	listener, err := net.Listen("tcp", r.address)
+	r.listener = listener
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "listen: %v", err)
 		os.Exit(1)
@@ -62,7 +93,7 @@ func (re *Recorder) HandleESP(req *consensus.ProposerMessage) *consensus.Recorde
 
 	// if not send a negative response
 
-	// Mark the time of the propose message for the proposer
+	// Mark the time of the proposal message for the proposer
 
 	return &response
 }
