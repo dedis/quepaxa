@@ -1,30 +1,38 @@
 package raxos
 
+import "time"
+
 type Proposer struct {
 	name int64
 	threadId int64
 	peers []peer // gRPC connection list
-	// chan from proxy
-	// chan to proxy
-	// pointer to the time array
+	proxyToProposerChan chan ProposeRequest
+	proposerToProxyChan chan ProposeResponse
+	lastSeenTimes []*time.Time 
 }
 
 // instantiate a new Proposer
 
-func NewProposer(peers []peer) *Proposer {
+func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, lastSeenTimes []*time.Time ) *Proposer {
 
 	pr := Proposer{
-		peers: peers,
+		name:                name,
+		threadId:            threadId,
+		peers:               peers,
+		proxyToProposerChan: proxyToProposerChan,
+		proposerToProxyChan: proposerToProxyChan,
+		lastSeenTimes:       lastSeenTimes,
 	}
 
 	return &pr
 }
 
-// infinte loop listening to the server channel
+// infinite loop listening to the server channel
 
 func (prop *Proposer) runProposer() {
 	go func() {
 		for true {
+			//todo
 			// get a new request
 			// wait for the time to pass
 			// propose for the fast path

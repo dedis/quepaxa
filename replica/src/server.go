@@ -22,7 +22,7 @@ type Server struct {
 	proposerToProxyChan chan ProposeResponse
 	recorderToProxyChan chan Decision
 
-	lastSeenTimeProposers []time.Time // last seen times of each proposer
+	lastSeenTimeProposers []*time.Time // last seen times of each proposer
 
 	peers        []peer                       // set of out going gRPC connections
 	cfg          configuration.InstanceConfig // configuration of clients and replicas
@@ -123,7 +123,7 @@ func (s *Server) setupgRPC() {
 
 func (s *Server) createProposers() []*Proposer {
 	for i := 0; i < s.numProposers; i++ {
-		newProposer := NewProposer(s.peers) //todo add missing fields
+		newProposer := NewProposer(s.ProxyInstance.name, int64(i), s.peers, s.proxyToProposerChan, s.proposerToProxyChan, s.lastSeenTimeProposers)
 		s.ProposerInstances = append(s.ProposerInstances, newProposer)
 		s.ProposerInstances[len(s.ProposerInstances)-1].runProposer()
 	}
@@ -143,7 +143,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		proxyToProposerChan:   make(chan ProposeRequest, pipelineLength),
 		proposerToProxyChan:   make(chan ProposeResponse, 10000),
 		recorderToProxyChan:   make(chan Decision, 10000),
-		lastSeenTimeProposers: make([]time.Time, len(cfg.Peers)),
+		lastSeenTimeProposers: make([]*time.Time, len(cfg.Peers)),
 		peers:                 make([]peer, 0),
 		cfg:                   *cfg,
 		numProposers:          int(pipelineLength),
