@@ -5,6 +5,8 @@ option go_package = "proto/consensus";
   ProposerMessage is the message type that is used for proposer-to-recorder
 */
 
+
+
 message ProposerMessage {
 
   message ClientBatch {
@@ -22,7 +24,6 @@ message ProposerMessage {
     int64 thread_id = 3;
     repeated string ids = 4; // client batch ids in the fast path
     repeated ClientBatch client_batches = 5; // client batches in the slow path
-    string uniqueId = 6; // unique id of the proposal 
   }
 
   int64 sender = 1; // sender id
@@ -32,10 +33,8 @@ message ProposerMessage {
   
   message DecidedSlot{
     int64 index = 1; // replicated slot
-    repeated string ids = 2; // in the fast path
-    repeated ClientBatch client_batches = 3; // slow path
-    int64 proposer = 4; // proposer who decided this index
-    string uniqueId = 5; // unique id of the proposal
+    repeated string ids = 2; // in the fast path client request ids
+    int64 proposer = 3; // proposer who decided this index
   }
   
   repeated DecidedSlot decidedSlots = 5;
@@ -48,8 +47,7 @@ message RecorderResponse {
     int64 priority = 1;
     int64 proposer_id = 2;
     int64 thread_id = 3;
-    repeated string ids = 4;
-    string uniqueId = 5;
+    repeated string ids = 4; // client batch ids
   }
   
   Proposal F = 2; // first proposal
@@ -62,4 +60,21 @@ message RecorderResponse {
 
 service Consensus {
   rpc ESP (ProposerMessage) returns (RecorderResponse);
+}
+
+message DecideRequest {
+  repeated string ids = 1; // client batch ids
+}
+
+message DecideResponse{
+  message ClientBatch {
+    int64 sender = 1;
+    message SingleMessage {
+      string message = 1;
+    }
+    repeated SingleMessage messages = 2;
+    string id = 3; // unique identifier for a batch
+  }
+  repeated ClientBatch client_batches = 1; // client batches
+  
 }
