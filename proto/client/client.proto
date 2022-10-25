@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "proto/";
+option go_package = "proto/client";
 
 // ClientBatch defines the message from/to client to/from all replicas
 

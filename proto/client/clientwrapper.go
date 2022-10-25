@@ -1,9 +1,10 @@
-package proto
+package client
 
 import (
 	"encoding/binary"
 	"google.golang.org/protobuf/proto"
 	"io"
+	proto2 "raxos/proto"
 )
 
 // ClientBatch
@@ -51,7 +52,7 @@ func (t *ClientBatch) Unmarshal(wire io.Reader) error {
 	}
 	return nil
 }
-func (t *ClientBatch) New() Serializable {
+func (t *ClientBatch) New() proto2.Serializable {
 	return new(ClientBatch)
 }
 
@@ -102,6 +103,7 @@ func (t *ClientStatus) Unmarshal(wire io.Reader) error {
 	}
 	return nil
 }
-func (t *ClientStatus) New() Serializable {
+
+func (t *ClientStatus) New() proto2.Serializable {
 	return new(ClientStatus)
 }
