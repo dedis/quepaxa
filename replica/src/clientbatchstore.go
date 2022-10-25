@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"raxos/proto"
+	"raxos/proto/client"
 	"strconv"
 	"sync"
 )
@@ -18,10 +18,10 @@ type ClientBatchStore struct {
 }
 
 /*
-	Add a new client batch to the store if it is not already there
+	add a new client batch to the store if it is not already there
 */
 
-func (cb *ClientBatchStore) Add(batch proto.ClientBatch) {
+func (cb *ClientBatchStore) Add(batch client.ClientBatch) {
 	_, ok := cb.clientBatches.Load(batch.Id)
 	if !ok {
 		cb.clientBatches.Store(batch.Id, batch)
@@ -32,17 +32,17 @@ func (cb *ClientBatchStore) Add(batch proto.ClientBatch) {
 	return an existing client batch
 */
 
-func (cb *ClientBatchStore) Get(id string) (proto.ClientBatch, bool) {
+func (cb *ClientBatchStore) Get(id string) (client.ClientBatch, bool) {
 	i, ok := cb.clientBatches.Load(id)
 	if ok {
-		return i.(proto.ClientBatch), ok
+		return i.(client.ClientBatch), ok
 	} else {
-		return proto.ClientBatch{}, ok
+		return client.ClientBatch{}, ok
 	}
 }
 
 /*
-	Remove an element from the map
+	remove an element from the map
 */
 
 func (cb *ClientBatchStore) Remove(id string) {
@@ -50,21 +50,21 @@ func (cb *ClientBatchStore) Remove(id string) {
 }
 
 /*
-	Convert a sync.map to regular map
+	convert a sync.map to regular map
 */
 
-func (cb *ClientBatchStore) convertToRegularMap(batches sync.Map) map[string]proto.ClientBatch {
-	var m map[string]proto.ClientBatch
-	m = make(map[string]proto.ClientBatch)
-	batches.Range(func(key, value interface{}) bool {
-		m[fmt.Sprint(key)] = value.(proto.ClientBatch)
+func (cb *ClientBatchStore) convertToRegularMap() map[string]client.ClientBatch {
+	var m map[string]client.ClientBatch
+	m = make(map[string]client.ClientBatch)
+	cb.clientBatches.Range(func(key, value interface{}) bool {
+		m[fmt.Sprint(key)] = value.(client.ClientBatch)
 		return true
 	})
 	return m
 }
 
 /*
-	Print all the batches
+	print all the batches
 */
 
 func (cb *ClientBatchStore) printStore(logFilePath string, nodeName int64) {
@@ -74,7 +74,7 @@ func (cb *ClientBatchStore) printStore(logFilePath string, nodeName int64) {
 	}
 	defer f.Close()
 
-	messageBlocks := cb.convertToRegularMap(cb.clientBatches)
+	messageBlocks := cb.convertToRegularMap()
 
 	for id, block := range messageBlocks {
 		for j := 0; j < len(block.Messages); j++ {

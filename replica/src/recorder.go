@@ -97,3 +97,11 @@ func (re *Recorder) HandleESP(req *consensus.ProposerMessage) *consensus.Recorde
 
 	return &response
 }
+
+// answer to fetch request
+
+func (r *Recorder) HandleFtech(req *consensus.DecideRequest) *consensus.DecideResponse {
+	var response consensus.DecideResponse
+	//todo implement
+	return &response
+}

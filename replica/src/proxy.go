@@ -7,7 +7,8 @@ import (
 	"net"
 	"raxos/common"
 	"raxos/configuration"
-	"raxos/proto"
+	"raxos/proto/client"
+	"raxos/proto/consensus"
 	"strconv"
 	"sync"
 	"time"
@@ -17,12 +18,10 @@ import (
 
 type Slot struct {
 	// slot index is implied by the array position
-	proposedBatch    []string // client batch ids proposed
-	decidedBatch     []string // decided client batch ids
-	proposedUniqueId string   // unique id of the set of proposed items
-	decidedUniqueId  string   // unique id of the set of decided items
-	decided          bool     // true if decided
-	committed        bool     // true if committed
+	proposedBatch []string // client batch ids proposed
+	decidedBatch  []string // decided client batch ids
+	decided       bool     // true if decided
+	committed     bool     // true if committed
 }
 
 /*Proxy saves the state of the proxy and handles client batches, creates replica batches and sends to proposers. Also the proxy executes the SMR and send responses back to client*/
@@ -50,10 +49,11 @@ type Proxy struct {
 
 	clientBatchRpc  uint8 // 0
 	clientStatusRpc uint8 // 1
+	decideRequest   uint8 // 2
+	decideResponse  uint8 // 3
 
 	replicatedLog []Slot // the replicated log of the proxy
-
-	exec              bool      // if true the response is sent after execution, if not response is sent after total order
+	
 	committedIndex    int64     // last index for which a request was committed and the result was sent to client
 	lastProposedIndex int64     // last index proposed
 	lastTimeCommitted time.Time // last committed time
@@ -76,18 +76,16 @@ type Proxy struct {
 
 	toBeProposed []string // set of client batches that are yet be proposed
 
-	proposalId int // counter for generating unique proposal ids
-
 	lastDecidedIndexes   []int      //slots that were previously decided
 	lastDecidedDecisions [][]string // for each lastDecidedIndex, the string array of client batches decided
-	lastDecidedUniqueIds []string   // unique id of last decided ids
 
 	leaderMode int // leader change mode
+	serverMode int
 }
 
 // instantiate a new proxy
 
-func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, exec bool, logFilePath string, batchSize int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server, leaderMode int, store *ClientBatchStore) *Proxy {
+func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, logFilePath string, batchSize int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server, leaderMode int, store *ClientBatchStore, serverMode int) *Proxy {
 
 	pr := Proxy{
 		name:                  name,
@@ -107,8 +105,9 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		recorderToProxyChan:   recorderToProxyChan,
 		clientBatchRpc:        0,
 		clientStatusRpc:       1,
+		decideRequest:         2,
+		decideResponse:        3,
 		replicatedLog:         make([]Slot, 0),
-		exec:                  exec,
 		committedIndex:        -1,
 		lastProposedIndex:     -1,
 		lastTimeCommitted:     time.Now(),
@@ -122,11 +121,10 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		serverStarted:         false,
 		server:                server,
 		toBeProposed:          make([]string, 0),
-		proposalId:            0,
 		lastDecidedIndexes:    make([]int, 0),
 		lastDecidedDecisions:  make([][]string, 0),
-		lastDecidedUniqueIds:  make([]string, 0),
 		leaderMode:            leaderMode,
+		serverMode:            serverMode,
 	}
 
 	// initialize the clientAddrList
@@ -153,8 +151,10 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 
 	// register rpcs
 
-	pr.RegisterRPC(new(proto.ClientBatch), pr.clientBatchRpc)
-	pr.RegisterRPC(new(proto.ClientStatus), pr.clientStatusRpc)
+	pr.RegisterRPC(new(client.ClientBatch), pr.clientBatchRpc)
+	pr.RegisterRPC(new(client.ClientStatus), pr.clientStatusRpc)
+	pr.RegisterRPC(new(consensus.DecideRequest), pr.decideRequest)
+	pr.RegisterRPC(new(consensus.DecideResponse), pr.decideResponse)
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
@@ -170,19 +170,19 @@ func (pr *Proxy) Run() {
 		for true {
 
 			select {
-			case clientMessage := <-pr.incomingChan:
+			case inpputMessage := <-pr.incomingChan:
 
 				pr.debug("Received client  message", 0)
-				code := clientMessage.Code
+				code := inpputMessage.Code
 				switch code {
 				case pr.clientBatchRpc:
-					clientBatch := clientMessage.Obj.(*proto.ClientBatch)
+					clientBatch := inpputMessage.Obj.(*client.ClientBatch)
 					pr.debug("Client message  "+fmt.Sprintf("%#v", clientBatch), 0)
 					pr.handleClientBatch(*clientBatch)
 					break
 
 				case pr.clientStatusRpc:
-					clientStatus := clientMessage.Obj.(*proto.ClientStatus)
+					clientStatus := inpputMessage.Obj.(*client.ClientStatus)
 					pr.debug("Client status  ", 1)
 					pr.handleClientStatus(*clientStatus)
 					break
@@ -204,7 +204,7 @@ func (pr *Proxy) Run() {
 }
 
 /*
-	If turned on, print the message to console
+	if turned on, print the message to console
 */
 
 func (pr *Proxy) debug(message string, level int) {
@@ -222,8 +222,7 @@ func (pr *Proxy) getLeaderWait(instance int) int {
 		if pr.name == 0 {
 			return 0
 		} else {
-			//todo implement non-leader order
-			return 10
+			return int(pr.name * pr.leaderTimeout)
 		}
 	} else if pr.leaderMode == 1 {
 		// todo
@@ -234,5 +233,5 @@ func (pr *Proxy) getLeaderWait(instance int) int {
 		// dynamic MAB
 		return 0
 	}
-	return 0
+	return 10
 }

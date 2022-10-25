@@ -3,23 +3,23 @@ package raxos
 import (
 	"log"
 	"os"
-	"raxos/proto"
+	"raxos/proto/client"
 	"strconv"
 )
 
 // handler for new client batches
 
-func (pr *Proxy) handleClientBatch(batch proto.ClientBatch) {
+func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 	// put the client batch to the store
 	pr.clientBatchStore.Add(batch)
 	// add the batch id to the toBeProposed array
 	pr.toBeProposed = append(pr.toBeProposed, batch.Id)
 
-	if len(pr.toBeProposed) > pr.batchSize { // if we have a sufficient batch size
+	if len(pr.toBeProposed) >= pr.batchSize { // if we have a sufficient batch size
 		if pr.lastProposedIndex-pr.committedIndex < pr.pipelineLength {
 			// send a new proposal Request to the ProposersChan
 			strProposals := pr.toBeProposed
-			btchProposals := make([]proto.ClientBatch, 0)
+			btchProposals := make([]client.ClientBatch, 0)
 
 			for i := 0; i < len(strProposals); i++ {
 				btch, ok := pr.clientBatchStore.Get(strProposals[i])
@@ -30,53 +30,43 @@ func (pr *Proxy) handleClientBatch(batch proto.ClientBatch) {
 			}
 
 			proposeIndex := pr.lastProposedIndex + 1
-			uniqueId := pr.proposalId
 
 			newProposalRequest := ProposeRequest{
 				instance:             proposeIndex,
 				proposalStr:          strProposals,
 				proposalBtch:         btchProposals,
 				msWait:               pr.getLeaderWait(int(proposeIndex)),
-				uniqueID:             strconv.Itoa(int(pr.name)) + "." + strconv.Itoa(uniqueId),
 				lastDecidedIndexes:   pr.lastDecidedIndexes,
 				lastDecidedDecisions: pr.lastDecidedDecisions,
-				lastDecidedUniqueIds: pr.lastDecidedUniqueIds,
 			}
 
 			pr.proxyToProposerChan <- newProposalRequest
 
-			// create the slot index from here
-
-			if int64(len(pr.replicatedLog)) != proposeIndex {
-				panic("propose index and length of replicated log do not match")
+			// create the slot index
+			for len(pr.replicatedLog) < int(proposeIndex+1) {
+				// create the new entry
+				pr.replicatedLog = append(pr.replicatedLog, Slot{})
 			}
 
-			// create the new entry
-			pr.replicatedLog = append(pr.replicatedLog, Slot{})
-
 			pr.replicatedLog[proposeIndex] = Slot{
-				proposedBatch:    strProposals,
-				decidedBatch:     nil,
-				proposedUniqueId: newProposalRequest.uniqueID,
-				decidedUniqueId:  "",
-				decided:          false,
-				committed:        false,
+				proposedBatch: strProposals,
+				decidedBatch:  nil,
+				decided:       false,
+				committed:     false,
 			}
 
 			// reset the variables
 			pr.toBeProposed = make([]string, 0)
 			pr.lastProposedIndex++
-			pr.proposalId++
 			pr.lastDecidedIndexes = make([]int, 0)
 			pr.lastDecidedDecisions = make([][]string, 0)
-			pr.lastDecidedUniqueIds = make([]string, 0)
 		}
 	}
 }
 
 // handler for client status request
 
-func (pr *Proxy) handleClientStatus(status proto.ClientStatus) {
+func (pr *Proxy) handleClientStatus(status client.ClientStatus) {
 	if status.Operation == 1 {
 		if pr.serverStarted == false {
 			// initiate gRPC connections
@@ -97,7 +87,7 @@ func (pr *Proxy) printLog() {
 	pr.printConsensusLog()                                  // print the replicated log
 }
 
-// print the replicated log to a file, only client batch ids are printed
+// print the replicated log to a file
 
 func (pr *Proxy) printConsensusLog() {
 	f, err := os.Create(pr.logFilePath + strconv.Itoa(int(pr.name)) + "-consensus.txt")
@@ -107,9 +97,16 @@ func (pr *Proxy) printConsensusLog() {
 	defer f.Close()
 
 	for i := 0; i < len(pr.replicatedLog); i++ {
-		if pr.replicatedLog[i].decided == true {
+		if pr.replicatedLog[i].committed == true {
 			for j := 0; j < len(pr.replicatedLog[i].decidedBatch); j++ {
-				_, _ = f.WriteString(strconv.Itoa(i) + "." + strconv.Itoa(j) + ":" + pr.replicatedLog[i].decidedBatch[j] + "\n")
+				batch, ok := pr.clientBatchStore.Get(pr.replicatedLog[i].decidedBatch[j])
+				if !ok {
+					panic("committed batch not in the store")
+				} else {
+					for k := 0; k < len(batch.Messages); k++ {
+						_, _ = f.WriteString(strconv.Itoa(i) + "." + strconv.Itoa(j) + "." + strconv.Itoa(k) + ":" + batch.Messages[k].Message + "\n")
+					}
+				}
 			}
 		} else {
 			break

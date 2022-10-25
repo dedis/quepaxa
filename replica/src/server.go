@@ -5,7 +5,7 @@ import (
 	"google.golang.org/grpc"
 	"os"
 	"raxos/configuration"
-	"raxos/proto"
+	"raxos/proto/client"
 	"raxos/proto/consensus"
 	"strconv"
 	"time"
@@ -28,19 +28,18 @@ type Server struct {
 	cfg          configuration.InstanceConfig // configuration of clients and replicas
 	numProposers int                          // number of proposers == pipeline length
 	store        *ClientBatchStore            // shared client batch store
+	serverMode   int
 }
 
 // ProposeRequest is the message type sent from proxy to proposer
 
 type ProposeRequest struct {
-	instance             int64               // slot index
-	proposalStr          []string            // fast path client batch ids
-	proposalBtch         []proto.ClientBatch // client batches for slow path
-	msWait               int                 // number of milliseconds to wait before proposing
-	uniqueID             string              // unique id of the proposal
-	lastDecidedIndexes   []int               //slots that were previously decided
-	lastDecidedDecisions [][]string          // for each lastDecidedIndex, the string array of client batches decided
-	lastDecidedUniqueIds []string            // unique id of last decided ids
+	instance             int64                // slot index
+	proposalStr          []string             // fast path client batch ids
+	proposalBtch         []client.ClientBatch // client batches for slow path
+	msWait               int                  // number of milliseconds to wait before proposing
+	lastDecidedIndexes   []int                //slots that were previously decided
+	lastDecidedDecisions [][]string           // for each lastDecidedIndex, the string array of client batches decided
 }
 
 // ProposeResponse is the message type sent from proposer to proxy
@@ -48,12 +47,10 @@ type ProposeRequest struct {
 type ProposeResponse struct {
 	index     int      // log instance
 	decisions []string // ids of the client batches
-	uniqueId  string   // unique proposal id
 }
 
 type Decision struct {
 	indexes   []int      // decided indexes
-	uniqueIDs []string   // unique ids of decided indexes
 	decisions [][]string // for each index the set of decided client batches
 }
 
@@ -65,14 +62,12 @@ type peer struct {
 }
 
 // AddPeer adds a new peer to the peer list
-func (sr *Server) AddPeer(name int64, client *consensus.ConsensusClient) error {
-
+func (sr *Server) AddPeer(name int64, client *consensus.ConsensusClient) {
 	// add peer to the peer list
 	sr.peers = append(sr.peers, peer{
 		name:   name,
 		client: client,
 	})
-	return nil
 }
 
 // listen to proxy tcp connections, listen to recorder gRPC connections
@@ -95,10 +90,11 @@ func (s *Server) StartProposers() {
 	// create N gRPC connections
 	s.setupgRPC()
 	// create M number of the Proposers. each have a pointer to the gRPC connections
-	s.ProposerInstances = s.createProposers()
+	s.createProposers()
 }
 
 // setup gRPC clients to all recorders and return the connection pointers
+
 func (s *Server) setupgRPC() {
 	// add peers
 	for _, peer := range s.cfg.Peers {
@@ -110,37 +106,31 @@ func (s *Server) setupgRPC() {
 		}
 		intName, _ := strconv.Atoi(peer.Name)
 		newClient := consensus.NewConsensusClient(conn)
-		err = s.AddPeer(int64(intName), &newClient)
-		if err != nil {
-			conn.Close()
-			fmt.Fprintf(os.Stderr, "add peer `%v`: %v", peer.Name, err)
-			os.Exit(1)
-		}
+		s.AddPeer(int64(intName), &newClient)
 	}
 }
 
 // create M number of proposers
 
-func (s *Server) createProposers() []*Proposer {
+func (s *Server) createProposers() {
 	for i := 0; i < s.numProposers; i++ {
 		newProposer := NewProposer(s.ProxyInstance.name, int64(i), s.peers, s.proxyToProposerChan, s.proposerToProxyChan, s.lastSeenTimeProposers)
 		s.ProposerInstances = append(s.ProposerInstances, newProposer)
 		s.ProposerInstances[len(s.ProposerInstances)-1].runProposer()
 	}
-	return nil
 }
 
 /*
 	create a new server instance, inside which there are proxy instance, proposer instances and recorder instance. initialize all fields
 */
 
-func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, leaderTimeout int64, pipelineLength int64, benchmark int64, debugOn bool, debugLevel int, leaderMode int, exec bool) *Server {
+func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, leaderTimeout int64, pipelineLength int64, benchmark int64, debugOn bool, debugLevel int, leaderMode int, serverMode int) *Server {
 
 	sr := Server{
 		ProxyInstance:         nil,
 		ProposerInstances:     nil, // this is initialized in the createProposers method, so no need to create them
 		RecorderInstance:      nil,
-		proxyToProposerChan:   make(chan ProposeRequest, pipelineLength),
+		proxyToProposerChan:   make(chan ProposeRequest, 10000),
 		proposerToProxyChan:   make(chan ProposeResponse, 10000),
 		recorderToProxyChan:   make(chan Decision, 10000),
 		lastSeenTimeProposers: make([]*time.Time, len(cfg.Peers)),
@@ -148,9 +138,10 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		cfg:                   *cfg,
 		numProposers:          int(pipelineLength),
 		store:                 &ClientBatchStore{},
+		serverMode:            serverMode,
 	}
 
-	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, exec, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store)
+	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store)
 	sr.RecorderInstance = NewRecorder(*cfg, sr.store, sr.lastSeenTimeProposers, sr.recorderToProxyChan, name)
 	return &sr
 }

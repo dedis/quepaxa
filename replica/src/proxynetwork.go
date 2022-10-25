@@ -14,8 +14,8 @@ import (
 // start listening to the proxy tcp connection, and setup all outgoing wires
 
 func (pr *Proxy) NetworkInit() {
-	go pr.WaitForConnections()
-	pr.StartOutgoingLinks()
+	pr.startOutgoingLinks()
+	go pr.waitForConnections()
 }
 
 /*
@@ -31,7 +31,7 @@ func (pr *Proxy) RegisterRPC(msgObj proto.Serializable, code uint8) {
 	Each proxy receives connection from all clients
 */
 
-func (pr *Proxy) WaitForConnections() {
+func (pr *Proxy) waitForConnections() {
 
 	var b [4]byte
 	bs := b[:4]
@@ -149,7 +149,7 @@ func (pr *Proxy) internalSendMessage(peer int64, rpcPair common.RPCPair) {
 	a set of threads that manages outgoing messages: write the message to the OS buffers
 */
 
-func (pr *Proxy) StartOutgoingLinks() {
+func (pr *Proxy) startOutgoingLinks() {
 	for i := 0; i < 200; i++ { // 200 is the number of threads
 		go func() {
 			for true {

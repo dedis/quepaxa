@@ -7,6 +7,8 @@ import (
 	proto2 "raxos/proto"
 )
 
+// for now we do not need this because we use a gRPC service, left for future use
+
 // DecideRequest
 
 func (t *DecideRequest) Marshal(wire io.Writer) error {
