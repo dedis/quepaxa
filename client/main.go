@@ -14,16 +14,14 @@ func main() {
 	configFile := flag.String("config", "configuration/local/configuration.yml", "raxos configuration file")
 	logFilePath := flag.String("logFilePath", "logs/", "log file path")
 	batchSize := flag.Int64("batchSize", 50, "client batch size")
-	requestSize := flag.Int64("requestSize", 8, "request size in bytes")
 	testDuration := flag.Int64("testDuration", 60, "test duration in seconds")
 	arrivalRate := flag.Int64("arrivalRate", 10000, "poisson arrival rate in requests per second")
-	benchmark := flag.Int64("benchmark", 0, "Benchmark: 0 for echo service, 1 for KV store and 2 for Redis ")
 	requestType := flag.String("requestType", "status", "request type: [status , request]")
 	operationType := flag.Int64("operationType", 1, "Type of operation for a status request: 1 (bootstrap server, 2: print log)")
-	debugLevel := flag.Int64("debugLevel", 0, "debug level")
 	keyLen := flag.Int64("keyLen", 8, "length of key")
 	valLen := flag.Int64("valLen", 8, "length of value")
 	debugOn := flag.Bool("debugOn", false, "turn on/off debug")
+	debugLevel := flag.Int64("debugLevel", 0, "debug level")
 
 	flag.Parse()
 
@@ -34,7 +32,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cl := cmd.New(*name, cfg, *logFilePath, *batchSize, *requestSize, *testDuration, *arrivalRate, *benchmark, *requestType, *operationType, int(*debugLevel), *debugOn, int(*keyLen), int(*valLen))
+	cl := cmd.New(*name, cfg, *logFilePath, *batchSize, *testDuration, *arrivalRate, *requestType, *operationType, int(*debugLevel), *debugOn, int(*keyLen), int(*valLen))
 
 	cl.StartOutgoingLinks()
 	go cl.WaitForConnections()

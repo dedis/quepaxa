@@ -8,11 +8,12 @@ import (
 	"net"
 	"raxos/common"
 	"raxos/proto"
+	"raxos/proto/client"
 	"strconv"
 )
 
 /*
-	Fill the RPC table by assigning a unique id to each message type
+	fill the RPC table by assigning a unique id to each message type
 */
 
 func (cl *Client) RegisterRPC(msgObj proto.Serializable, code uint8) {
@@ -20,7 +21,7 @@ func (cl *Client) RegisterRPC(msgObj proto.Serializable, code uint8) {
 }
 
 /*
-	Each client sends connection requests to all replica proxies
+	each client sends connection requests to all replica proxies
 */
 
 func (cl *Client) ConnectToReplicas() {
@@ -35,7 +36,7 @@ func (cl *Client) ConnectToReplicas() {
 			conn, err := net.Dial("tcp", cl.replicaAddrList[i])
 			if err == nil {
 				cl.outgoingReplicaWriters[i] = bufio.NewWriter(conn)
-				binary.LittleEndian.PutUint16(bs, uint16(cl.clientName))
+				binary.LittleEndian.PutUint16(bs, uint16(cl.name))
 				_, err := conn.Write(bs)
 				if err != nil {
 					cl.debug("Error while writing name to replica"+strconv.Itoa(int(i)), 0)
@@ -50,8 +51,8 @@ func (cl *Client) ConnectToReplicas() {
 }
 
 /*
-	Listen on the port for new connections
-	Whenever the proxy receives a new client connection, it dials the client
+	listen on the port for new connections
+	whenever the proxy receives a new client connection, it dials the client
 */
 
 func (cl *Client) WaitForConnections() {
@@ -112,7 +113,7 @@ func (cl *Client) connectionListener(reader *bufio.Reader, id int32) {
 }
 
 /*
-	This is an execution thread that listens to all the incoming messages
+	execution thread that listens to all the incoming messages
 	It listens to incoming messages from the incomingChan, and invokes the appropriate handler depending on the message type
 */
 
@@ -127,13 +128,13 @@ func (cl *Client) Run() {
 			switch code {
 
 			case cl.clientBatchRpc:
-				clientResponseBatch := replicaMessage.Obj.(*proto.ClientBatch)
+				clientResponseBatch := replicaMessage.Obj.(*client.ClientBatch)
 				cl.debug("Client response batch from "+fmt.Sprintf("%#v", clientResponseBatch.Sender), 0)
 				cl.handleClientResponseBatch(clientResponseBatch)
 				break
 
 			case cl.clientStatusRpc:
-				clientStatusResponse := replicaMessage.Obj.(*proto.ClientStatus)
+				clientStatusResponse := replicaMessage.Obj.(*client.ClientStatus)
 				cl.debug("Client Status Response from"+fmt.Sprintf("%#v", clientStatusResponse.Sender), 0)
 				cl.handleClientStatusResponse(clientStatusResponse)
 				break
@@ -143,7 +144,7 @@ func (cl *Client) Run() {
 }
 
 /*
-	Write a message to the wire, first the message type is written and then the actual message
+	write a message to the wire, first the message type is written and then the actual message
 */
 
 func (cl *Client) internalSendMessage(peer int64, rpcPair *common.RPCPair) {
@@ -173,7 +174,7 @@ func (cl *Client) internalSendMessage(peer int64, rpcPair *common.RPCPair) {
 }
 
 /*
-	A set of threads that manages outgoing messages: write the message to the OS buffers
+	a set of threads that manages outgoing messages: write the message to the OS buffers
 */
 
 func (cl *Client) StartOutgoingLinks() {

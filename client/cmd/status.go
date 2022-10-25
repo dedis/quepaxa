@@ -3,16 +3,16 @@ package cmd
 import (
 	"fmt"
 	"raxos/common"
-	"raxos/proto"
+	"raxos/proto/client"
 	"strconv"
 	"time"
 )
 
 /*
-	When a status response is received, print it to console
+	when a status response is received, print it to console
 */
 
-func (cl *Client) handleClientStatusResponse(response *proto.ClientStatus) {
+func (cl *Client) handleClientStatusResponse(response *client.ClientStatus) {
 	fmt.Print("Status response from " + strconv.Itoa(int(response.Sender)) + " \n")
 }
 
@@ -26,8 +26,8 @@ func (cl *Client) SendStatus(operationType int64) {
 
 	for i, _ := range cl.replicaAddrList {
 
-		statusRequest := proto.ClientStatus{
-			Sender:    cl.clientName,
+		statusRequest := client.ClientStatus{
+			Sender:    cl.name,
 			Operation: operationType,
 			Message:   "",
 		}

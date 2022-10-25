@@ -5,7 +5,7 @@ import (
 	"github.com/montanaflynn/stats"
 	"log"
 	"os"
-	"raxos/proto"
+	"raxos/proto/client"
 	"strconv"
 	"sync"
 )
@@ -25,7 +25,7 @@ func (cl *Client) getNumberOfSentRequests(requests [][]sentRequestBatch) int {
 }
 
 /*
-	Add value N to list, M times
+	add value N to list, M times
 */
 
 func (cl *Client) addValueNToArrayMTimes(list []int64, N int64, M int) []int64 {
@@ -37,7 +37,7 @@ func (cl *Client) addValueNToArrayMTimes(list []int64, N int64, M int) []int64 {
 
 /*
 
-	Convert a sync.map to regular map
+	convert a sync.map to regular map
 */
 
 func (cl *Client) convertToRegularMap(syncMap sync.Map) map[string]receivedResponseBatch {
@@ -51,7 +51,7 @@ func (cl *Client) convertToRegularMap(syncMap sync.Map) map[string]receivedRespo
 }
 
 /*
-	Count the number of individual responses in responses map
+	count the number of individual responses in responses map
 */
 
 func (cl *Client) getNumberOfReceivedResponses(responses sync.Map) int {
@@ -66,17 +66,17 @@ func (cl *Client) getNumberOfReceivedResponses(responses sync.Map) int {
 }
 
 /*
-	Maps the request with the response batch
-    Compute the time taken for each request
-	Computer the error rate
-	Compute the throughput as successfully committed requests per second
-	Compute the latency
-	Print the basic stats to the stdout
+	map the request with the response batch
+    compute the time taken for each request
+	computer the error rate
+	compute the throughput as successfully committed requests per second
+	compute the latency
+	print the basic stats to the stdout
 */
 
 func (cl *Client) computeStats() {
 
-	f, err := os.Create(cl.logFilePath + strconv.Itoa(int(cl.clientName)) + ".txt")
+	f, err := os.Create(cl.logFilePath + strconv.Itoa(int(cl.name)) + ".txt")
 	if err != nil {
 		cl.debug("Error creating the output log file", 1)
 		log.Fatal(err)
@@ -119,7 +119,7 @@ func (cl *Client) computeStats() {
 }
 
 /*
-	Converts int[] to float64[]
+	converts int[] to float64[]
 */
 
 func (cl *Client) getFloat64List(list []int64) []float64 {
@@ -131,10 +131,10 @@ func (cl *Client) getFloat64List(list []int64) []float64 {
 }
 
 /*
-	Print a client request batch with arrival time and end time
+	print a client request batch with arrival time and end time
 */
 
-func (cl *Client) printRequests(messages proto.ClientBatch, startTime int64, endTime int64, f *os.File) {
+func (cl *Client) printRequests(messages client.ClientBatch, startTime int64, endTime int64, f *os.File) {
 	for i := 0; i < len(messages.Messages); i++ {
 		_, _ = f.WriteString(messages.Messages[i].Message + "," + strconv.Itoa(int(startTime)) + "," + strconv.Itoa(int(endTime)) + "\n")
 	}

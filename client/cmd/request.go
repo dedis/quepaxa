@@ -5,7 +5,7 @@ import (
 	"math"
 	"math/rand"
 	"raxos/common"
-	"raxos/proto"
+	"raxos/proto/client"
 	"strconv"
 	"time"
 	"unsafe"
@@ -15,7 +15,7 @@ import (
 	Upon receiving a client response batch, add the batch to the received requests map
 */
 
-func (cl *Client) handleClientResponseBatch(batch *proto.ClientBatch) {
+func (cl *Client) handleClientResponseBatch(batch *client.ClientBatch) {
 	cl.receivedResponses.Store(batch.Id, receivedResponseBatch{
 		batch: *batch,
 		time:  time.Now(), // record the time when the response was received
@@ -54,7 +54,7 @@ const (
 )
 
 /*
-	generate a random string of length n
+	generate a random string of length n adapted from the Rabia SOSP 2021 code base https://github.com/haochenpan/rabia/
 */
 
 func (cl *Client) RandString(n int) string {
@@ -75,23 +75,24 @@ func (cl *Client) RandString(n int) string {
 }
 
 /*
-	Each request generator generates requests by generating string requests, forming batches, send batches and add them to the correct sent array
+	each request generator generates requests by generating string requests, forming batches, send batches and add them to the correct sent array
 */
 
 func (cl *Client) startRequestGenerators() {
 
 	for i := 0; i < numRequestGenerationThreads; i++ { // i is the thread number
 		go func(threadNumber int) {
+
 			localCounter := 0
 
 			for true {
 
 				numRequests := int64(0)
-				var requests []*proto.ClientBatch_SingleMessage
+				var requests []*client.ClientBatch_SingleMessage
 				// this loop collects requests until the minimum batch size is met
 				for numRequests < cl.batchSize {
 					_ = <-cl.arrivalChan // keep collecting new requests arrivals
-					requests = append(requests, &proto.ClientBatch_SingleMessage{
+					requests = append(requests, &client.ClientBatch_SingleMessage{
 						Message: fmt.Sprintf("%d%v%v", rand.Intn(2),
 							cl.RandString(cl.keyLen),
 							cl.RandString(cl.valLen)),
@@ -101,16 +102,16 @@ func (cl *Client) startRequestGenerators() {
 
 				for i, _ := range cl.replicaAddrList {
 
-					var requests_i []*proto.ClientBatch_SingleMessage
+					var requests_i []*client.ClientBatch_SingleMessage
 
 					for j := 0; j < len(requests); j++ {
 						requests_i = append(requests_i, requests[j])
 					}
 
-					batch := proto.ClientBatch{
-						Sender:   cl.clientName,
+					batch := client.ClientBatch{
+						Sender:   cl.name,
 						Messages: requests_i,
-						Id:       strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id,
+						Id:       strconv.Itoa(int(cl.name)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id,
 					}
 
 					rpcPair := common.RPCPair{
@@ -121,12 +122,12 @@ func (cl *Client) startRequestGenerators() {
 					cl.sendMessage(i, rpcPair)
 				}
 
-				cl.debug("Sent "+strconv.Itoa(int(cl.clientName))+"."+strconv.Itoa(threadNumber)+"."+strconv.Itoa(localCounter), 0)
+				cl.debug("Sent "+strconv.Itoa(int(cl.name))+"."+strconv.Itoa(threadNumber)+"."+strconv.Itoa(localCounter), 0)
 
-				batch := proto.ClientBatch{
-					Sender:   cl.clientName,
+				batch := client.ClientBatch{
+					Sender:   cl.name,
 					Messages: requests,
-					Id:       strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id,
+					Id:       strconv.Itoa(int(cl.name)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id,
 				}
 
 				cl.sentRequests[threadNumber] = append(cl.sentRequests[threadNumber], sentRequestBatch{
@@ -142,16 +143,17 @@ func (cl *Client) startRequestGenerators() {
 }
 
 /*
-	Until the test duration is arrived, fetch new arrivals and inform the request generators
+	until the test duration is arrived, fetch new arrivals and inform the request generators
 */
 
 func (cl *Client) startScheduler() {
-	start := time.Now()
 
-	for time.Now().Sub(start).Nanoseconds() < cl.testDuration*1000*1000*1000 {
+	cl.startTime = time.Now()
+
+	for time.Now().Sub(cl.startTime).Nanoseconds() < cl.testDuration*1000*1000*1000 {
 		nextArrivalTime := <-cl.arrivalTimeChan
 
-		for time.Now().Sub(start).Nanoseconds() < nextArrivalTime {
+		for time.Now().Sub(cl.startTime).Nanoseconds() < nextArrivalTime {
 			// busy waiting until the time to dispatch this request arrives
 		}
 		cl.arrivalChan <- true
@@ -159,7 +161,7 @@ func (cl *Client) startScheduler() {
 }
 
 /*
-	Generates Poisson arrival times
+	generate poisson arrival times
 */
 
 func (cl *Client) generateArrivalTimes() {

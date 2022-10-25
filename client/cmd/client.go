@@ -7,7 +7,7 @@ import (
 	"os"
 	"raxos/common"
 	"raxos/configuration"
-	"raxos/proto"
+	"raxos/proto/client"
 	"strconv"
 	"sync"
 	"time"
@@ -19,7 +19,7 @@ import (
 */
 
 type Client struct {
-	clientName  int64 // unique client identifier as defined in the configuration.yml
+	name        int64 // unique client identifier as defined in the configuration.yml
 	numReplicas int64 // number of replicas (a replica acts as a proposer and a recorder)
 	numClients  int64 // number of clients (for the moment this is not required, just leaving for future use or to remove)
 
@@ -43,10 +43,8 @@ type Client struct {
 	debugOn    bool // if turned on, the debug messages will be printed on the console
 	debugLevel int  // debug level
 
-	requestSize  int64 // size of the request payload in bytes
 	testDuration int64 // test duration in seconds
 	arrivalRate  int64 // poisson rate of the request (requests per second)
-	benchmark    int64 // type of the workload: 0 for no-op, 1 for kv store and 2 for redis
 
 	arrivalTimeChan   chan int64           // channel to which the poisson process adds new request arrival times in nanoseconds w.r.t test start time
 	arrivalChan       chan bool            // channel to which the main scheduler adds new request arrivals, to be consumed by the request generation threads
@@ -67,7 +65,7 @@ type Client struct {
 */
 
 type sentRequestBatch struct {
-	batch proto.ClientBatch
+	batch client.ClientBatch
 	time  time.Time
 }
 
@@ -76,7 +74,7 @@ type sentRequestBatch struct {
 */
 
 type receivedResponseBatch struct {
-	batch proto.ClientBatch
+	batch client.ClientBatch
 	time  time.Time
 }
 
@@ -91,9 +89,9 @@ const arrivalBufferSize = 1000000     // size of the buffer that collects new re
 	Instantiate a new Client instance, allocate the buffers
 */
 
-func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batchSize int64, requestSize int64, testDuration int64, arrivalRate int64, benchmark int64, requestType string, operationType int64, debugLevel int, debugOn bool, keyLen int, valLen int) *Client {
+func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batchSize int64, testDuration int64, arrivalRate int64, requestType string, operationType int64, debugLevel int, debugOn bool, keyLen int, valLen int) *Client {
 	cl := Client{
-		clientName:             name,
+		name:                   name,
 		numReplicas:            int64(len(cfg.Peers)),
 		numClients:             int64(len(cfg.Clients)),
 		replicaAddrList:        make(map[int64]string),
@@ -109,10 +107,8 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		outgoingMessageChan:    make(chan *common.OutgoingRPC, outgoingBufferSize),
 		debugOn:                debugOn,
 		debugLevel:             debugLevel,
-		requestSize:            requestSize,
 		testDuration:           testDuration,
 		arrivalRate:            arrivalRate,
-		benchmark:              benchmark,
 		arrivalTimeChan:        make(chan int64, arrivalBufferSize),
 		arrivalChan:            make(chan bool, arrivalBufferSize),
 		RequestType:            requestType,
@@ -132,7 +128,7 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 	}
 
 	// initialize the socketMutexs
-	for i := 0; i < len(cfg.Peers); i++ {
+	for i := int64(0); i < cl.numReplicas; i++ {
 		intName, _ := strconv.Atoi(cfg.Peers[i].Name)
 		cl.socketMutexs[int64(intName)] = &sync.Mutex{}
 	}
@@ -143,18 +139,17 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		cl.sentRequests[i] = make([]sentRequestBatch, 0)
 	}
 
-	cl.RegisterRPC(new(proto.ClientBatch), cl.clientBatchRpc)
-	cl.RegisterRPC(new(proto.ClientStatus), cl.clientStatusRpc)
+	cl.RegisterRPC(new(client.ClientBatch), cl.clientBatchRpc)
+	cl.RegisterRPC(new(client.ClientStatus), cl.clientStatusRpc)
 
 	rand.Seed(time.Now().UTC().UnixNano())
 	pid := os.Getpid()
 	fmt.Printf("initialized client %v with process id: %v \n", name, pid)
-
 	return &cl
 }
 
 /*
-	If turned on, prints the message to console
+	if turned on, prints the message to console
 */
 
 func (cl *Client) debug(message string, level int) {

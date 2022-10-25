@@ -1,6 +1,8 @@
 package common
 
-import "raxos/proto"
+import (
+	"raxos/proto"
+)
 
 /*
 	RPC pair assigns a unique id to each type of message defined in the proto files

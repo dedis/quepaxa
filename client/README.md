@@ -22,8 +22,6 @@ Supported options
 
 ```--batchSize```: client batch size 
 
-```--requestSize```: request size in bytes
-
 ```--testDuration```: test duration in seconds
 
 ```--arrivalRate```: poisson arrival rate in requests per second
@@ -32,10 +30,12 @@ Supported options
 
 ```--operationType```: Type of operation for a status request: ```1``` (bootstrap server), ```2```: (print log)
 
+```--keyLen```: key length
+
+```--valLen```: value length
+
 ```--debugOn```: ```false``` or ```true```
 
 ```--debugLevel```: debug level
 
-```--keyLen```: key length
-
-```--valLen```: value length 
+ 
