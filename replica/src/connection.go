@@ -25,9 +25,15 @@ func (gc *GRPCConnection) mustEmbedUnimplementedConsensusServer() {
 
 // answer to fetch Request
 
-func (gc *GRPCConnection) Fetch(ctx context.Context, req *DecideRequest) (*DecideResponse, error) {
+func (gc *GRPCConnection) FetchBatches(ctx context.Context, req *DecideRequest) (*DecideResponse, error) {
 
 	var response *DecideResponse
 	response = gc.Recorder.HandleFtech(req)
 	return response, nil
+}
+
+// for gRPC forward compatibility
+
+func (gc *GRPCConnection) mustEmbedUnimplementedFetchServer() {
+	// no need to implement
 }

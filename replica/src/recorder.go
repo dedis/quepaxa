@@ -22,11 +22,24 @@ type Recorder struct {
 	name                  int64
 	slots                 []RecorderSlot // recorder side replicated log
 	cfg                   configuration.InstanceConfig
+	instanceCreationMutex *sync.Mutex
 }
 
+type Value struct {
+	priority    int64
+	proposer_id int64
+	thread_id   int64
+	ids         []string
+}
+
+// Recorder side slot
+
 type RecorderSlot struct {
-	mutex *sync.Mutex
-	//todo
+	Mutex *sync.Mutex
+	S     int
+	F     Value
+	A     Value
+	M     Value
 }
 
 // instantiate a new Recorder
@@ -35,12 +48,16 @@ func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchSto
 
 	re := Recorder{
 		address:               "",
+		listener:              nil,
+		server:                nil,
+		connection:            nil,
 		clientBatches:         clientBatches,
 		lastSeenTimeProposers: lastSeenTimeProposers,
 		recorderToProxyChan:   recorderToProxyChan,
 		name:                  name,
 		slots:                 make([]RecorderSlot, 0),
 		cfg:                   cfg,
+		instanceCreationMutex: &sync.Mutex{},
 	}
 
 	// initialize the address
@@ -63,6 +80,7 @@ func (r *Recorder) NetworkInit() {
 	r.server = grpc.NewServer()
 	r.connection = &GRPCConnection{Recorder: r}
 	RegisterConsensusServer(r.server, r.connection)
+	RegisterFetchServer(r.server, r.connection)
 
 	// start listener
 	listener, err := net.Listen("tcp", r.address)
@@ -71,7 +89,7 @@ func (r *Recorder) NetworkInit() {
 		fmt.Fprintf(os.Stderr, "listen: %v", err)
 		os.Exit(1)
 	}
-	err = r.server.Serve(listener)
+	go r.server.Serve(listener)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "serve: %v", err)
 		os.Exit(1)
@@ -84,11 +102,31 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 
 	var response RecorderResponse
 
-	// todo
-
 	// send the last decided index details to the proxy, if available
+	if len(req.DecidedSlots) > 0 {
+		d := Decision{
+			indexes:   make([]int, 0),
+			decisions: make([][]string, 0),
+		}
 
-	// if there are only hashes, then check if all the client batches are available in the shared pool. if yes send a positive response depending on the consensus rules
+		for i := 0; i < len(req.DecidedSlots); i++ {
+			d.indexes = append(d.indexes, int(req.DecidedSlots[i].Index))
+			d.decisions = append(d.decisions, req.DecidedSlots[i].Ids)
+		}
+		re.recorderToProxyChan <- d
+	}
+
+	if len(req.P.ClientBatches) == 0 {
+		// if there are only hashes, then check if all the client batches are available in the shared pool. if yes send a positive response depending on the consensus rules
+		allBatchesFound := re.findAllBatches(req.P.Ids)
+		if !allBatchesFound {
+			response.HasClientBacthes = false
+
+		} else {
+			// process using the recorder logic
+			response.S, response.F, response.M = re.espImpl(req.Index, req.P)
+		}
+	}
 
 	// if not send a negative response
 
@@ -103,4 +141,41 @@ func (r *Recorder) HandleFtech(req *DecideRequest) *DecideResponse {
 	var response DecideResponse
 	//todo implement
 	return &response
+}
+
+// check of all the batches are available in the store
+
+func (re *Recorder) findAllBatches(ids []string) bool {
+	for i := 0; i < len(ids); i++ {
+		_, ok := re.clientBatches.Get(ids[i])
+		if !ok {
+			return false
+		}
+	}
+	return true
+}
+
+// main recorder logic goes here
+
+func (re *Recorder) espImpl(index int64, p *ProposerMessage_Proposal) (int64, *RecorderResponse_Proposal, *RecorderResponse_Proposal) {
+	
+	re.instanceCreationMutex.Lock()
+	
+	for int64(len(re.slots)) < index+1 {
+		re.slots = append(re.slots, RecorderSlot{
+			Mutex: &sync.Mutex{},
+			S:     0,
+			F:     Value{},
+			A:     Value{},
+			M:     Value{},
+		})
+	}
+	re.instanceCreationMutex.Unlock()
+	
+	// from here Oct 26 23.14
+	
+	//todo
+	
+	return -1, nil, nil
+	
 }
