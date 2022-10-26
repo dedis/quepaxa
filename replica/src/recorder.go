@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 	"raxos/configuration"
-	"raxos/proto/consensus"
 	"strconv"
 	"sync"
 	"time"
@@ -16,7 +15,7 @@ type Recorder struct {
 	address               string       // address to listen for gRPC connections
 	listener              net.Listener // socket for gRPC connections
 	server                *grpc.Server // gRPC server
-	connection            *consensus.GRPCConnection
+	connection            *GRPCConnection
 	clientBatches         *ClientBatchStore
 	lastSeenTimeProposers []*time.Time // last seen times of each proposer
 	recorderToProxyChan   chan Decision
@@ -62,8 +61,8 @@ func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchSto
 
 func (r *Recorder) NetworkInit() {
 	r.server = grpc.NewServer()
-	r.connection = &consensus.GRPCConnection{Recorder: r}
-	consensus.RegisterConsensusServer(r.server, r.connection)
+	r.connection = &GRPCConnection{Recorder: r}
+	RegisterConsensusServer(r.server, r.connection)
 
 	// start listener
 	listener, err := net.Listen("tcp", r.address)
@@ -81,9 +80,9 @@ func (r *Recorder) NetworkInit() {
 
 // answer to proposer RPC
 
-func (re *Recorder) HandleESP(req *consensus.ProposerMessage) *consensus.RecorderResponse {
+func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 
-	var response consensus.RecorderResponse
+	var response RecorderResponse
 
 	// todo
 
@@ -100,8 +99,8 @@ func (re *Recorder) HandleESP(req *consensus.ProposerMessage) *consensus.Recorde
 
 // answer to fetch request
 
-func (r *Recorder) HandleFtech(req *consensus.DecideRequest) *consensus.DecideResponse {
-	var response consensus.DecideResponse
+func (r *Recorder) HandleFtech(req *DecideRequest) *DecideResponse {
+	var response DecideResponse
 	//todo implement
 	return &response
 }

@@ -1,4 +1,4 @@
-package consensus
+package raxos
 
 import (
 	"encoding/binary"

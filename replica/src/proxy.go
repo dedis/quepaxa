@@ -8,7 +8,6 @@ import (
 	"raxos/common"
 	"raxos/configuration"
 	"raxos/proto/client"
-	"raxos/proto/consensus"
 	"strconv"
 	"sync"
 	"time"
@@ -163,8 +162,8 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 
 	pr.RegisterRPC(new(client.ClientBatch), pr.clientBatchRpc)
 	pr.RegisterRPC(new(client.ClientStatus), pr.clientStatusRpc)
-	pr.RegisterRPC(new(consensus.DecideRequest), pr.decideRequest)
-	pr.RegisterRPC(new(consensus.DecideResponse), pr.decideResponse)
+	pr.RegisterRPC(new(DecideRequest), pr.decideRequest)
+	pr.RegisterRPC(new(DecideResponse), pr.decideResponse)
 
 	rand.Seed(time.Now().UTC().UnixNano())
 

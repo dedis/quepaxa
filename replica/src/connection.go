@@ -1,12 +1,11 @@
-package consensus
+package raxos
 
 import (
 	"context"
-	raxos "raxos/replica/src"
 )
 
 type GRPCConnection struct {
-	Recorder *raxos.Recorder
+	Recorder *Recorder
 }
 
 // answer to proposer RPC

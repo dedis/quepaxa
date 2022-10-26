@@ -6,7 +6,6 @@ import (
 	"os"
 	"raxos/configuration"
 	"raxos/proto/client"
-	"raxos/proto/consensus"
 	"strconv"
 	"time"
 )
@@ -74,11 +73,11 @@ type Decision struct {
 
 type peer struct {
 	name   int64
-	client *consensus.ConsensusClient
+	client *ConsensusClient
 }
 
 // AddPeer adds a new peer to the peer list
-func (sr *Server) AddPeer(name int64, client *consensus.ConsensusClient) {
+func (sr *Server) AddPeer(name int64, client *ConsensusClient) {
 	// add peer to the peer list
 	sr.peers = append(sr.peers, peer{
 		name:   name,
@@ -121,7 +120,7 @@ func (s *Server) setupgRPC() {
 			os.Exit(1)
 		}
 		intName, _ := strconv.Atoi(peer.Name)
-		newClient := consensus.NewConsensusClient(conn)
+		newClient := NewConsensusClient(conn)
 		s.AddPeer(int64(intName), &newClient)
 	}
 }
