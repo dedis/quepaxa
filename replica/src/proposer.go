@@ -33,7 +33,7 @@ func (prop *Proposer) runProposer() {
 	go func() {
 		for true {
 			//todo
-			// get a new request
+			// get a new request / get a new fetch request
 			// wait for the time to pass
 			// propose for the fast path
 			// wait for the responses

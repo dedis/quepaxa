@@ -43,9 +43,11 @@ type Proxy struct {
 	incomingChan        chan common.RPCPair     // used to collect all the client messages
 	outgoingMessageChan chan common.OutgoingRPC // buffer for messages that are written to the wire
 
-	proxyToProposerChan chan ProposeRequest  // proxy to proposer channel
-	proposerToProxyChan chan ProposeResponse // proposer to proxy channel
-	recorderToProxyChan chan Decision        // recorder to proxy channel
+	proxyToProposerChan      chan ProposeRequest  // proxy to proposer channel
+	proposerToProxyChan      chan ProposeResponse // proposer to proxy channel
+	recorderToProxyChan      chan Decision        // recorder to proxy channel
+	proxyToProposerFetchChan chan FetchRequest
+	proposerToProxyFetchChan chan FetchResposne
 
 	clientBatchRpc  uint8 // 0
 	clientStatusRpc uint8 // 1
@@ -53,7 +55,7 @@ type Proxy struct {
 	decideResponse  uint8 // 3
 
 	replicatedLog []Slot // the replicated log of the proxy
-	
+
 	committedIndex    int64     // last index for which a request was committed and the result was sent to client
 	lastProposedIndex int64     // last index proposed
 	lastTimeCommitted time.Time // last committed time
@@ -85,46 +87,48 @@ type Proxy struct {
 
 // instantiate a new proxy
 
-func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, logFilePath string, batchSize int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server, leaderMode int, store *ClientBatchStore, serverMode int) *Proxy {
+func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, logFilePath string, batchSize int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server, leaderMode int, store *ClientBatchStore, serverMode int, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne) *Proxy {
 
 	pr := Proxy{
-		name:                  name,
-		numReplicas:           len(cfg.Peers),
-		numClients:            len(cfg.Clients),
-		clientAddrList:        make(map[int64]string),
-		incomingClientReaders: make(map[int64]*bufio.Reader),
-		outgoingClientWriters: make(map[int64]*bufio.Writer),
-		buffioWriterMutexes:   make(map[int64]*sync.Mutex),
-		serverAddress:         "",
-		Listener:              nil,
-		rpcTable:              make(map[uint8]*common.RPCPair),
-		incomingChan:          make(chan common.RPCPair),
-		outgoingMessageChan:   make(chan common.OutgoingRPC),
-		proxyToProposerChan:   proxyToProposerChan,
-		proposerToProxyChan:   proposerToProxyChan,
-		recorderToProxyChan:   recorderToProxyChan,
-		clientBatchRpc:        0,
-		clientStatusRpc:       1,
-		decideRequest:         2,
-		decideResponse:        3,
-		replicatedLog:         make([]Slot, 0),
-		committedIndex:        -1,
-		lastProposedIndex:     -1,
-		lastTimeCommitted:     time.Now(),
-		logFilePath:           logFilePath,
-		batchSize:             int(batchSize),
-		pipelineLength:        pipelineLength,
-		clientBatchStore:      store,
-		leaderTimeout:         leaderTimeout,
-		debugOn:               debugOn,
-		debugLevel:            debugLevel,
-		serverStarted:         false,
-		server:                server,
-		toBeProposed:          make([]string, 0),
-		lastDecidedIndexes:    make([]int, 0),
-		lastDecidedDecisions:  make([][]string, 0),
-		leaderMode:            leaderMode,
-		serverMode:            serverMode,
+		name:                     name,
+		numReplicas:              len(cfg.Peers),
+		numClients:               len(cfg.Clients),
+		clientAddrList:           make(map[int64]string),
+		incomingClientReaders:    make(map[int64]*bufio.Reader),
+		outgoingClientWriters:    make(map[int64]*bufio.Writer),
+		buffioWriterMutexes:      make(map[int64]*sync.Mutex),
+		serverAddress:            "",
+		Listener:                 nil,
+		rpcTable:                 make(map[uint8]*common.RPCPair),
+		incomingChan:             make(chan common.RPCPair),
+		outgoingMessageChan:      make(chan common.OutgoingRPC),
+		proxyToProposerChan:      proxyToProposerChan,
+		proposerToProxyChan:      proposerToProxyChan,
+		recorderToProxyChan:      recorderToProxyChan,
+		proxyToProposerFetchChan: proxyToProposerFetchChan,
+		proposerToProxyFetchChan: proposerToProxyFetchChan,
+		clientBatchRpc:           0,
+		clientStatusRpc:          1,
+		decideRequest:            2, // not needed
+		decideResponse:           3, //not needed
+		replicatedLog:            make([]Slot, 0),
+		committedIndex:           -1,
+		lastProposedIndex:        -1,
+		lastTimeCommitted:        time.Now(),
+		logFilePath:              logFilePath,
+		batchSize:                int(batchSize),
+		pipelineLength:           pipelineLength,
+		clientBatchStore:         store,
+		leaderTimeout:            leaderTimeout,
+		debugOn:                  debugOn,
+		debugLevel:               debugLevel,
+		serverStarted:            false,
+		server:                   server,
+		toBeProposed:             make([]string, 0),
+		lastDecidedIndexes:       make([]int, 0),
+		lastDecidedDecisions:     make([][]string, 0),
+		leaderMode:               leaderMode,
+		serverMode:               serverMode, // for the proposer
 	}
 
 	// initialize the clientAddrList
@@ -148,6 +152,12 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 			break
 		}
 	}
+	// add a special request with id nil
+	pr.clientBatchStore.Add(client.ClientBatch{
+		Sender:   -1,
+		Messages: nil,
+		Id:       "nil",
+	})
 
 	// register rpcs
 
@@ -197,6 +207,11 @@ func (pr *Proxy) Run() {
 			case recorderMessage := <-pr.recorderToProxyChan:
 				pr.debug("Received recorder message", 0)
 				pr.handleRecorderResponse(recorderMessage)
+				break
+
+			case fetchResponse := <-pr.proposerToProxyFetchChan:
+				pr.debug("Received fetch response", 0)
+				pr.handleFetchResponse(fetchResponse)
 				break
 			}
 		}

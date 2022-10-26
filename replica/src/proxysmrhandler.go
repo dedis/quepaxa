@@ -6,63 +6,49 @@ import (
 	"time"
 )
 
-// handler for propose response
+// checks if the two string arrays are the same
 
-func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
-	if pr.decidedTheProposedValue(message) {
-		if pr.replicatedLog[message.index].decided == false {
-			// decide the value I proposed
-			pr.replicatedLog[message.index].decided = true
-			pr.replicatedLog[message.index].decidedBatch = message.decisions
-
-			// update SMR -- if all entries are available
-			pr.updateStateMachine()
-			
-			// from here: if not look at the last time committed, and revoke if needed using no-ops
-
-			// send back the response to client if self is who decided that
-			//todo
-		}
-	} else {
-		// re-propose to a new index
-		//todo
+func (pr *Proxy) hasSameBatches(array1 []string, array2 []string) bool {
+	if len(array1) != len(array2) {
+		return false
 	}
-	// add the decided value to proxy's lastDecidedIndexes, lastDecidedDecisions and lastDecidedUniqueIds
-
+	for i := 0; i < len(array1); i++ {
+		if array1[i] != array2[i] {
+			return false
+		}
+	}
+	return true
 }
 
-// update the state machine by executing all the commands from the committedIndex to len(log)-1
-// record the last committed time
+// returns true if the decision is same as the proposed value or if I have not proposed anything before
 
-func (pr *Proxy) updateStateMachine() {
-	for i := pr.committedIndex + 1; i < int64(len(pr.replicatedLog)); i++ {
+func (pr *Proxy) decidedTheProposedValue(index int, decisions []string) bool {
+	if pr.replicatedLog[index].proposedBatch == nil {
+		// i have not proposed anything
+		return true
+	}
+	if pr.hasSameBatches(pr.replicatedLog[index].proposedBatch, decisions) {
+		return true
+	}
+	return false
+}
 
-		if pr.replicatedLog[i].decided == true {
+// for each item in the list, if it is found in the toBeProposed, then delete it
 
-			for j := 0; j < len(pr.replicatedLog[i].decidedBatch); j++ {
-				var responseBatch *client.ClientBatch
-				responseBatch = pr.executeClientBatch(pr.replicatedLog[i].decidedBatch[j])
-				pr.sendClientRespose(responseBatch)
-				pr.committedIndex++
-				pr.lastTimeCommitted = time.Now()
+func (pr *Proxy) removeDecidedItemsFromFutureProposals(items []string) {
+	for i := 0; i < len(items); i++ {
+		position := -1
+		for j := 0; j < len(pr.toBeProposed); j++ {
+			if items[i] == pr.toBeProposed[j] {
+				position = j
+				break
 			}
-		} else {
-			break
+		}
+		if position != -1 {
+			pr.toBeProposed[position] = pr.toBeProposed[len(pr.toBeProposed)-1]
+			pr.toBeProposed = pr.toBeProposed[:len(pr.toBeProposed)-1]
 		}
 	}
-}
-
-// execute a single client batch
-
-func (pr *Proxy) executeClientBatch(s string) *client.ClientBatch {
-	batch, ok := pr.clientBatchStore.Get(s)
-	if !ok {
-		panic("decided batch not in the store")
-	}
-	// todo put application logic here
-	var outputBatch client.ClientBatch
-	outputBatch = pr.applySMRLogic(batch)
-	return &outputBatch
 }
 
 // apply the SMR logic for each client request
@@ -72,41 +58,235 @@ func (pr *Proxy) applySMRLogic(batch client.ClientBatch) client.ClientBatch {
 	return batch // todo change this later
 }
 
+// execute a single client batch
+
+func (pr *Proxy) executeClientBatch(s string) (*client.ClientBatch, bool) {
+	batch, ok := pr.clientBatchStore.Get(s)
+	if !ok {
+		return nil, false
+	}
+	outputBatch := pr.applySMRLogic(batch)
+	return &outputBatch, true
+}
+
 // send the client response to client
 
-func (pr *Proxy) sendClientRespose(batch *client.ClientBatch) {
-	pr.sendMessage(batch.Sender, common.RPCPair{
-		Code: pr.clientBatchRpc,
-		Obj:  batch,
-	})
+func (pr *Proxy) sendClientResponse(batches []*client.ClientBatch) {
+
+	for i := 0; i < len(batches); i++ {
+		if batches[i].Sender == -1 {
+			continue
+		}
+		pr.sendMessage(batches[i].Sender, common.RPCPair{
+			Code: pr.clientBatchRpc,
+			Obj:  batches[i],
+		})
+	}
+}
+
+// update the state machine by executing all the commands from the committedIndex to len(log)-1
+// record the last committed time
+
+func (pr *Proxy) updateStateMachine(sendResponse bool) {
+	for i := pr.committedIndex + 1; i < int64(len(pr.replicatedLog)); i++ {
+
+		if pr.replicatedLog[i].decided == true {
+
+			for j := 0; j < len(pr.replicatedLog[i].decidedBatch); j++ {
+				// check if each batch exists
+				_, ok := pr.clientBatchStore.Get(pr.replicatedLog[i].decidedBatch[j])
+				if !ok {
+					pr.proxyToProposerFetchChan <- FetchRequest{ids: pr.replicatedLog[i].decidedBatch}
+					return
+				}
+			}
+
+			var responseBatches []*client.ClientBatch
+			for j := 0; j < len(pr.replicatedLog[i].decidedBatch); j++ {
+				var responseBatch *client.ClientBatch
+				responseBatch, ok := pr.executeClientBatch(pr.replicatedLog[i].decidedBatch[j])
+				if !ok {
+					panic("did not find the client batch")
+				}
+				responseBatches = append(responseBatches, responseBatch)
+			}
+			pr.lastTimeCommitted = time.Now()
+			pr.committedIndex++
+			if sendResponse {
+				pr.sendClientResponse(responseBatches)
+			}
+		} else {
+			break
+		}
+	}
+}
+
+// revoke a single instance by proposing the same command proposed before
+
+func (pr *Proxy) revokeInstance(i int64) {
+
+	if pr.replicatedLog[i].decided == true {
+		panic("revoking an already decided entry")
+	}
+
+	strProposals := pr.replicatedLog[i].proposedBatch
+
+	if strProposals == nil || len(strProposals) == 0 {
+		// I have not proposed for this index before
+		if len(pr.toBeProposed) > 0 {
+			strProposals = pr.toBeProposed
+			pr.toBeProposed = make([]string, 0)
+		} else {
+			strProposals = []string{"nil"}
+		}
+	}
+
+	btchProposals := make([]client.ClientBatch, 0)
+
+	for i := 0; i < len(strProposals); i++ {
+		if strProposals[i] == "nil" {
+			btchProposals = append(btchProposals, client.ClientBatch{
+				Sender:   -1,
+				Messages: nil,
+				Id:       "nil",
+			})
+		} else {
+			btch, ok := pr.clientBatchStore.Get(strProposals[i])
+			if !ok {
+				strProposals[i] = "nil"
+				btchProposals = append(btchProposals, client.ClientBatch{
+					Sender:   -1,
+					Messages: nil,
+					Id:       "nil",
+				})
+			} else {
+				btchProposals = append(btchProposals, btch)
+			}
+		}
+	}
+
+	if len(strProposals) != len(btchProposals) {
+		panic("lengths do not match")
+	}
+
+	newProposalRequest := ProposeRequest{
+		instance:             i,
+		proposalStr:          strProposals,
+		proposalBtch:         btchProposals,
+		msWait:               pr.getLeaderWait(int(i)),
+		lastDecidedIndexes:   pr.lastDecidedIndexes,
+		lastDecidedDecisions: pr.lastDecidedDecisions,
+	}
+
+	pr.proxyToProposerChan <- newProposalRequest
+
+	pr.replicatedLog[i] = Slot{
+		proposedBatch: strProposals,
+		decidedBatch:  nil,
+		decided:       false,
+		committed:     false,
+	}
+
+	pr.lastDecidedIndexes = make([]int, 0)
+	pr.lastDecidedDecisions = make([][]string, 0)
+}
+
+// revoke all the instances from the last committed index to len log
+
+func (pr *Proxy) revokeInstances() {
+	for i := pr.committedIndex + 1; i < int64(len(pr.replicatedLog)); i++ {
+		if pr.replicatedLog[i].decided == false {
+			pr.revokeInstance(i)
+		}
+	}
+}
+
+// handler for propose response from the proposer
+
+func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
+	if pr.replicatedLog[message.index].decided == false {
+		pr.replicatedLog[message.index].decided = true
+		pr.replicatedLog[message.index].decidedBatch = message.decisions
+
+		if !pr.decidedTheProposedValue(message.index, message.decisions) {
+			pr.toBeProposed = append(pr.toBeProposed, pr.replicatedLog[message.index].proposedBatch...)
+		}
+		// remove the decided batches from toBeProposed
+		pr.removeDecidedItemsFromFutureProposals(pr.replicatedLog[message.index].decidedBatch)
+	}
+
+	// update SMR -- if all entries are available
+	pr.updateStateMachine(true)
+
+	// look at the last time committed, and revoke if needed using no-ops
+	if time.Now().Sub(pr.lastTimeCommitted).Milliseconds() > int64(pr.leaderTimeout*10) {
+		// revoke all the instances from last committed index
+		pr.revokeInstances()
+		//todo we loose optimistic liveness here, not sure how to fix that
+	}
+
+	// add the decided value to proxy's lastDecidedIndexes, lastDecidedDecisions
+	pr.lastDecidedIndexes = append(pr.lastDecidedIndexes, message.index)
+	pr.lastDecidedDecisions = append(pr.lastDecidedDecisions, message.decisions)
+
+}
+
+// return the highest from the array
+
+func (pr *Proxy) getHighestIndex(indexes []int) int {
+	highest := indexes[0]
+	for i := 0; i < len(indexes); i++ {
+		if indexes[i] > highest {
+			highest = indexes[i]
+		}
+	}
+	return highest
 }
 
 // mark the entries in the replicated log, and if possible execute
 
 func (pr *Proxy) handleRecorderResponse(message Decision) {
-	// todo
-}
-
-// returns true if the decision is same as the proposed value
-
-func (pr *Proxy) decidedTheProposedValue(message ProposeResponse) bool {
-	index := message.index
-	if pr.hasSameBatches(pr.replicatedLog[index].proposedBatch, message.decisions) {
-		return true
+	if len(message.indexes) != len(message.decisions) {
+		panic("number of decided items and number of decisions do not match")
 	}
-	return false
-}
 
-// checks if the two arrays are same
+	highestIndex := pr.getHighestIndex(message.indexes)
 
-func (pr *Proxy) hasSameBatches(batch []string, decisions []string) bool {
-	if len(batch) != len(decisions) {
-		return false
+	for len(pr.replicatedLog) < int(highestIndex)+1 {
+		pr.replicatedLog = append(pr.replicatedLog, Slot{
+			proposedBatch: nil,
+			decidedBatch:  nil,
+			decided:       false,
+			committed:     false,
+		})
 	}
-	for i := 0; i < len(batch); i++ {
-		if batch[i] != decisions[i] {
-			return false
+
+	for i := 0; i < len(message.indexes); i++ {
+		index := message.indexes[i]
+		batches := message.decisions[i]
+
+		if pr.replicatedLog[index].decided == false {
+			pr.replicatedLog[index].decided = true
+			pr.replicatedLog[index].decidedBatch = batches
+
+			if !pr.decidedTheProposedValue(index, batches) {
+				pr.toBeProposed = append(pr.toBeProposed, pr.replicatedLog[index].proposedBatch...)
+			}
+
+			pr.removeDecidedItemsFromFutureProposals(batches)
 		}
 	}
-	return true
+
+	// update SMR -- if all entries are available
+	pr.updateStateMachine(false)
+
+}
+
+// save the batch in the store
+
+func (pr *Proxy) handleFetchResponse(response FetchResposne) {
+	for i := 0; i < len(response.batches); i++ {
+		pr.clientBatchStore.Add(response.batches[i])
+	}
+	pr.updateStateMachine(true)
 }

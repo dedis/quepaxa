@@ -45,7 +45,12 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 			// create the slot index
 			for len(pr.replicatedLog) < int(proposeIndex+1) {
 				// create the new entry
-				pr.replicatedLog = append(pr.replicatedLog, Slot{})
+				pr.replicatedLog = append(pr.replicatedLog, Slot{
+					proposedBatch: nil,
+					decidedBatch:  nil,
+					decided:       false,
+					committed:     false,
+				})
 			}
 
 			pr.replicatedLog[proposeIndex] = Slot{

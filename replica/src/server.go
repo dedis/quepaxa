@@ -21,6 +21,10 @@ type Server struct {
 	proxyToProposerChan chan ProposeRequest
 	proposerToProxyChan chan ProposeResponse
 	recorderToProxyChan chan Decision
+	
+	proxyToProposerFetchChan chan FetchRequest
+	proposerToProxyFetchChan chan FetchResposne
+	
 
 	lastSeenTimeProposers []*time.Time // last seen times of each proposer
 
@@ -29,6 +33,18 @@ type Server struct {
 	numProposers int                          // number of proposers == pipeline length
 	store        *ClientBatchStore            // shared client batch store
 	serverMode   int
+}
+
+// from proxy to proposer
+
+type FetchRequest struct {
+	ids []string
+}
+
+// from proposer to proxy
+
+type FetchResposne struct {
+	batches []client.ClientBatch
 }
 
 // ProposeRequest is the message type sent from proxy to proposer
@@ -139,9 +155,11 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		numProposers:          int(pipelineLength),
 		store:                 &ClientBatchStore{},
 		serverMode:            serverMode,
+		proxyToProposerFetchChan: make(chan FetchRequest, 10000),
+		proposerToProxyFetchChan: make(chan FetchResposne, 10000),
 	}
 
-	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store)
+	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode , sr.store , serverMode, sr.proxyToProposerFetchChan, sr.proposerToProxyFetchChan)
 	sr.RecorderInstance = NewRecorder(*cfg, sr.store, sr.lastSeenTimeProposers, sr.recorderToProxyChan, name)
 	return &sr
 }
