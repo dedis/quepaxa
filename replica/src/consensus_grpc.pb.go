@@ -97,7 +97,7 @@ var Consensus_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/consensus/consensus.proto",
+	Metadata: "replica/src/consensus.proto",
 }
 
 // FetchClient is the client API for Fetch service.
@@ -183,5 +183,5 @@ var Fetch_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/consensus/consensus.proto",
+	Metadata: "replica/src/consensus.proto",
 }

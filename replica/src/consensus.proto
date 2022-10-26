@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "proto/consensus";
+option go_package = "/raxos";
 
 /*
   ProposerMessage is the message type that is used for proposer-to-recorder
