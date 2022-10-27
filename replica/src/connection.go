@@ -31,9 +31,3 @@ func (gc *GRPCConnection) FetchBatches(ctx context.Context, req *DecideRequest) 
 	response = gc.Recorder.HandleFetch(req)
 	return response, nil
 }
-
-// for gRPC forward compatibility
-
-func (gc *GRPCConnection) mustEmbedUnimplementedFetchServer() {
-	// no need to implement
-}

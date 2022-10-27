@@ -19,6 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ConsensusClient interface {
 	ESP(ctx context.Context, in *ProposerMessage, opts ...grpc.CallOption) (*RecorderResponse, error)
+	FetchBatches(ctx context.Context, in *DecideRequest, opts ...grpc.CallOption) (*DecideResponse, error)
 }
 
 type consensusClient struct {
@@ -38,11 +39,21 @@ func (c *consensusClient) ESP(ctx context.Context, in *ProposerMessage, opts ...
 	return out, nil
 }
 
+func (c *consensusClient) FetchBatches(ctx context.Context, in *DecideRequest, opts ...grpc.CallOption) (*DecideResponse, error) {
+	out := new(DecideResponse)
+	err := c.cc.Invoke(ctx, "/Consensus/FetchBatches", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ConsensusServer is the server API for Consensus service.
 // All implementations must embed UnimplementedConsensusServer
 // for forward compatibility
 type ConsensusServer interface {
 	ESP(context.Context, *ProposerMessage) (*RecorderResponse, error)
+	FetchBatches(context.Context, *DecideRequest) (*DecideResponse, error)
 	mustEmbedUnimplementedConsensusServer()
 }
 
@@ -52,6 +63,9 @@ type UnimplementedConsensusServer struct {
 
 func (UnimplementedConsensusServer) ESP(context.Context, *ProposerMessage) (*RecorderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ESP not implemented")
+}
+func (UnimplementedConsensusServer) FetchBatches(context.Context, *DecideRequest) (*DecideResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FetchBatches not implemented")
 }
 func (UnimplementedConsensusServer) mustEmbedUnimplementedConsensusServer() {}
 
@@ -84,6 +98,24 @@ func _Consensus_ESP_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Consensus_FetchBatches_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DecideRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsensusServer).FetchBatches(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Consensus/FetchBatches",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsensusServer).FetchBatches(ctx, req.(*DecideRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Consensus_ServiceDesc is the grpc.ServiceDesc for Consensus service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -95,91 +127,9 @@ var Consensus_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "ESP",
 			Handler:    _Consensus_ESP_Handler,
 		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "replica/src/consensus.proto",
-}
-
-// FetchClient is the client API for Fetch service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type FetchClient interface {
-	FetchBatches(ctx context.Context, in *DecideRequest, opts ...grpc.CallOption) (*DecideResponse, error)
-}
-
-type fetchClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewFetchClient(cc grpc.ClientConnInterface) FetchClient {
-	return &fetchClient{cc}
-}
-
-func (c *fetchClient) FetchBatches(ctx context.Context, in *DecideRequest, opts ...grpc.CallOption) (*DecideResponse, error) {
-	out := new(DecideResponse)
-	err := c.cc.Invoke(ctx, "/Fetch/FetchBatches", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// FetchServer is the server API for Fetch service.
-// All implementations must embed UnimplementedFetchServer
-// for forward compatibility
-type FetchServer interface {
-	FetchBatches(context.Context, *DecideRequest) (*DecideResponse, error)
-	mustEmbedUnimplementedFetchServer()
-}
-
-// UnimplementedFetchServer must be embedded to have forward compatible implementations.
-type UnimplementedFetchServer struct {
-}
-
-func (UnimplementedFetchServer) FetchBatches(context.Context, *DecideRequest) (*DecideResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FetchBatches not implemented")
-}
-func (UnimplementedFetchServer) mustEmbedUnimplementedFetchServer() {}
-
-// UnsafeFetchServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to FetchServer will
-// result in compilation errors.
-type UnsafeFetchServer interface {
-	mustEmbedUnimplementedFetchServer()
-}
-
-func RegisterFetchServer(s grpc.ServiceRegistrar, srv FetchServer) {
-	s.RegisterService(&Fetch_ServiceDesc, srv)
-}
-
-func _Fetch_FetchBatches_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DecideRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(FetchServer).FetchBatches(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/Fetch/FetchBatches",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FetchServer).FetchBatches(ctx, req.(*DecideRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// Fetch_ServiceDesc is the grpc.ServiceDesc for Fetch service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var Fetch_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "Fetch",
-	HandlerType: (*FetchServer)(nil),
-	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "FetchBatches",
-			Handler:    _Fetch_FetchBatches_Handler,
+			Handler:    _Consensus_FetchBatches_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

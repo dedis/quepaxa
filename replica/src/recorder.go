@@ -77,7 +77,6 @@ func (r *Recorder) NetworkInit() {
 	r.server = grpc.NewServer()
 	r.connection = &GRPCConnection{Recorder: r}
 	RegisterConsensusServer(r.server, r.connection)
-	RegisterFetchServer(r.server, r.connection)
 
 	// start listener
 	listener, err := net.Listen("tcp", r.address)
@@ -245,7 +244,7 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 			d.indexes = append(d.indexes, int(req.DecidedSlots[i].Index))
 			d.decisions = append(d.decisions, req.DecidedSlots[i].Ids)
 		}
-		
+
 		re.recorderToProxyChan <- d
 	}
 

@@ -61,6 +61,7 @@ message RecorderResponse {
 
 service Consensus {
   rpc ESP (ProposerMessage) returns (RecorderResponse);
+  rpc FetchBatches (DecideRequest) returns (DecideResponse);
 }
 
 message DecideRequest {
@@ -78,8 +79,4 @@ message DecideResponse{
   }
   repeated ClientBatch client_batches = 1; // client batches
 
-}
-
-service Fetch {
-  rpc FetchBatches (DecideRequest) returns (DecideResponse);
 }
