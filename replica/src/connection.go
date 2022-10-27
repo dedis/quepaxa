@@ -28,7 +28,7 @@ func (gc *GRPCConnection) mustEmbedUnimplementedConsensusServer() {
 func (gc *GRPCConnection) FetchBatches(ctx context.Context, req *DecideRequest) (*DecideResponse, error) {
 
 	var response *DecideResponse
-	response = gc.Recorder.HandleFtech(req)
+	response = gc.Recorder.HandleFetch(req)
 	return response, nil
 }
 

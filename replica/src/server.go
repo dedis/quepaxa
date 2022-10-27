@@ -20,10 +20,9 @@ type Server struct {
 	proxyToProposerChan chan ProposeRequest
 	proposerToProxyChan chan ProposeResponse
 	recorderToProxyChan chan Decision
-	
+
 	proxyToProposerFetchChan chan FetchRequest
 	proposerToProxyFetchChan chan FetchResposne
-	
 
 	lastSeenTimeProposers []*time.Time // last seen times of each proposer
 
@@ -142,23 +141,29 @@ func (s *Server) createProposers() {
 func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, leaderTimeout int64, pipelineLength int64, benchmark int64, debugOn bool, debugLevel int, leaderMode int, serverMode int) *Server {
 
 	sr := Server{
-		ProxyInstance:         nil,
-		ProposerInstances:     nil, // this is initialized in the createProposers method, so no need to create them
-		RecorderInstance:      nil,
-		proxyToProposerChan:   make(chan ProposeRequest, 10000),
-		proposerToProxyChan:   make(chan ProposeResponse, 10000),
-		recorderToProxyChan:   make(chan Decision, 10000),
-		lastSeenTimeProposers: make([]*time.Time, len(cfg.Peers)),
-		peers:                 make([]peer, 0),
-		cfg:                   *cfg,
-		numProposers:          int(pipelineLength),
-		store:                 &ClientBatchStore{},
-		serverMode:            serverMode,
+		ProxyInstance:            nil,
+		ProposerInstances:        nil, // this is initialized in the createProposers method, so no need to create them
+		RecorderInstance:         nil,
+		proxyToProposerChan:      make(chan ProposeRequest, 10000),
+		proposerToProxyChan:      make(chan ProposeResponse, 10000),
+		recorderToProxyChan:      make(chan Decision, 10000),
+		lastSeenTimeProposers:    make([]*time.Time, len(cfg.Peers)),
+		peers:                    make([]peer, 0),
+		cfg:                      *cfg,
+		numProposers:             int(pipelineLength),
+		store:                    &ClientBatchStore{},
+		serverMode:               serverMode,
 		proxyToProposerFetchChan: make(chan FetchRequest, 10000),
 		proposerToProxyFetchChan: make(chan FetchResposne, 10000),
 	}
 
-	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode , sr.store , serverMode, sr.proxyToProposerFetchChan, sr.proposerToProxyFetchChan)
+	// allocate the lastSeenTimeProposers
+
+	for i := 0; i < len(sr.lastSeenTimeProposers); i++ {
+		sr.lastSeenTimeProposers[i] = &time.Time{}
+	}
+
+	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store, serverMode, sr.proxyToProposerFetchChan, sr.proposerToProxyFetchChan)
 	sr.RecorderInstance = NewRecorder(*cfg, sr.store, sr.lastSeenTimeProposers, sr.recorderToProxyChan, name)
 	return &sr
 }
