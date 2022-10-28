@@ -31,6 +31,8 @@ type Server struct {
 	numProposers int                          // number of proposers == pipeline length
 	store        *ClientBatchStore            // shared client batch store
 	serverMode   int
+	debugOn      bool
+	debugLevel   int
 }
 
 // from proxy to proposer
@@ -72,7 +74,7 @@ type Decision struct {
 
 type peer struct {
 	name   int64
-	client *ConsensusClient
+	client ConsensusClient
 }
 
 // AddPeer adds a new peer to the peer list
@@ -80,7 +82,7 @@ func (sr *Server) AddPeer(name int64, client *ConsensusClient) {
 	// add peer to the peer list
 	sr.peers = append(sr.peers, peer{
 		name:   name,
-		client: client,
+		client: *client,
 	})
 }
 
@@ -101,34 +103,38 @@ func (s *Server) Run() {
 	start the set of gRPC connections and initiate the set of Proposers
 */
 func (s *Server) StartProposers() {
-	// create N gRPC connections
-	s.setupgRPC()
 	// create M number of the Proposers. each have a pointer to the gRPC connections
 	s.createProposers()
 }
 
 // setup gRPC clients to all recorders and return the connection pointers
 
-func (s *Server) setupgRPC() {
-	// add peers
-	for _, peer := range s.cfg.Peers {
-		strAddress := peer.IP + ":" + peer.RECORDERPORT
+func (s *Server) setupgRPC() []peer {
+	peers := make([]peer, 0)
+	for _, peeri := range s.cfg.Peers {
+		strAddress := peeri.IP + ":" + peeri.RECORDERPORT
 		conn, err := grpc.Dial(strAddress, grpc.WithInsecure())
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "dial: %v", err)
 			os.Exit(1)
 		}
-		intName, _ := strconv.Atoi(peer.Name)
+		intName, _ := strconv.Atoi(peeri.Name)
 		newClient := NewConsensusClient(conn)
-		s.AddPeer(int64(intName), &newClient)
+		peers = append(peers, peer{
+			name:   int64(intName),
+			client: newClient,
+		})
 	}
+	return peers
 }
 
 // create M number of proposers
 
 func (s *Server) createProposers() {
 	for i := 0; i < s.numProposers; i++ {
-		newProposer := NewProposer(s.ProxyInstance.name, int64(i), s.peers, s.proxyToProposerChan, s.proposerToProxyChan, s.lastSeenTimeProposers)
+		// create N gRPC connections
+		peers := s.setupgRPC()
+		newProposer := NewProposer(s.ProxyInstance.name, int64(i), peers, s.proxyToProposerChan, s.proposerToProxyChan, s.proxyToProposerFetchChan, s.proposerToProxyFetchChan, s.lastSeenTimeProposers, s.debugOn, s.debugLevel)
 		s.ProposerInstances = append(s.ProposerInstances, newProposer)
 		s.ProposerInstances[len(s.ProposerInstances)-1].runProposer()
 	}
@@ -155,6 +161,8 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		serverMode:               serverMode,
 		proxyToProposerFetchChan: make(chan FetchRequest, 10000),
 		proposerToProxyFetchChan: make(chan FetchResposne, 10000),
+		debugOn:                  debugOn,
+		debugLevel:               debugLevel,
 	}
 
 	// allocate the lastSeenTimeProposers
