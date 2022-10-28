@@ -145,7 +145,7 @@ func (r *Recorder) max(oldValue Value, p *ProposerMessage_Proposal) Value {
 
 // main recorder logic goes here
 
-func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (int64, Value, Value, bool) {
+func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (int64, Value, Value) {
 
 	re.instanceCreationMutex.Lock()
 	for int64(len(re.slots)) < index+1 {
@@ -175,12 +175,9 @@ func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (in
 	re.instanceCreationMutex.Unlock()
 
 	re.slots[index].Mutex.Lock()
-	success := false
 	if re.slots[index].S == s {
-		success = true
 		re.slots[index].A = re.max(re.slots[index].A, p)
 	} else if re.slots[index].S < s {
-		success = true
 		if re.slots[index].S+1 < s {
 			re.slots[index].A = Value{
 				priority:    -1,
@@ -211,7 +208,7 @@ func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (in
 
 	re.slots[index].Mutex.Unlock()
 
-	return int64(returnS), returnF, returnM, success
+	return int64(returnS), returnF, returnM
 
 }
 
@@ -269,24 +266,21 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 	}
 
 	// process using the recorder logic
-	S, F, M, success := re.espImpl(req.Index, int(req.S), req.P)
-	response.Success = success
-	if success {
-		response.S = S
-		response.F = &RecorderResponse_Proposal{
-			Priority:   F.priority,
-			ProposerId: F.proposer_id,
-			ThreadId:   F.thread_id,
-			Ids:        F.ids,
-		}
-		response.M = &RecorderResponse_Proposal{
-			Priority:   M.priority,
-			ProposerId: M.proposer_id,
-			ThreadId:   M.thread_id,
-			Ids:        M.ids,
-		}
+	S, F, M := re.espImpl(req.Index, int(req.S), req.P)
+	response.S = S
+	response.F = &RecorderResponse_Proposal{
+		Priority:   F.priority,
+		ProposerId: F.proposer_id,
+		ThreadId:   F.thread_id,
+		Ids:        F.ids,
 	}
-
+	response.M = &RecorderResponse_Proposal{
+		Priority:   M.priority,
+		ProposerId: M.proposer_id,
+		ThreadId:   M.thread_id,
+		Ids:        M.ids,
+	}
+	
 	proposer := req.Sender
 	// Mark the time of the proposal message for the proposer
 	*re.lastSeenTimeProposers[proposer] = time.Now()

@@ -134,7 +134,8 @@ func (s *Server) createProposers() {
 	for i := 0; i < s.numProposers; i++ {
 		// create N gRPC connections
 		peers := s.setupgRPC()
-		newProposer := NewProposer(s.ProxyInstance.name, int64(i), peers, s.proxyToProposerChan, s.proposerToProxyChan, s.proxyToProposerFetchChan, s.proposerToProxyFetchChan, s.lastSeenTimeProposers, s.debugOn, s.debugLevel)
+		hi := 10000
+		newProposer := NewProposer(s.ProxyInstance.name, int64(i), peers, s.proxyToProposerChan, s.proposerToProxyChan, s.proxyToProposerFetchChan, s.proposerToProxyFetchChan, s.lastSeenTimeProposers, s.debugOn, s.debugLevel, hi)
 		s.ProposerInstances = append(s.ProposerInstances, newProposer)
 		s.ProposerInstances[len(s.ProposerInstances)-1].runProposer()
 	}
