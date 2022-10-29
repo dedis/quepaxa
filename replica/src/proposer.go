@@ -143,6 +143,7 @@ func (prop *Proposer) convertToClientBtchMessages(messages []*client.ClientBatch
 			Message: messages[i].Message,
 		})
 	}
+	return rA
 }
 
 // convert between proto types
@@ -156,6 +157,7 @@ func (prop *Proposer) getProposeClientBatches(btch []client.ClientBatch) []*Prop
 			Id:       btch[i].Id,
 		})
 	}
+	return rA
 }
 
 // convert between proto types
@@ -176,30 +178,123 @@ func (prop *Proposer) extractDecidedSlots(indexes []int, decisions [][]string) [
 	return rA
 }
 
+// checks if element set of ele1 is greater than ele2
+
+func (prop *Proposer) isGreaterThan(ele1 RecorderResponse, ele2 *RecorderResponse_Proposal, set string) bool {
+	if set == "F" {
+		if ele1.F.Priority > ele2.Priority {
+			return true
+		}
+		if ele1.F.Priority == ele2.Priority && ele1.F.ProposerId > ele2.ProposerId {
+			return true
+		}
+		if ele1.F.Priority == ele2.Priority && ele1.F.ProposerId == ele2.ProposerId && ele1.F.ThreadId > ele2.ThreadId {
+			return true
+		}
+		if ele1.F.Priority == ele2.Priority && ele1.F.ProposerId == ele2.ProposerId && ele1.F.ThreadId == ele2.ThreadId {
+			panic("should not happen")
+		}
+
+		return false
+	} else if set == "M" {
+		if ele1.M.Priority > ele2.Priority {
+			return true
+		}
+		if ele1.M.Priority == ele2.Priority && ele1.F.ProposerId > ele2.ProposerId {
+			return true
+		}
+		if ele1.M.Priority == ele2.Priority && ele1.F.ProposerId == ele2.ProposerId && ele1.F.ThreadId > ele2.ThreadId {
+			return true
+		}
+		if ele1.M.Priority == ele2.Priority && ele1.M.ProposerId == ele2.ProposerId && ele1.M.ThreadId == ele2.ThreadId {
+			panic("should not happen")
+		}
+
+		return false
+	} else {
+		panic("should not happen")
+	}
+
+}
+
 // return the maximum of F’ from all replies in R
 
 func (prop *Proposer) getMaxFromResponses(array []RecorderResponse, set string) ProposerMessage_Proposal {
 	if len(array) == 0 {
 		panic("should not happen")
 	}
-	
+
 	var max *RecorderResponse_Proposal
-	
+
 	if set == "F" {
 		max = array[0].F
-	}else if set == "M"{
-		max = array[0].M	
+	} else if set == "M" {
+		max = array[0].M
 	}
-	
+
 	for i := 1; i < len(array); i++ {
-		if prop.isGreaterThan(array[i], max, set) { //todo start from here
+		if prop.isGreaterThan(array[i], max, set) {
 			if set == "F" {
 				max = array[i].F
-			}else if set == "M"{
+			} else if set == "M" {
 				max = array[i].M
-			}		
+			}
 		}
 	}
+	return ProposerMessage_Proposal{
+		Priority:   max.Priority,
+		ProposerId: max.ProposerId,
+		ThreadId:   max.ThreadId,
+		Ids:        max.Ids,
+	}
+}
+
+// compare a client batch
+
+func (prop *Proposer) isEqual(batch1 *ProposerMessage_ClientBatch, batch2 *ProposerMessage_ClientBatch) bool {
+	if batch1.Sender != batch2.Sender {
+		return false
+	}
+	if batch1.Id != batch2.Id {
+		return false
+	}
+	return true
+}
+
+// compare two arrays of client batches
+
+func (prop *Proposer) isEqualClientBatches(batche1 []*ProposerMessage_ClientBatch, batche2 []*ProposerMessage_ClientBatch) bool {
+	if len(batche1) != len(batche2) {
+		return false
+	}
+	for i := 0; i < len(batche1); i++ {
+		if !prop.isEqual(batche1[i], batche2[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+//  compares two proposals
+
+func (prop *Proposer) isEqualProposal(p ProposerMessage_Proposal, m ProposerMessage_Proposal) bool {
+	if p.Priority != m.Priority {
+		return false
+	}
+	if p.ProposerId != m.ProposerId {
+		return false
+	}
+	if p.ThreadId != m.ThreadId {
+		return false
+	}
+	if len(p.ClientBatches) != len(m.ClientBatches) {
+		return false
+	}
+	if !prop.isEqualClientBatches(p.ClientBatches, m.ClientBatches) {
+		return false
+	}
+
+	return true
 }
 
 // run the proposer logic
@@ -238,7 +333,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 		}
 
 		responses := make(chan *RecorderResponse, prop.numReplicas)
-		ctx, cancel := context.WithTimeout(context.Background(), in.timeout)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10)*time.Second)
 
 		wg := sync.WaitGroup{}
 		for i := 0; i < prop.numReplicas; i++ {
@@ -307,9 +402,35 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 			// P ← maximum of F’ from all replies in R
 			P = prop.getMaxFromResponses(responsesArray, "F")
+		} else if allRepliesHaveS && S%4 == 2 {
+			maxM := prop.getMaxFromResponses(responsesArray, "M")
+			if prop.isEqualProposal(P, maxM) {
+				return ProposeResponse{
+					index:     int(message.instance),
+					decisions: P.Ids,
+				}
+			}
+		} else if allRepliesHaveS && S%4 == 3 {
+			P = prop.getMaxFromResponses(responsesArray, "M")
+		} else if allRepliesHaveS {
+			S = S + 1
 		}
 
+		//  if any reply in R has S’ > S: S, P ← S’, F’ from any reply with maximum S’
+		for i := 0; i < len(responsesArray); i++ {
+			if responsesArray[i].S > int64(S) {
+				S = int(responsesArray[i].S)
+				P = ProposerMessage_Proposal{
+					Priority:   responsesArray[i].F.Priority,
+					ProposerId: responsesArray[i].F.ProposerId,
+					ThreadId:   responsesArray[i].F.ThreadId,
+					Ids:        responsesArray[i].F.Ids,
+				}
+			}
+		}
 	}
+	panic("should not happen")
+	return ProposeResponse{}
 }
 
 // infinite loop listening to the server channel
