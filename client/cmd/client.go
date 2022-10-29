@@ -116,9 +116,18 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		sentRequests:           make([][]sentRequestBatch, numRequestGenerationThreads),
 		receivedResponses:      sync.Map{},
 		startTime:              time.Time{},
-		clientListenAddress:    "0.0.0.0:" + cfg.Clients[name].CLIENTPORT,
+		clientListenAddress:    "",
 		keyLen:                 keyLen,
 		valLen:                 valLen,
+	}
+
+	// client listen address
+
+	for i := 0; i < len(cfg.Clients); i++ {
+		if cfg.Clients[i].Name == strconv.Itoa(int(name)) {
+			cl.clientListenAddress = "0.0.0.0:" + cfg.Clients[i].CLIENTPORT
+			break
+		}
 	}
 
 	// initialize the replicaAddrList

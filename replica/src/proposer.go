@@ -331,6 +331,13 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 	// todo add msWait check for non-leader proposals
 
+	if message.msWait != 0 {
+		return ProposeResponse{
+			index:     -1,
+			decisions: nil,
+		} //todo change
+	}
+
 	for true {
 
 		Pi := make([]ProposerMessage_Proposal, prop.numReplicas)
@@ -372,12 +379,8 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 					return
 				}
 
-				select {
-				case responses <- resp:
-					return
-				default:
-					return
-				}
+				responses <- resp
+				return
 
 			}(prop.peers[i], Pi[i], S, decidedSlots)
 		}
@@ -386,6 +389,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 		go func() {
 			wg.Wait()
 			cancel()
+			close(responses)
 		}()
 
 		// todo add fast path checks where HasClientBacthes is false when s = 0, in which case the proposer sends the s=0 again with actual batches
@@ -395,7 +399,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 			responsesArray = append(responsesArray, *r)
 			// close the channel once a majority of the replies are collected
 			if len(responsesArray) == prop.numReplicas/2+1 {
-				close(responses)
+				break
 			}
 		}
 		// If all replies in R have S’ = S and S%4 = 0
@@ -463,7 +467,10 @@ func (prop *Proposer) runProposer() {
 			select {
 			case proposeMessage := <-prop.proxyToProposerChan:
 				prop.debug("Received propose request", 0)
-				prop.proposerToProxyChan <- prop.handleProposeRequest(proposeMessage)
+				response := prop.handleProposeRequest(proposeMessage)
+				if response.index != -1 {
+					prop.proposerToProxyChan <- response
+				}
 				break
 
 			case fetchMessage := <-prop.proxyToProposerFetchChan:

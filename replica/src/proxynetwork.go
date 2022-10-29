@@ -39,7 +39,7 @@ func (pr *Proxy) waitForConnections() {
 	// listen to proxy port
 	pr.Listener, _ = net.Listen("tcp", pr.serverAddress)
 
-	for i := 0; i < pr.numClients; i++ {
+	for true {
 		conn, err := pr.Listener.Accept()
 		if err != nil {
 			fmt.Println("TCP accept error:", err)
@@ -106,7 +106,7 @@ func (pr *Proxy) connectToClient(id int32) {
 				pr.debug("Error connecting to client "+strconv.Itoa(int(id)), 0)
 				panic(err)
 			}
-			pr.debug("Started outgoing tcp connection to client"+strconv.Itoa(int(id)), 0)
+			pr.debug("Started outgoing tcp connection to client "+strconv.Itoa(int(id)), 0)
 			break
 		}
 	}
