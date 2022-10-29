@@ -22,11 +22,12 @@ type Proposer struct {
 	debugOn                  bool // if turned on, the debug messages will be print on the console
 	debugLevel               int  // debug level
 	hi                       int  // hi priority
+	serverMode               int  // if 1, use the fast path LAN optimizations
 }
 
 // instantiate a new Proposer
 
-func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, lastSeenTimes []*time.Time, debugOn bool, debugLevel int, hi int) *Proposer {
+func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, lastSeenTimes []*time.Time, debugOn bool, debugLevel int, hi int, serverMode int) *Proposer {
 
 	pr := Proposer{
 		numReplicas:              len(peers),
@@ -41,6 +42,7 @@ func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan c
 		debugOn:                  debugOn,
 		debugLevel:               debugLevel,
 		hi:                       hi,
+		serverMode:               serverMode,
 	}
 
 	return &pr

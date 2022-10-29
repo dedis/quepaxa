@@ -13,6 +13,7 @@ import (
 // server is the main struct for the replica that has a proxy, multiple proposers and a recorder in it
 
 type Server struct {
+	name              int64
 	ProxyInstance     *Proxy
 	ProposerInstances []*Proposer
 	RecorderInstance  *Recorder
@@ -30,7 +31,7 @@ type Server struct {
 	cfg          configuration.InstanceConfig // configuration of clients and replicas
 	numProposers int                          // number of proposers == pipeline length
 	store        *ClientBatchStore            // shared client batch store
-	serverMode   int
+	serverMode   int                          // todo use this in the proposer code for the optimizations
 	debugOn      bool
 	debugLevel   int
 }
@@ -135,7 +136,7 @@ func (s *Server) createProposers() {
 		// create N gRPC connections
 		peers := s.setupgRPC()
 		hi := 10000
-		newProposer := NewProposer(s.ProxyInstance.name, int64(i), peers, s.proxyToProposerChan, s.proposerToProxyChan, s.proxyToProposerFetchChan, s.proposerToProxyFetchChan, s.lastSeenTimeProposers, s.debugOn, s.debugLevel, hi)
+		newProposer := NewProposer(s.name, int64(i), peers, s.proxyToProposerChan, s.proposerToProxyChan, s.proxyToProposerFetchChan, s.proposerToProxyFetchChan, s.lastSeenTimeProposers, s.debugOn, s.debugLevel, hi, s.serverMode)
 		s.ProposerInstances = append(s.ProposerInstances, newProposer)
 		s.ProposerInstances[len(s.ProposerInstances)-1].runProposer()
 	}
@@ -164,6 +165,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		proposerToProxyFetchChan: make(chan FetchResposne, 10000),
 		debugOn:                  debugOn,
 		debugLevel:               debugLevel,
+		name:                     name,
 	}
 
 	// allocate the lastSeenTimeProposers
@@ -173,6 +175,6 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 	}
 
 	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store, serverMode, sr.proxyToProposerFetchChan, sr.proposerToProxyFetchChan)
-	sr.RecorderInstance = NewRecorder(*cfg, sr.store, sr.lastSeenTimeProposers, sr.recorderToProxyChan, name)
+	sr.RecorderInstance = NewRecorder(*cfg, sr.store, sr.lastSeenTimeProposers, sr.recorderToProxyChan, name, debugOn, debugLevel)
 	return &sr
 }
