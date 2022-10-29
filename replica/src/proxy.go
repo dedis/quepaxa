@@ -167,6 +167,8 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
+	pr.debug("initiazlied a new proxy "+fmt.Sprintf("%v", pr), 0)
+
 	return &pr
 }
 
@@ -192,7 +194,7 @@ func (pr *Proxy) Run() {
 
 				case pr.clientStatusRpc:
 					clientStatus := inpputMessage.Obj.(*client.ClientStatus)
-					pr.debug("Client status  ", 1)
+					pr.debug("Client status  ", 0)
 					pr.handleClientStatus(*clientStatus)
 					break
 

@@ -1,6 +1,7 @@
 package raxos
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"raxos/proto/client"
@@ -41,7 +42,7 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 			}
 
 			pr.proxyToProposerChan <- newProposalRequest
-
+			pr.debug("proxy sent a proposal request to proposer  "+fmt.Sprintf("%v", newProposalRequest), 0)
 			// create the slot index
 			for len(pr.replicatedLog) < int(proposeIndex+1) {
 				// create the new entry
@@ -75,11 +76,13 @@ func (pr *Proxy) handleClientStatus(status client.ClientStatus) {
 	if status.Operation == 1 {
 		if pr.serverStarted == false {
 			// initiate gRPC connections
+			pr.debug("proxy starting proposers  ", 0)
 			pr.server.StartProposers()
 			pr.serverStarted = true
 		}
 	}
 	if status.Operation == 2 {
+		pr.debug("proxy printing logs", 0)
 		// print logs
 		pr.printLog()
 	}

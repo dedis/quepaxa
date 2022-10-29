@@ -45,6 +45,8 @@ func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan c
 		serverMode:               serverMode,
 	}
 
+	pr.debug("created a new proposer "+fmt.Sprintf("%v", pr), 0)
+
 	return &pr
 }
 
@@ -109,7 +111,7 @@ func (prop *Proposer) convertToClientBatches(batches []*DecideResponse_ClientBat
 // send a fetch request to a random peer
 
 func (prop *Proposer) handleFetchRequest(message FetchRequest) FetchResposne {
-
+	prop.debug("proposer starting to handle a fetch request "+fmt.Sprintf("%v", message), 0)
 	found := false
 	cltBatches := make([]*DecideResponse_ClientBatch, 0)
 	numBtches := len(message.ids)
@@ -123,8 +125,10 @@ func (prop *Proposer) handleFetchRequest(message FetchRequest) FetchResposne {
 			Ids: message.ids,
 		})
 
-		if err == nil && resp != nil {
+		prop.debug("proposer sent a grpc fetch request to "+fmt.Sprintf("%v", client), 0)
 
+		if err == nil && resp != nil {
+			prop.debug("proposer received a grpc fetch response "+fmt.Sprintf("%v", resp), 0)
 			for i := 0; i < len(resp.ClientBatches); i++ {
 				foundBtch := false
 				for j := 0; j < len(cltBatches); j++ {
@@ -140,6 +144,7 @@ func (prop *Proposer) handleFetchRequest(message FetchRequest) FetchResposne {
 
 			if len(cltBatches) == numBtches {
 				found = true
+				prop.debug("proposer received all the client batches for the fetch request "+fmt.Sprintf("%v", cltBatches), 0)
 			}
 
 		}
@@ -318,6 +323,8 @@ func (prop *Proposer) isEqualProposal(p ProposerMessage_Proposal, m ProposerMess
 // run the proposer logic
 
 func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeResponse {
+	prop.debug("proposer received propose request from the proxy "+fmt.Sprintf("%v", message), 0)
+
 	S := 1*4 + 0
 	P := ProposerMessage_Proposal{
 		Priority:      int64(prop.hi),
@@ -327,11 +334,14 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 		ClientBatches: prop.getProposeClientBatches(message.proposalBtch),
 	}
 
+	prop.debug("proposer created initial proposal "+fmt.Sprintf("%v", P), 0)
+
 	decidedSlots := prop.extractDecidedSlots(message.lastDecidedIndexes, message.lastDecidedDecisions)
 
 	// todo add msWait check for non-leader proposals
 
 	if message.msWait != 0 {
+		prop.debug("proposer did not propose because i am not the leader ", 0)
 		return ProposeResponse{
 			index:     -1,
 			decisions: nil,
@@ -357,11 +367,13 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 			for i := 0; i < prop.numReplicas; i++ {
 				Pi[i].Priority = int64(rand.Intn(prop.hi-2)) + 1
 			}
+
+			prop.debug("proposer changed the priority because i am not the leader "+fmt.Sprintf("%v", Pi), 0)
 		}
 
 		responses := make(chan *RecorderResponse, prop.numReplicas)
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10)*time.Second)
-
+		prop.debug("proposer sending rpc in parallel ", 0)
 		wg := sync.WaitGroup{}
 		for i := 0; i < prop.numReplicas; i++ {
 			wg.Add(1)
@@ -380,6 +392,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 				}
 
 				responses <- resp
+				prop.debug("proposer received a rpc response "+fmt.Sprintf("%v", resp), 0)
 				return
 
 			}(prop.peers[i], Pi[i], S, decidedSlots)
@@ -399,6 +412,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 			responsesArray = append(responsesArray, *r)
 			// close the channel once a majority of the replies are collected
 			if len(responsesArray) == prop.numReplicas/2+1 {
+				prop.debug("proposer received majority recorder responses "+fmt.Sprintf("%v", responsesArray), 0)
 				break
 			}
 		}
@@ -411,6 +425,8 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 			}
 		}
 
+		prop.debug("proposer received recorder responses with all same S with my S "+fmt.Sprintf("%v", responsesArray), 0)
+
 		if allRepliesHaveS && S%4 == 0 { //propose phase
 			allRepliesHaveFHiFit := true
 			for i := 0; i < len(responsesArray); i++ {
@@ -420,6 +436,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 				}
 			}
 			if allRepliesHaveFHiFit {
+				prop.debug("proposer succeeded propose phase fast path "+fmt.Sprintf("%v", responsesArray), 0)
 				return ProposeResponse{
 					index:     int(message.instance),
 					decisions: responsesArray[0].F.Ids,
@@ -428,9 +445,11 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 			// P ← maximum of F’ from all replies in R
 			P = prop.getMaxFromResponses(responsesArray, "F")
+			prop.debug("proposer did not succeed in the fast path propose phase, updated P to "+fmt.Sprintf("%v", P), 0)
 		} else if allRepliesHaveS && S%4 == 2 {
 			maxM := prop.getMaxFromResponses(responsesArray, "M")
 			if prop.isEqualProposal(P, maxM) {
+				prop.debug("proposer succeeded  in the s %4 == 2 slow path with Max m "+fmt.Sprintf("%v", maxM), 0)
 				return ProposeResponse{
 					index:     int(message.instance),
 					decisions: P.Ids,
@@ -438,8 +457,10 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 			}
 		} else if allRepliesHaveS && S%4 == 3 {
 			P = prop.getMaxFromResponses(responsesArray, "M")
+			prop.debug("proposer is in S%4 ==3 gather phase and updated P to "+fmt.Sprintf("%v", P), 0)
 		} else if allRepliesHaveS {
 			S = S + 1
+			prop.debug("proposer is in S%4==1 phase, updated S to "+fmt.Sprintf("%v", S), 0)
 		}
 
 		//  if any reply in R has S’ > S: S, P ← S’, F’ from any reply with maximum S’
@@ -452,6 +473,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 					ThreadId:   responsesArray[i].F.ThreadId,
 					Ids:        responsesArray[i].F.Ids,
 				}
+				prop.debug("proposer received a higher S, hence updated S to "+fmt.Sprintf("%v", S)+" and P to "+fmt.Sprintf("%v", P), 0)
 			}
 		}
 	}
@@ -470,12 +492,14 @@ func (prop *Proposer) runProposer() {
 				response := prop.handleProposeRequest(proposeMessage)
 				if response.index != -1 {
 					prop.proposerToProxyChan <- response
+					prop.debug("proposer sent back to response to proxy for the propose request to "+fmt.Sprintf("%v", response), 0)
 				}
 				break
 
 			case fetchMessage := <-prop.proxyToProposerFetchChan:
 				prop.debug("Received fetch request", 0)
 				prop.proposerToProxyFetchChan <- prop.handleFetchRequest(fetchMessage)
+				prop.debug("proposer sent back to response to proxy for the fetch request ", 0)
 				break
 			}
 		}

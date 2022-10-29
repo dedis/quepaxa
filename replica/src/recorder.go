@@ -73,6 +73,8 @@ func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchSto
 		}
 	}
 
+	re.debug("recorder created a new recorder  "+fmt.Sprintf("%v", re), 0)
+
 	return &re
 }
 
@@ -105,6 +107,8 @@ func (r *Recorder) NetworkInit() {
 			panic("should not happen")
 		}
 	}()
+
+	r.debug("recorder started listening to grpc  ", 0)
 }
 
 // check if all the batches are available in the store
@@ -161,7 +165,6 @@ func (r *Recorder) max(oldValue Value, p *ProposerMessage_Proposal) Value {
 // main recorder logic goes here
 
 func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (int64, Value, Value) {
-
 	re.instanceCreationMutex.Lock()
 	for int64(len(re.slots)) < index+1 {
 		re.slots = append(re.slots, RecorderSlot{
@@ -242,7 +245,7 @@ func (r *Recorder) convertToClientBatchMessages(messages []*ProposerMessage_Clie
 // answer to proposer RPC
 
 func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
-
+	re.debug("recorder received esp  "+fmt.Sprintf("%v", req), 0)
 	var response RecorderResponse
 
 	// send the last decided index details to the proxy, if available
@@ -258,16 +261,20 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 		}
 
 		re.recorderToProxyChan <- d
+		re.debug("recorder sent the decisions to the proxy  "+fmt.Sprintf("%v", d), 0)
 	}
 
 	if len(req.P.ClientBatches) == 0 {
 		// if there are only hashes, then check if all the client batches are available in the shared pool
 		allBatchesFound := re.findAllBatches(req.P.Ids)
 		if !allBatchesFound {
+			re.debug("recorder does not have all the client batches, hence rejecting  "+fmt.Sprintf("%v", req), 0)
 			response.HasClientBacthes = false
 			return &response
 		}
 	}
+
+	re.debug("recorder has all the client batches to process  "+fmt.Sprintf("%v", req), 0)
 
 	if len(req.P.ClientBatches) > 0 {
 		// add all the batches to the store
@@ -296,10 +303,12 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 		Ids:        M.ids,
 	}
 
+	re.debug("recorder responding to esp request  "+fmt.Sprintf("%v", req)+" with response "+fmt.Sprintf("%v", response), 0)
+
 	// Mark the time of the proposal message for the proposer
 	proposer := req.Sender
 	*re.lastSeenTimeProposers[proposer] = time.Now()
-
+	re.debug("recorder updated the last seen times  "+fmt.Sprintf("%v", re.lastSeenTimeProposers), 0)
 	return &response
 }
 
@@ -319,6 +328,7 @@ func (r *Recorder) convertToDecideResponseClientBatchMessages(messages []*client
 // answer to fetch request
 
 func (r *Recorder) HandleFetch(req *DecideRequest) *DecideResponse {
+	r.debug("recorder received a fetch request  "+fmt.Sprintf("%v", req), 0)
 	response := DecideResponse{
 		ClientBatches: nil,
 	}
@@ -334,5 +344,6 @@ func (r *Recorder) HandleFetch(req *DecideRequest) *DecideResponse {
 		}
 	}
 
+	r.debug("recorder respond to the fetch request  "+fmt.Sprintf("%v", req)+"with response "+fmt.Sprintf("%v", response), 0)
 	return &response
 }

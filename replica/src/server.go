@@ -26,8 +26,7 @@ type Server struct {
 	proposerToProxyFetchChan chan FetchResposne
 
 	lastSeenTimeProposers []*time.Time // last seen times of each proposer
-
-	peers        []peer                       // set of out going gRPC connections
+	
 	cfg          configuration.InstanceConfig // configuration of clients and replicas
 	numProposers int                          // number of proposers == pipeline length
 	store        *ClientBatchStore            // shared client batch store
@@ -76,15 +75,6 @@ type Decision struct {
 type peer struct {
 	name   int64
 	client ConsensusClient
-}
-
-// AddPeer adds a new peer to the peer list
-func (sr *Server) AddPeer(name int64, client *ConsensusClient) {
-	// add peer to the peer list
-	sr.peers = append(sr.peers, peer{
-		name:   name,
-		client: *client,
-	})
 }
 
 // listen to proxy tcp connections, listen to recorder gRPC connections
@@ -156,7 +146,6 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		proposerToProxyChan:      make(chan ProposeResponse, 10000),
 		recorderToProxyChan:      make(chan Decision, 10000),
 		lastSeenTimeProposers:    make([]*time.Time, len(cfg.Peers)),
-		peers:                    make([]peer, 0),
 		cfg:                      *cfg,
 		numProposers:             int(pipelineLength),
 		store:                    &ClientBatchStore{},
