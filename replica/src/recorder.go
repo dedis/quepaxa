@@ -281,8 +281,8 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 		Ids:        M.ids,
 	}
 	
-	proposer := req.Sender
 	// Mark the time of the proposal message for the proposer
+	proposer := req.Sender
 	*re.lastSeenTimeProposers[proposer] = time.Now()
 
 	return &response
