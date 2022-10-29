@@ -1,6 +1,7 @@
 package raxos
 
 import (
+	"fmt"
 	"google.golang.org/grpc"
 	"net"
 	"raxos/configuration"
@@ -39,11 +40,13 @@ type Recorder struct {
 	slots                 []RecorderSlot // recorder side replicated log
 	cfg                   configuration.InstanceConfig
 	instanceCreationMutex *sync.Mutex
+	debugOn               bool // if turned on, the debug messages will be print on the console
+	debugLevel            int  // debug level
 }
 
 // instantiate a new Recorder
 
-func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchStore, lastSeenTimeProposers []*time.Time, recorderToProxyChan chan Decision, name int64) *Recorder {
+func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchStore, lastSeenTimeProposers []*time.Time, recorderToProxyChan chan Decision, name int64, debugOn bool, debugLevel int) *Recorder {
 
 	re := Recorder{
 		address:               "",
@@ -57,6 +60,8 @@ func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchSto
 		slots:                 make([]RecorderSlot, 0),
 		cfg:                   cfg,
 		instanceCreationMutex: &sync.Mutex{},
+		debugLevel:            debugLevel,
+		debugOn:               debugOn,
 	}
 
 	// serverAddress
@@ -69,6 +74,16 @@ func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchSto
 	}
 
 	return &re
+}
+
+/*
+	if turned on, print the message to console
+*/
+
+func (re *Recorder) debug(message string, level int) {
+	if re.debugOn && level >= re.debugLevel {
+		fmt.Printf("%s\n", message)
+	}
 }
 
 // start listening to gRPC connection
@@ -280,7 +295,7 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 		ThreadId:   M.thread_id,
 		Ids:        M.ids,
 	}
-	
+
 	// Mark the time of the proposal message for the proposer
 	proposer := req.Sender
 	*re.lastSeenTimeProposers[proposer] = time.Now()

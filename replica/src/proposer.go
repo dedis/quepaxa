@@ -13,7 +13,7 @@ type Proposer struct {
 	numReplicas              int
 	name                     int64
 	threadId                 int64
-	peers                    []peer // gRPC connection list
+	peers                    []peer // gRPC connection list (not shared)
 	proxyToProposerChan      chan ProposeRequest
 	proposerToProxyChan      chan ProposeResponse
 	proxyToProposerFetchChan chan FetchRequest
@@ -21,7 +21,7 @@ type Proposer struct {
 	lastSeenTimes            []*time.Time
 	debugOn                  bool // if turned on, the debug messages will be print on the console
 	debugLevel               int  // debug level
-	hi                       int
+	hi                       int  // hi priority
 }
 
 // instantiate a new Proposer
@@ -47,7 +47,7 @@ func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan c
 }
 
 /*
-	if turned on, print the message to console
+	if turned on, print the message to console,
 */
 
 func (prop *Proposer) debug(message string, level int) {
@@ -57,17 +57,18 @@ func (prop *Proposer) debug(message string, level int) {
 }
 
 // return the grpc client of rn
+
 func (prop *Proposer) findClientByName(rn int64) peer {
 	for i := 0; i < len(prop.peers); i++ {
 		if prop.peers[i].name == rn {
 			return prop.peers[i]
 		}
 	}
-
 	panic("replica not found")
 }
 
 // select a random grpc client that is not self
+
 func (prop *Proposer) getRandomClient() peer {
 	rn := rand.Intn(prop.numReplicas)
 	for int64(rn) == prop.name {
@@ -108,20 +109,35 @@ func (prop *Proposer) convertToClientBatches(batches []*DecideResponse_ClientBat
 func (prop *Proposer) handleFetchRequest(message FetchRequest) FetchResposne {
 
 	found := false
-	var cltBatches []*DecideResponse_ClientBatch
+	cltBatches := make([]*DecideResponse_ClientBatch, 0)
+	numBtches := len(message.ids)
+
 	for !found {
 
 		client := prop.getRandomClient()
 		clientCon := client.client
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(2*time.Second))
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Second))
 		resp, err := clientCon.FetchBatches(ctx, &DecideRequest{
 			Ids: message.ids,
 		})
 
 		if err == nil && resp != nil {
-			if len(resp.ClientBatches) == len(message.ids) {
+
+			for i := 0; i < len(resp.ClientBatches); i++ {
+				foundBtch := false
+				for j := 0; j < len(cltBatches); j++ {
+					if resp.ClientBatches[i].Id == cltBatches[j].Id {
+						foundBtch = true
+						break
+					}
+				}
+				if !foundBtch {
+					cltBatches = append(cltBatches, resp.ClientBatches[i])
+				}
+			}
+
+			if len(cltBatches) == numBtches {
 				found = true
-				cltBatches = resp.ClientBatches
 			}
 
 		}
@@ -178,7 +194,7 @@ func (prop *Proposer) extractDecidedSlots(indexes []int, decisions [][]string) [
 	return rA
 }
 
-// checks if element set of ele1 is greater than ele2
+// checks if element "set" of ele1 is greater than ele2
 
 func (prop *Proposer) isGreaterThan(ele1 RecorderResponse, ele2 *RecorderResponse_Proposal, set string) bool {
 	if set == "F" {
@@ -200,10 +216,10 @@ func (prop *Proposer) isGreaterThan(ele1 RecorderResponse, ele2 *RecorderRespons
 		if ele1.M.Priority > ele2.Priority {
 			return true
 		}
-		if ele1.M.Priority == ele2.Priority && ele1.F.ProposerId > ele2.ProposerId {
+		if ele1.M.Priority == ele2.Priority && ele1.M.ProposerId > ele2.ProposerId {
 			return true
 		}
-		if ele1.M.Priority == ele2.Priority && ele1.F.ProposerId == ele2.ProposerId && ele1.F.ThreadId > ele2.ThreadId {
+		if ele1.M.Priority == ele2.Priority && ele1.M.ProposerId == ele2.ProposerId && ele1.M.ThreadId > ele2.ThreadId {
 			return true
 		}
 		if ele1.M.Priority == ele2.Priority && ele1.M.ProposerId == ele2.ProposerId && ele1.M.ThreadId == ele2.ThreadId {
@@ -261,21 +277,21 @@ func (prop *Proposer) isEqual(batch1 *ProposerMessage_ClientBatch, batch2 *Propo
 	return true
 }
 
-// compare two arrays of client batches
+// compare two arrays of client batches,
 
-func (prop *Proposer) isEqualClientBatches(batche1 []*ProposerMessage_ClientBatch, batche2 []*ProposerMessage_ClientBatch) bool {
-	if len(batche1) != len(batche2) {
+func (prop *Proposer) isEqualClientBatches(batch1 []*ProposerMessage_ClientBatch, batch2 []*ProposerMessage_ClientBatch) bool {
+	if len(batch1) != len(batch2) {
 		return false
 	}
-	for i := 0; i < len(batche1); i++ {
-		if !prop.isEqual(batche1[i], batche2[i]) {
+	for i := 0; i < len(batch1); i++ {
+		if !prop.isEqual(batch1[i], batch2[i]) {
 			return false
 		}
 	}
 	return true
 }
 
-//  compares two proposals
+//  compare two proposals
 
 func (prop *Proposer) isEqualProposal(p ProposerMessage_Proposal, m ProposerMessage_Proposal) bool {
 	if p.Priority != m.Priority {
@@ -311,6 +327,8 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 	decidedSlots := prop.extractDecidedSlots(message.lastDecidedIndexes, message.lastDecidedDecisions)
 
+	// todo add msWait check for non-leader proposals
+
 	for true {
 
 		Pi := make([]ProposerMessage_Proposal, prop.numReplicas)
@@ -328,7 +346,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 		}
 		if S%4 == 0 && (S > 4 || message.msWait != 0) {
 			for i := 0; i < prop.numReplicas; i++ {
-				Pi[i].Priority = int64(rand.Intn(prop.hi-1)) + 1
+				Pi[i].Priority = int64(rand.Intn(prop.hi-2)) + 1
 			}
 		}
 
@@ -361,17 +379,19 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 			}(prop.peers[i], Pi[i], S, decidedSlots)
 		}
-		decidedSlots = make([]*ProposerMessage_DecidedSlot, 0)
+		decidedSlots = make([]*ProposerMessage_DecidedSlot, 0) // only the first try have the decided slots
 
 		go func() {
 			wg.Wait()
 			cancel()
 		}()
 
-		// todo add fast path checks where HasClientBacthes is false
+		// todo add fast path checks where HasClientBacthes is false when s = 0, in which case the proposer sends the s=0 again with actual batches
+
 		responsesArray := make([]RecorderResponse, 0)
 		for r := range responses {
 			responsesArray = append(responsesArray, *r)
+			// close the channel once a majority of the replies are collected
 			if len(responsesArray) == prop.numReplicas/2+1 {
 				close(responses)
 			}
@@ -385,7 +405,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 			}
 		}
 
-		if allRepliesHaveS && S%4 == 0 {
+		if allRepliesHaveS && S%4 == 0 { //propose phase
 			allRepliesHaveFHiFit := true
 			for i := 0; i < len(responsesArray); i++ {
 				if responsesArray[i].F.Priority != int64(prop.hi) {
@@ -430,7 +450,6 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 		}
 	}
 	panic("should not happen")
-	return ProposeResponse{}
 }
 
 // infinite loop listening to the server channel
@@ -451,6 +470,5 @@ func (prop *Proposer) runProposer() {
 				break
 			}
 		}
-
 	}()
 }
