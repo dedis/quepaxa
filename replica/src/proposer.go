@@ -214,9 +214,6 @@ func (prop *Proposer) isGreaterThan(ele1 RecorderResponse, ele2 *RecorderRespons
 		if ele1.F.Priority == ele2.Priority && ele1.F.ProposerId == ele2.ProposerId && ele1.F.ThreadId > ele2.ThreadId {
 			return true
 		}
-		if ele1.F.Priority == ele2.Priority && ele1.F.ProposerId == ele2.ProposerId && ele1.F.ThreadId == ele2.ThreadId {
-			panic("should not happen")
-		}
 
 		return false
 	} else if set == "M" {
@@ -228,9 +225,6 @@ func (prop *Proposer) isGreaterThan(ele1 RecorderResponse, ele2 *RecorderRespons
 		}
 		if ele1.M.Priority == ele2.Priority && ele1.M.ProposerId == ele2.ProposerId && ele1.M.ThreadId > ele2.ThreadId {
 			return true
-		}
-		if ele1.M.Priority == ele2.Priority && ele1.M.ProposerId == ele2.ProposerId && ele1.M.ThreadId == ele2.ThreadId {
-			panic("should not happen")
 		}
 
 		return false
@@ -340,8 +334,18 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 	// todo add msWait check for non-leader proposals
 
-	if message.msWait != 0 {
-		prop.debug("proposer did not propose because i am not the leader ", 0)
+	// for experimental purposes, to be removed in later versions
+	//if message.msWait != 0 {
+	//	prop.debug("proposer did not propose because i am not the leader ", 0)
+	//	return ProposeResponse{
+	//		index:     -1,
+	//		decisions: nil,
+	//	} //todo change
+	//}
+
+	// for experimental purposes, to be removed in later versions
+	if prop.name != 1 {
+		prop.debug("proposer did not propose because i am not the replica 1 ", 0)
 		return ProposeResponse{
 			index:     -1,
 			decisions: nil,
@@ -458,7 +462,9 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 		} else if allRepliesHaveS && S%4 == 3 {
 			P = prop.getMaxFromResponses(responsesArray, "M")
 			prop.debug("proposer is in S%4 ==3 gather phase and updated P to "+fmt.Sprintf("%v", P), 0)
-		} else if allRepliesHaveS {
+		}
+
+		if allRepliesHaveS {
 			S = S + 1
 			prop.debug("proposer is in S%4==1 phase, updated S to "+fmt.Sprintf("%v", S), 0)
 		}
