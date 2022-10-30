@@ -74,7 +74,7 @@ echo "Sent status to print log"
 
 sleep 20
 
-# python3 experiments/python/overlay-test.py ${output_path}0.txt ${output_path}1.txt ${output_path}2.txt ${output_path}3.txt ${output_path}4.txt >${output_path}local-test.log
+python3 experiments/python/overlay-test.py ${output_path}0.txt ${output_path}1.txt ${output_path}2.txt ${output_path}3.txt ${output_path}4.txt >${output_path}local-test.log
 
 pkill replica
 pkill replica

@@ -119,6 +119,7 @@ func (pr *Proxy) updateStateMachine(sendResponse bool) {
 			}
 			pr.lastTimeCommitted = time.Now()
 			pr.debug("proxy committed  "+fmt.Sprintf("%v", pr.committedIndex+1), 0)
+			pr.replicatedLog[i].committed = true
 			pr.committedIndex++
 			if sendResponse {
 				pr.sendClientResponse(responseBatches)
@@ -266,7 +267,7 @@ func (pr *Proxy) getHighestIndex(indexes []int) int {
 
 func (pr *Proxy) handleRecorderResponse(message Decision) {
 
-	pr.debug("proxy received decisions from the recorder  "+fmt.Sprintf("%v", message), 0)
+	pr.debug("proxy received decisions from the recorder  "+fmt.Sprintf("%v", message), -1)
 	if len(message.indexes) != len(message.decisions) {
 		panic("number of decided items and number of decisions do not match")
 	}

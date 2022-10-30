@@ -206,7 +206,7 @@ func (pr *Proxy) Run() {
 				break
 
 			case recorderMessage := <-pr.recorderToProxyChan:
-				pr.debug("proxy received recorder message", 0)
+				pr.debug("proxy received recorder decide message"+fmt.Sprintf("%v", recorderMessage), 0)
 				pr.handleRecorderResponse(recorderMessage)
 				break
 
