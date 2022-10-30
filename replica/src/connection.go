@@ -12,7 +12,7 @@ type GRPCConnection struct {
 // answer to proposer RPC
 
 func (gc *GRPCConnection) ESP(ctx context.Context, req *ProposerMessage) (*RecorderResponse, error) {
-	gc.Recorder.debug("received esp request "+fmt.Sprintf("%v", req), 0)
+	gc.Recorder.debug("received esp request "+fmt.Sprintf("%v", req), -1)
 	var response *RecorderResponse
 	response = gc.Recorder.HandleESP(req)
 	gc.Recorder.debug("responded to esp request "+fmt.Sprintf("%v", response), 0)

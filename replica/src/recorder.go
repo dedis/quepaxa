@@ -73,7 +73,7 @@ func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchSto
 		}
 	}
 
-	re.debug("recorder created a new recorder  "+fmt.Sprintf("%v", re), 0)
+	re.debug("recorder created a new recorder  "+fmt.Sprintf("%v", re), -1)
 
 	return &re
 }
@@ -108,7 +108,7 @@ func (r *Recorder) NetworkInit() {
 		}
 	}()
 
-	r.debug("recorder started listening to grpc  ", 0)
+	r.debug("recorder started listening to grpc  ", -1)
 }
 
 // check if all the batches are available in the store
@@ -245,7 +245,7 @@ func (r *Recorder) convertToClientBatchMessages(messages []*ProposerMessage_Clie
 // answer to proposer RPC
 
 func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
-	re.debug("recorder received esp  "+fmt.Sprintf("%v", req), 0)
+	re.debug("recorder received esp  "+fmt.Sprintf("%v", req), -1)
 	var response RecorderResponse
 
 	// send the last decided index details to the proxy, if available
@@ -308,7 +308,7 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 	// Mark the time of the proposal message for the proposer
 	proposer := req.Sender
 	*re.lastSeenTimeProposers[proposer] = time.Now()
-	re.debug("recorder updated the last seen times  "+fmt.Sprintf("%v", re.lastSeenTimeProposers), 0)
+	re.debug("recorder updated the last seen times  "+fmt.Sprintf("%v", re.lastSeenTimeProposers), -1)
 	return &response
 }
 

@@ -45,7 +45,7 @@ func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan c
 		serverMode:               serverMode,
 	}
 
-	pr.debug("created a new proposer "+fmt.Sprintf("%v", pr), 0)
+	pr.debug("created a new proposer "+fmt.Sprintf("%v", pr), -1)
 
 	return &pr
 }
@@ -323,7 +323,7 @@ func (prop *Proposer) isEqualProposal(p ProposerMessage_Proposal, m ProposerMess
 // run the proposer logic
 
 func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeResponse {
-	prop.debug("proposer received propose request from the proxy "+fmt.Sprintf("%v", message), 0)
+	prop.debug("proposer received propose request from the proxy "+fmt.Sprintf("%v", message), -1)
 
 	S := 1*4 + 0
 	P := ProposerMessage_Proposal{
@@ -373,7 +373,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 		responses := make(chan *RecorderResponse, prop.numReplicas)
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10)*time.Second)
-		prop.debug("proposer sending rpc in parallel ", 0)
+		prop.debug("proposer sending rpc in parallel ", -1)
 		wg := sync.WaitGroup{}
 		for i := 0; i < prop.numReplicas; i++ {
 			wg.Add(1)
@@ -488,7 +488,7 @@ func (prop *Proposer) runProposer() {
 
 			select {
 			case proposeMessage := <-prop.proxyToProposerChan:
-				prop.debug("Received propose request", 0)
+				prop.debug("proposer received propose request", -1)
 				response := prop.handleProposeRequest(proposeMessage)
 				if response.index != -1 {
 					prop.proposerToProxyChan <- response
@@ -497,7 +497,7 @@ func (prop *Proposer) runProposer() {
 				break
 
 			case fetchMessage := <-prop.proxyToProposerFetchChan:
-				prop.debug("Received fetch request", 0)
+				prop.debug("proposer received fetch request", 0)
 				prop.proposerToProxyFetchChan <- prop.handleFetchRequest(fetchMessage)
 				prop.debug("proposer sent back to response to proxy for the fetch request ", 0)
 				break

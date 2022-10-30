@@ -83,7 +83,7 @@ func (pr *Proxy) sendClientResponse(batches []*client.ClientBatch) {
 			Obj:  batches[i],
 		})
 
-		pr.debug("proxy sent a client response  "+fmt.Sprintf("%v", batches[i]), 0)
+		pr.debug("proxy sent a client response  "+fmt.Sprintf("%v", batches[i]), -1)
 	}
 }
 
@@ -118,7 +118,7 @@ func (pr *Proxy) updateStateMachine(sendResponse bool) {
 				responseBatches = append(responseBatches, responseBatch)
 			}
 			pr.lastTimeCommitted = time.Now()
-			pr.debug("proxy committed  "+fmt.Sprintf("%v", pr.committedIndex), 0)
+			pr.debug("proxy committed  "+fmt.Sprintf("%v", pr.committedIndex+1), 0)
 			pr.committedIndex++
 			if sendResponse {
 				pr.sendClientResponse(responseBatches)

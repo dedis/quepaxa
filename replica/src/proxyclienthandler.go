@@ -76,7 +76,7 @@ func (pr *Proxy) handleClientStatus(status client.ClientStatus) {
 	if status.Operation == 1 {
 		if pr.serverStarted == false {
 			// initiate gRPC connections
-			pr.debug("proxy starting proposers  ", 0)
+			pr.debug("proxy starting proposers  ", -1)
 			pr.server.StartProposers()
 			pr.serverStarted = true
 		}

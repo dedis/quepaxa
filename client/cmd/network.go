@@ -42,7 +42,7 @@ func (cl *Client) ConnectToReplicas() {
 					cl.debug("Error while writing name to replica"+strconv.Itoa(int(i)), 0)
 					panic(err)
 				}
-				cl.debug("Established outgoing connection to "+strconv.Itoa(int(i)), 0)
+				cl.debug("established outgoing connection to "+strconv.Itoa(int(i)), -1)
 				break
 			}
 		}
@@ -73,7 +73,7 @@ func (cl *Client) WaitForConnections() {
 			panic(err)
 		}
 		id := int32(binary.LittleEndian.Uint16(bs))
-		cl.debug("Received incoming tcp connection from "+strconv.Itoa(int(id)), 0)
+		cl.debug("Received incoming tcp connection from "+strconv.Itoa(int(id)), -1)
 
 		cl.incomingReplicaReaders[int64(id)] = bufio.NewReader(conn)
 		go cl.connectionListener(cl.incomingReplicaReaders[int64(id)], id)
@@ -121,7 +121,7 @@ func (cl *Client) Run() {
 	go func() {
 		for true {
 
-			cl.debug("Checking channel\n", 0)
+			cl.debug("Checking channel\n", -1)
 			replicaMessage := <-cl.incomingChan
 			cl.debug("Received replica message", 0)
 			code := replicaMessage.Code
@@ -129,7 +129,7 @@ func (cl *Client) Run() {
 
 			case cl.clientBatchRpc:
 				clientResponseBatch := replicaMessage.Obj.(*client.ClientBatch)
-				cl.debug("Client response batch from "+fmt.Sprintf("%#v", clientResponseBatch.Sender), 0)
+				cl.debug("client response batch "+fmt.Sprintf("%#v", clientResponseBatch), 0)
 				cl.handleClientResponseBatch(clientResponseBatch)
 				break
 
@@ -170,7 +170,7 @@ func (cl *Client) internalSendMessage(peer int64, rpcPair *common.RPCPair) {
 		return
 	}
 	cl.socketMutexs[peer].Unlock()
-	cl.debug("Internal sent message to "+strconv.Itoa(int(peer)), 0)
+	cl.debug("internal sent message to "+strconv.Itoa(int(peer)), -1)
 }
 
 /*
@@ -183,7 +183,7 @@ func (cl *Client) StartOutgoingLinks() {
 			for true {
 				outgoingMessage := <-cl.outgoingMessageChan
 				cl.internalSendMessage(outgoingMessage.Peer, outgoingMessage.RpcPair)
-				cl.debug("Invoked internal sent to replica "+strconv.Itoa(int(outgoingMessage.Peer)), 0)
+				cl.debug("Invoked internal sent to replica "+strconv.Itoa(int(outgoingMessage.Peer)), -1)
 			}
 		}()
 	}
@@ -198,5 +198,5 @@ func (cl *Client) sendMessage(peer int64, rpcPair common.RPCPair) {
 		RpcPair: &rpcPair,
 		Peer:    peer,
 	}
-	cl.debug("Added RPC pair to outgoing channel to peer "+strconv.Itoa(int(peer)), 0)
+	cl.debug("client added RPC pair to outgoing channel to peer "+strconv.Itoa(int(peer)), -1)
 }

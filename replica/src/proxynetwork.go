@@ -14,7 +14,7 @@ import (
 // start listening to the proxy tcp connection, and setup all outgoing wires
 
 func (pr *Proxy) NetworkInit() {
-	pr.debug("proxy network init", 0)
+	pr.debug("proxy network init", -1)
 	pr.startOutgoingLinks()
 	go pr.waitForConnections()
 }
@@ -51,11 +51,11 @@ func (pr *Proxy) waitForConnections() {
 			panic(err)
 		}
 		id := int32(binary.LittleEndian.Uint16(bs))
-		pr.debug("Received incoming tcp connection from "+strconv.Itoa(int(id)), 0)
+		pr.debug("Received incoming tcp connection from "+strconv.Itoa(int(id)), -1)
 
 		pr.incomingClientReaders[int64(id)] = bufio.NewReader(conn)
 		go pr.connectionListener(pr.incomingClientReaders[int64(id)], id)
-		pr.debug("Started listening to "+strconv.Itoa(int(id)), 0)
+		pr.debug("Started listening to "+strconv.Itoa(int(id)), -1)
 		pr.connectToClient(id) // make a TCP connection with client id
 	}
 }
@@ -107,7 +107,7 @@ func (pr *Proxy) connectToClient(id int32) {
 				pr.debug("Error connecting to client "+strconv.Itoa(int(id)), 0)
 				panic(err)
 			}
-			pr.debug("Started outgoing tcp connection to client "+strconv.Itoa(int(id)), 0)
+			pr.debug("Started outgoing tcp connection to client "+strconv.Itoa(int(id)), -1)
 			break
 		}
 	}
@@ -120,7 +120,7 @@ func (pr *Proxy) connectToClient(id int32) {
 
 func (pr *Proxy) internalSendMessage(peer int64, rpcPair common.RPCPair) {
 
-	pr.debug("proxy internal sending message to  "+fmt.Sprintf("%v", peer)+"with content "+fmt.Sprintf("%v", rpcPair), 0)
+	pr.debug("proxy internal sending message to  "+fmt.Sprintf("%v", peer)+" with content "+fmt.Sprintf("%v", rpcPair), -1)
 
 	code := rpcPair.Code
 	msg := rpcPair.Obj
@@ -148,7 +148,7 @@ func (pr *Proxy) internalSendMessage(peer int64, rpcPair common.RPCPair) {
 	}
 	pr.buffioWriterMutexes[peer].Unlock()
 
-	pr.debug("proxy sent internal sending message to  "+fmt.Sprintf("%v", peer)+"with content "+fmt.Sprintf("%v", rpcPair), 0)
+	pr.debug("proxy sent internal sending message to  "+fmt.Sprintf("%v", peer)+" with content "+fmt.Sprintf("%v", rpcPair), -1)
 
 }
 
@@ -162,7 +162,7 @@ func (pr *Proxy) startOutgoingLinks() {
 			for true {
 				outgoingMessage := <-pr.outgoingMessageChan
 				pr.internalSendMessage(outgoingMessage.Peer, *outgoingMessage.RpcPair)
-				pr.debug("proxy called internal send for  "+fmt.Sprintf("%v", outgoingMessage), 0)
+				pr.debug("proxy called internal send for  "+fmt.Sprintf("%v", outgoingMessage.RpcPair.Obj), -1)
 			}
 		}()
 	}
@@ -178,5 +178,5 @@ func (pr *Proxy) sendMessage(peer int64, rpcPair common.RPCPair) {
 		RpcPair: &rpcPair,
 		Peer:    peer,
 	}
-	pr.debug("proxy added a new outgoing message  "+fmt.Sprintf("%v", rpcPair), 0)
+	pr.debug("proxy added a new outgoing message  "+fmt.Sprintf("%v", rpcPair), -1)
 }

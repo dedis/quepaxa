@@ -167,7 +167,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	pr.debug("initiazlied a new proxy "+fmt.Sprintf("%v", pr), 0)
+	pr.debug("initiazlied a new proxy "+fmt.Sprintf("%v", pr), -1)
 
 	return &pr
 }
@@ -183,35 +183,35 @@ func (pr *Proxy) Run() {
 			select {
 			case inpputMessage := <-pr.incomingChan:
 
-				pr.debug("Received client  message", 0)
+				pr.debug("Received client  message", -1)
 				code := inpputMessage.Code
 				switch code {
 				case pr.clientBatchRpc:
 					clientBatch := inpputMessage.Obj.(*client.ClientBatch)
-					pr.debug("Client message  "+fmt.Sprintf("%#v", clientBatch), 0)
+					pr.debug("proxy received client batch  "+fmt.Sprintf("%#v", clientBatch), -1)
 					pr.handleClientBatch(*clientBatch)
 					break
 
 				case pr.clientStatusRpc:
 					clientStatus := inpputMessage.Obj.(*client.ClientStatus)
-					pr.debug("Client status  ", 0)
+					pr.debug("proxy received client status  ", 0)
 					pr.handleClientStatus(*clientStatus)
 					break
 
 				}
 				break
 			case proposerMessage := <-pr.proposerToProxyChan:
-				pr.debug("Received proposer message", 0)
+				pr.debug("proxy received proposer message", -1)
 				pr.handleProposeResponse(proposerMessage)
 				break
 
 			case recorderMessage := <-pr.recorderToProxyChan:
-				pr.debug("Received recorder message", 0)
+				pr.debug("proxy received recorder message", 0)
 				pr.handleRecorderResponse(recorderMessage)
 				break
 
 			case fetchResponse := <-pr.proposerToProxyFetchChan:
-				pr.debug("Received fetch response", 0)
+				pr.debug("proxy received fetch response", 0)
 				pr.handleFetchResponse(fetchResponse)
 				break
 			}
