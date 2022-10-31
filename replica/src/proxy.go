@@ -111,8 +111,8 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		decideRequest:            2, // not needed
 		decideResponse:           3, //not needed
 		replicatedLog:            make([]Slot, 0),
-		committedIndex:           -1,
-		lastProposedIndex:        -1,
+		committedIndex:           0,
+		lastProposedIndex:        0,
 		lastTimeCommitted:        time.Now(),
 		logFilePath:              logFilePath,
 		batchSize:                int(batchSize),
@@ -129,6 +129,15 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		leaderMode:               leaderMode,
 		serverMode:               serverMode, // for the proposer
 	}
+	
+	// initialize the genenesis
+	
+	pr.replicatedLog = append(pr.replicatedLog, Slot{
+		proposedBatch: []string{"nil"},
+		decidedBatch:  []string{"nil"},
+		decided:       true,
+		committed:     true,
+	})
 
 	// initialize the clientAddrList
 
@@ -206,12 +215,12 @@ func (pr *Proxy) Run() {
 				break
 
 			case recorderMessage := <-pr.recorderToProxyChan:
-				pr.debug("proxy received recorder decide message"+fmt.Sprintf("%v", recorderMessage), 0)
+				pr.debug("proxy received recorder decide message"+fmt.Sprintf("%v", recorderMessage), -1)
 				pr.handleRecorderResponse(recorderMessage)
 				break
 
 			case fetchResponse := <-pr.proposerToProxyFetchChan:
-				pr.debug("proxy received fetch response", 0)
+				pr.debug("proxy received fetch response", 1)
 				pr.handleFetchResponse(fetchResponse)
 				break
 			}

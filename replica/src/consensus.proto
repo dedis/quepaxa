@@ -53,7 +53,7 @@ message RecorderResponse {
   Proposal F = 2; // first proposal
   Proposal M = 3; // the maximum of all values (v) proposed in the prior epoch for s’-1  
 
-  bool HasClientBacthes = 4; // if all the client batches from the proposer message exists
+  bool ClientBatchesNotFound = 4; // if any of the client batches are not found, set this to true
 }
 
 // define the Consensus gRPC service

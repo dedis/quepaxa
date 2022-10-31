@@ -265,7 +265,7 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 		}
 
 		re.recorderToProxyChan <- d
-		re.debug("recorder sent the decisions to the proxy  "+fmt.Sprintf("%v", d)+" for index "+fmt.Sprintf("%v", req.Index), 0)
+		re.debug("recorder sent the decisions to the proxy  "+fmt.Sprintf("%v", d)+" for index "+fmt.Sprintf("%v", req.Index), -1)
 	}
 
 	if len(req.P.ClientBatches) == 0 {
@@ -273,12 +273,12 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 		allBatchesFound := re.findAllBatches(req.P.Ids)
 		if !allBatchesFound {
 			re.debug("recorder does not have all the client batches, hence rejecting  "+fmt.Sprintf("%v", req)+" for index "+fmt.Sprintf("%v", req.Index), 0)
-			response.HasClientBacthes = false
+			response.ClientBatchesNotFound = true
 			return &response
 		}
 	}
 
-	re.debug("recorder has all the client batches to process  "+fmt.Sprintf("%v", req)+" for index "+fmt.Sprintf("%v", req.Index), 0)
+	re.debug("recorder has all the client batches to process  "+fmt.Sprintf("%v", req)+" for index "+fmt.Sprintf("%v", req.Index), -1)
 
 	if len(req.P.ClientBatches) > 0 {
 		// add all the batches to the store

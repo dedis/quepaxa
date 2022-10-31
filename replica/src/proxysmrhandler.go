@@ -92,21 +92,20 @@ func (pr *Proxy) sendClientResponse(batches []*client.ClientBatch) {
 
 func (pr *Proxy) updateStateMachine(sendResponse bool) {
 	for i := pr.committedIndex + 1; i < int64(len(pr.replicatedLog)); i++ {
-
 		if pr.replicatedLog[i].decided == true {
-			pr.debug("proxy calling update state machine and found a new decided slot  "+fmt.Sprintf("%v", pr.replicatedLog[i]), 0)
+			pr.debug("proxy calling update state machine and found a new decided slot  "+fmt.Sprintf("%v", i), 1)
 
 			for j := 0; j < len(pr.replicatedLog[i].decidedBatch); j++ {
 				// check if each batch exists
 				_, ok := pr.clientBatchStore.Get(pr.replicatedLog[i].decidedBatch[j])
 				if !ok {
 					pr.proxyToProposerFetchChan <- FetchRequest{ids: pr.replicatedLog[i].decidedBatch}
-					pr.debug("proxy cannot commit because the client batches are missing for decided slot  "+fmt.Sprintf("%v", pr.replicatedLog[i])+"hence requesting  "+fmt.Sprintf("%v", pr.replicatedLog[i].decidedBatch), 0)
+					pr.debug("proxy cannot commit because the client batches are missing for decided slot  "+fmt.Sprintf("%v", i)+" hence requesting  "+fmt.Sprintf("%v", pr.replicatedLog[i].decidedBatch), 1)
 					return
 				}
 			}
 
-			pr.debug("proxy has all client batches to commit  "+fmt.Sprintf("%v", pr.replicatedLog[i]), 0)
+			pr.debug("proxy has all client batches to commit  "+fmt.Sprintf("%v", pr.replicatedLog[i]), 1)
 
 			var responseBatches []*client.ClientBatch
 			for j := 0; j < len(pr.replicatedLog[i].decidedBatch); j++ {
@@ -118,7 +117,7 @@ func (pr *Proxy) updateStateMachine(sendResponse bool) {
 				responseBatches = append(responseBatches, responseBatch)
 			}
 			pr.lastTimeCommitted = time.Now()
-			pr.debug("proxy committed  "+fmt.Sprintf("%v", pr.committedIndex+1), 0)
+			pr.debug("proxy committed  "+fmt.Sprintf("%v", pr.committedIndex+1), 2)
 			pr.replicatedLog[i].committed = true
 			// empty the proposed batch
 			pr.replicatedLog[i].proposedBatch = make([]string, 0)
@@ -193,13 +192,13 @@ func (pr *Proxy) revokeInstance(i int64) {
 
 	pr.proxyToProposerChan <- newProposalRequest
 
-	pr.debug("proxy revoked instance with new Proposal Request  "+fmt.Sprintf("%v", newProposalRequest), 0)
+	pr.debug("proxy revoked instance with new Proposal Request  "+fmt.Sprintf("%v", newProposalRequest), 1)
 
 	pr.replicatedLog[i] = Slot{
 		proposedBatch: strProposals,
-		decidedBatch:  nil,
-		decided:       false,
-		committed:     false,
+		decidedBatch:  pr.replicatedLog[i].decidedBatch,
+		decided:       pr.replicatedLog[i].decided,
+		committed:     pr.replicatedLog[i].committed,
 	}
 
 	pr.lastDecidedIndexes = make([]int, 0)
@@ -220,13 +219,13 @@ func (pr *Proxy) revokeInstances() {
 
 func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 
-	pr.debug("proxy received a proposal response from the proxy  "+fmt.Sprintf("%v", message), 0)
+	pr.debug("proxy received a proposal response from the proxy  "+fmt.Sprintf("%v", message), -1)
 
 	if pr.replicatedLog[message.index].decided == false {
 		pr.replicatedLog[message.index].decided = true
 		pr.replicatedLog[message.index].decidedBatch = message.decisions
 
-		pr.debug("proxy decided  "+fmt.Sprintf("%v", pr.replicatedLog[message.index]), 0)
+		pr.debug("proxy decided as a result of propose "+fmt.Sprintf(" for instance %v with values", message.index, message.decisions), 1)
 
 		if !pr.decidedTheProposedValue(message.index, message.decisions) {
 			pr.debug("proxy decided  a different proposal, hence putting back stuff to propose later", 0)
@@ -292,7 +291,7 @@ func (pr *Proxy) handleRecorderResponse(message Decision) {
 		if pr.replicatedLog[index].decided == false {
 			pr.replicatedLog[index].decided = true
 			pr.replicatedLog[index].decidedBatch = batches
-			pr.debug("proxy decided from the recorder response "+fmt.Sprintf("%v", pr.replicatedLog[index]), 0)
+			pr.debug("proxy decided from the recorder response "+fmt.Sprintf(" instance %v with batches %v", index, batches), 1)
 			if !pr.decidedTheProposedValue(index, batches) {
 				pr.toBeProposed = append(pr.toBeProposed, pr.replicatedLog[index].proposedBatch...)
 			}
@@ -309,9 +308,14 @@ func (pr *Proxy) handleRecorderResponse(message Decision) {
 // save the batch in the store
 
 func (pr *Proxy) handleFetchResponse(response FetchResposne) {
-	pr.debug("proxy received fetch response from the proposer "+fmt.Sprintf("%v", response), 0)
+	pr.debug("proxy received fetch response from the proposer "+fmt.Sprintf("%v", response), 1)
 	for i := 0; i < len(response.batches); i++ {
 		pr.clientBatchStore.Add(response.batches[i])
+	}
+
+	pr.debug("proxy update smr after fetch response, note that last committed index is "+fmt.Sprintf("%v", pr.committedIndex), 1)
+	if int64(len(pr.replicatedLog)) > pr.committedIndex+1 {
+		pr.debug("the state of the next instance is "+fmt.Sprintf("%v", pr.replicatedLog[pr.committedIndex+1]), 1)
 	}
 	pr.updateStateMachine(true)
 }

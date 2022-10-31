@@ -32,7 +32,7 @@ func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan c
 	pr := Proposer{
 		numReplicas:              len(peers),
 		name:                     name,
-		threadId:                 threadId,
+		threadId:                 threadId + 1,
 		peers:                    peers,
 		proxyToProposerChan:      proxyToProposerChan,
 		proposerToProxyChan:      proposerToProxyChan,
@@ -111,7 +111,7 @@ func (prop *Proposer) convertToClientBatches(batches []*DecideResponse_ClientBat
 // send a fetch request to a random peer
 
 func (prop *Proposer) handleFetchRequest(message FetchRequest) FetchResposne {
-	prop.debug("proposer starting to handle a fetch request "+fmt.Sprintf("%v", message), 0)
+	prop.debug("proposer starting to handle a fetch request "+fmt.Sprintf("%v", message), 1)
 	found := false
 	cltBatches := make([]*DecideResponse_ClientBatch, 0)
 	numBtches := len(message.ids)
@@ -144,7 +144,7 @@ func (prop *Proposer) handleFetchRequest(message FetchRequest) FetchResposne {
 
 			if len(cltBatches) == numBtches {
 				found = true
-				prop.debug("proposer received all the client batches for the fetch request "+fmt.Sprintf("%v", cltBatches), 0)
+				prop.debug("proposer received all the client batches for the fetch request "+fmt.Sprintf("%v", cltBatches), 1)
 			}
 
 		}
@@ -328,7 +328,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 		ClientBatches: prop.getProposeClientBatches(message.proposalBtch),
 	}
 
-	prop.debug("proposer created initial proposal "+fmt.Sprintf("%v", P) +" for index "+fmt.Sprintf("%v", message.instance), 0)
+	prop.debug("proposer created initial proposal "+fmt.Sprintf("%v", P)+" for index "+fmt.Sprintf("%v", message.instance), 0)
 
 	decidedSlots := prop.extractDecidedSlots(message.lastDecidedIndexes, message.lastDecidedDecisions)
 
@@ -395,8 +395,10 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 					return
 				}
 
-				responses <- resp
-				prop.debug("proposer received a rpc response "+fmt.Sprintf("%v", resp)+" for index "+fmt.Sprintf("%v", message.instance), 0)
+				if resp != nil && resp.S > 0 {
+					responses <- resp
+				}
+				prop.debug("proposer received a rpc response "+fmt.Sprintf("%v", resp)+" for index "+fmt.Sprintf("%v", message.instance), -1)
 				return
 
 			}(prop.peers[i], Pi[i], S, decidedSlots)
@@ -415,8 +417,11 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 		for r := range responses {
 			responsesArray = append(responsesArray, *r)
 			// close the channel once a majority of the replies are collected
-			if len(responsesArray) == prop.numReplicas/2+1 {
+			if len(responsesArray) == (prop.numReplicas/2)+1 {
 				prop.debug("proposer received majority recorder responses "+fmt.Sprintf("%v", responsesArray)+" for index "+fmt.Sprintf("%v", message.instance), 0)
+				if len(responsesArray) != (prop.numReplicas/2)+1 {
+					panic("should not happen")
+				}
 				break
 			}
 		}
@@ -432,6 +437,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 		prop.debug("proposer received recorder responses with all same S with my S "+fmt.Sprintf("%v", responsesArray)+" for index "+fmt.Sprintf("%v", message.instance), 0)
 
 		if allRepliesHaveS && S%4 == 0 { //propose phase
+			prop.debug("proposer is processing S%4==0 responses for index "+fmt.Sprintf("%v", message.instance), 0)
 			allRepliesHaveFHiFit := true
 			for i := 0; i < len(responsesArray); i++ {
 				if responsesArray[i].F.Priority != int64(prop.hi) {
@@ -451,6 +457,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 			P = prop.getMaxFromResponses(responsesArray, "F")
 			prop.debug("proposer did not succeed in the fast path propose phase, updated P to "+fmt.Sprintf("%v", P)+" for index "+fmt.Sprintf("%v", message.instance), 0)
 		} else if allRepliesHaveS && S%4 == 2 {
+			prop.debug("proposer is processing S%4==2 responses for index "+fmt.Sprintf("%v", message.instance), 0)
 			maxM := prop.getMaxFromResponses(responsesArray, "M")
 			if prop.isEqualProposal(P, maxM) {
 				prop.debug("proposer succeeded  in the s %4 == 2 slow path with Max m "+fmt.Sprintf("%v", maxM)+" for index "+fmt.Sprintf("%v", message.instance), 0)
@@ -460,26 +467,27 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 				}
 			}
 		} else if allRepliesHaveS && S%4 == 3 {
+			prop.debug("proposer is processing S%4==3 responses for index "+fmt.Sprintf("%v", message.instance), 0)
 			P = prop.getMaxFromResponses(responsesArray, "M")
 			prop.debug("proposer is in S%4 ==3 gather phase and updated P to "+fmt.Sprintf("%v", P)+" for index "+fmt.Sprintf("%v", message.instance), 0)
 		}
 
 		if allRepliesHaveS {
 			S = S + 1
-			prop.debug("proposer is in S%4==1 phase, updated S to "+fmt.Sprintf("%v", S)+" for index "+fmt.Sprintf("%v", message.instance), 0)
-		}
-
-		//  if any reply in R has S’ > S: S, P ← S’, F’ from any reply with maximum S’
-		for i := 0; i < len(responsesArray); i++ {
-			if responsesArray[i].S > int64(S) {
-				S = int(responsesArray[i].S)
-				P = ProposerMessage_Proposal{
-					Priority:   responsesArray[i].F.Priority,
-					ProposerId: responsesArray[i].F.ProposerId,
-					ThreadId:   responsesArray[i].F.ThreadId,
-					Ids:        responsesArray[i].F.Ids,
+			prop.debug("proposer updated S to "+fmt.Sprintf("%v", S)+" for index "+fmt.Sprintf("%v", message.instance), 0)
+		} else {
+			//  if any reply in R has S’ > S: S, P ← S’, F’ from any reply with maximum S’
+			for i := 0; i < len(responsesArray); i++ {
+				if responsesArray[i].S > int64(S) {
+					S = int(responsesArray[i].S)
+					P = ProposerMessage_Proposal{
+						Priority:   responsesArray[i].F.Priority,
+						ProposerId: responsesArray[i].F.ProposerId,
+						ThreadId:   responsesArray[i].F.ThreadId,
+						Ids:        responsesArray[i].F.Ids,
+					}
+					prop.debug("proposer received a higher S, hence updated S to "+fmt.Sprintf("%v", S)+" and P to "+fmt.Sprintf("%v", P)+" for index "+fmt.Sprintf("%v", message.instance), 0)
 				}
-				prop.debug("proposer received a higher S, hence updated S to "+fmt.Sprintf("%v", S)+" and P to "+fmt.Sprintf("%v", P)+" for index "+fmt.Sprintf("%v", message.instance), 0)
 			}
 		}
 	}
@@ -493,6 +501,13 @@ func (prop *Proposer) runProposer() {
 		for true {
 
 			select {
+
+			case fetchMessage := <-prop.proxyToProposerFetchChan:
+				prop.debug("proposer received fetch request", 0)
+				prop.proposerToProxyFetchChan <- prop.handleFetchRequest(fetchMessage)
+				prop.debug("proposer sent back to response to proxy for the fetch request ", 0)
+				break
+
 			case proposeMessage := <-prop.proxyToProposerChan:
 				prop.debug("proposer received propose request", -1)
 				response := prop.handleProposeRequest(proposeMessage)
@@ -500,12 +515,6 @@ func (prop *Proposer) runProposer() {
 					prop.proposerToProxyChan <- response
 					prop.debug("proposer sent back to response to proxy for the propose request to "+fmt.Sprintf("%v", response), 0)
 				}
-				break
-
-			case fetchMessage := <-prop.proxyToProposerFetchChan:
-				prop.debug("proposer received fetch request", 0)
-				prop.proposerToProxyFetchChan <- prop.handleFetchRequest(fetchMessage)
-				prop.debug("proposer sent back to response to proxy for the fetch request ", 0)
 				break
 			}
 		}

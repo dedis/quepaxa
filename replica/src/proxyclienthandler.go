@@ -31,6 +31,9 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 			}
 
 			proposeIndex := pr.lastProposedIndex + 1
+			for proposeIndex+1 <= int64(len(pr.replicatedLog)) {
+				proposeIndex++
+			}
 
 			newProposalRequest := ProposeRequest{
 				instance:             proposeIndex,
@@ -42,7 +45,7 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 			}
 
 			pr.proxyToProposerChan <- newProposalRequest
-			pr.debug("proxy sent a proposal request to proposer  "+fmt.Sprintf("%v", newProposalRequest), 0)
+			pr.debug("proxy sent a proposal request to proposer  "+fmt.Sprintf("%v", newProposalRequest), -1)
 			// create the slot index
 			for len(pr.replicatedLog) < int(proposeIndex+1) {
 				// create the new entry
@@ -56,9 +59,9 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 
 			pr.replicatedLog[proposeIndex] = Slot{
 				proposedBatch: strProposals,
-				decidedBatch:  nil,
-				decided:       false,
-				committed:     false,
+				decidedBatch:  pr.replicatedLog[proposeIndex].decidedBatch,
+				decided:       pr.replicatedLog[proposeIndex].decided,
+				committed:     pr.replicatedLog[proposeIndex].committed,
 			}
 
 			// reset the variables
