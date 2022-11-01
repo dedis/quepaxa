@@ -154,7 +154,7 @@ func (r *Recorder) max(oldValue Value, p *ProposerMessage_Proposal) Value {
 				}
 				return maxm
 			} else if maxm.thread_id == p.ThreadId {
-				panic("should not happen")
+				panic("should not happen") // todo remove this when you implement hedging, for all single proposer tests this should be there
 			}
 		}
 	}
@@ -194,11 +194,11 @@ func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (in
 
 	re.slots[index].Mutex.Lock()
 	if re.slots[index].S == s {
-		re.debug("recorder received esp for the same s  "+" for index "+fmt.Sprintf("%v", index), 0)
+		re.debug("recorder received esp for the same s  "+" for index "+fmt.Sprintf("%v", index), 2)
 		re.slots[index].A = re.max(re.slots[index].A, p)
 	} else if re.slots[index].S < s {
 		if re.slots[index].S+1 < s {
-			re.debug("recorder received esp for s greater than one step  "+" for index "+fmt.Sprintf("%v", index), 0)
+			re.debug("recorder received esp for s greater than one step  "+" for index "+fmt.Sprintf("%v", index), 2)
 			re.slots[index].A = Value{
 				priority:    -1,
 				proposer_id: -1,
@@ -206,7 +206,7 @@ func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (in
 				ids:         nil,
 			}
 		} else {
-			re.debug("recorder received esp for s with one step ahead "+" for index "+fmt.Sprintf("%v", index), 0)
+			re.debug("recorder received esp for s with one step ahead "+" for index "+fmt.Sprintf("%v", index), 2)
 		}
 		re.slots[index].S = s
 		re.slots[index].F = Value{

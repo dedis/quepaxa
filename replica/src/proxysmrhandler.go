@@ -239,9 +239,9 @@ func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 	pr.updateStateMachine(true)
 
 	// look at the last time committed, and revoke if needed using no-ops
-	if time.Now().Sub(pr.lastTimeCommitted).Milliseconds() > int64(pr.leaderTimeout*10) {
+	if time.Now().Sub(pr.lastTimeCommitted).Milliseconds() > int64(pr.leaderTimeout*100) {
 		// revoke all the instances from last committed index
-		pr.debug("proxy revoking because has not committed anything recently  ", 0)
+		pr.debug("proxy revoking because has not committed anything recently  ", 5)
 		pr.revokeInstances()
 		//todo we loose optimistic liveness here, not sure how to fix that
 	}

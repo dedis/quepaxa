@@ -42,9 +42,13 @@ func main() {
 	time.Sleep(5 * time.Second)
 
 	if cl.RequestType == "status" {
+		fmt.Printf("\nstarting status client\n")
 		cl.SendStatus(cl.OperationType)
+		fmt.Printf("\nfinishing status client\n")
 	} else if cl.RequestType == "request" {
+		fmt.Printf("\nstarting request client\n")
 		cl.SendRequests()
+		fmt.Printf("\nfinishing request client\n")
 	}
 
 }

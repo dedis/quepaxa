@@ -372,7 +372,9 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 				Pi[i].Priority = int64(rand.Intn(prop.hi-2)) + 1
 			}
 
-			prop.debug("proposer changed the priority because i am not the leader "+fmt.Sprintf("%v", Pi)+" for index "+fmt.Sprintf("%v", message.instance), 0)
+			for i := 0; i < prop.numReplicas; i++ {
+				prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"+ proposal  priority for  replica "+fmt.Sprintf("%v is %v ", i, Pi[i].Priority)+" for index "+fmt.Sprintf("%v", message.instance), 2)
+			}
 		}
 
 		responses := make(chan *RecorderResponse, prop.numReplicas)
@@ -398,7 +400,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 				if resp != nil && resp.S > 0 {
 					responses <- resp
 				}
-				prop.debug("proposer received a rpc response "+fmt.Sprintf("%v", resp)+" for index "+fmt.Sprintf("%v", message.instance), -1)
+				prop.debug("proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v, and M:%v",resp.S, resp.F, resp.M)+" for index "+fmt.Sprintf("%v", message.instance), -1)
 				return
 
 			}(prop.peers[i], Pi[i], S, decidedSlots)
@@ -418,7 +420,10 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 			responsesArray = append(responsesArray, *r)
 			// close the channel once a majority of the replies are collected
 			if len(responsesArray) == (prop.numReplicas/2)+1 {
-				prop.debug("proposer received majority recorder responses "+fmt.Sprintf("%v", responsesArray)+" for index "+fmt.Sprintf("%v", message.instance), 0)
+				for i:=0; i< (prop.numReplicas/2)+1; i++{
+					prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v,%v,%v,%v, and M:%v,%v,%v",responsesArray[i].S, responsesArray[i].F.Priority,responsesArray[i].F.ProposerId,responsesArray[i].F.ThreadId,responsesArray[i].F.Ids[0], responsesArray[i].M.Priority,responsesArray[i].M.ProposerId,responsesArray[i].M.ThreadId)+" for index "+fmt.Sprintf("%v", message.instance), 2)
+				}				
+				
 				if len(responsesArray) != (prop.numReplicas/2)+1 {
 					panic("should not happen")
 				}
@@ -434,10 +439,10 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 			}
 		}
 
-		prop.debug("proposer received recorder responses with all same S with my S "+fmt.Sprintf("%v", responsesArray)+" for index "+fmt.Sprintf("%v", message.instance), 0)
+		prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer received recorder responses with all same S with my S "+" for index "+fmt.Sprintf("%v", message.instance), 2)
 
 		if allRepliesHaveS && S%4 == 0 { //propose phase
-			prop.debug("proposer is processing S%4==0 responses for index "+fmt.Sprintf("%v", message.instance), 0)
+			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer is processing S%4==0 responses for index "+fmt.Sprintf("%v", message.instance), 2)
 			allRepliesHaveFHiFit := true
 			for i := 0; i < len(responsesArray); i++ {
 				if responsesArray[i].F.Priority != int64(prop.hi) {
@@ -446,7 +451,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 				}
 			}
 			if allRepliesHaveFHiFit {
-				prop.debug("proposer succeeded propose phase fast path "+fmt.Sprintf("%v", responsesArray)+" for index "+fmt.Sprintf("%v", message.instance), 0)
+				prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer succeeded propose phase fast path for index "+fmt.Sprintf("%v", message.instance), 2)
 				return ProposeResponse{
 					index:     int(message.instance),
 					decisions: responsesArray[0].F.Ids,
@@ -455,26 +460,26 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 			// P ← maximum of F’ from all replies in R
 			P = prop.getMaxFromResponses(responsesArray, "F")
-			prop.debug("proposer did not succeed in the fast path propose phase, updated P to "+fmt.Sprintf("%v", P)+" for index "+fmt.Sprintf("%v", message.instance), 0)
+			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer did not succeed in the fast path propose phase, updated P to "+fmt.Sprintf("priority: %v, replica:%v, thread:%v, and ids:%v", P.Priority, P.ProposerId, P.ThreadId, P.Ids[0])+" for index "+fmt.Sprintf("%v", message.instance), 2)
 		} else if allRepliesHaveS && S%4 == 2 {
-			prop.debug("proposer is processing S%4==2 responses for index "+fmt.Sprintf("%v", message.instance), 0)
+			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer is processing S%4==2 responses for index "+fmt.Sprintf("%v", message.instance), 0)
 			maxM := prop.getMaxFromResponses(responsesArray, "M")
 			if prop.isEqualProposal(P, maxM) {
-				prop.debug("proposer succeeded  in the s %4 == 2 slow path with Max m "+fmt.Sprintf("%v", maxM)+" for index "+fmt.Sprintf("%v", message.instance), 0)
+				prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer succeeded  in the s %4 == 2 slow path with Max m "+fmt.Sprintf("priority: %v, proposer:%v, thread:%v, and ids:%v ,", maxM.Priority, maxM.ProposerId, maxM.ThreadId, maxM.Ids[0])+" for index "+fmt.Sprintf("%v", message.instance), 2)
 				return ProposeResponse{
 					index:     int(message.instance),
 					decisions: P.Ids,
 				}
 			}
 		} else if allRepliesHaveS && S%4 == 3 {
-			prop.debug("proposer is processing S%4==3 responses for index "+fmt.Sprintf("%v", message.instance), 0)
+			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer is processing S%4==3 responses for index "+fmt.Sprintf("%v", message.instance), 0)
 			P = prop.getMaxFromResponses(responsesArray, "M")
-			prop.debug("proposer is in S%4 ==3 gather phase and updated P to "+fmt.Sprintf("%v", P)+" for index "+fmt.Sprintf("%v", message.instance), 0)
+			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer is in S%4 ==3 gather phase and updated P to "+fmt.Sprintf("priority: %v, replica:%v, thread:%v, and ids:%v", P.Priority, P.ProposerId, P.ThreadId, P.Ids[0])+" for index "+fmt.Sprintf("%v", message.instance), 2)
 		}
 
 		if allRepliesHaveS {
 			S = S + 1
-			prop.debug("proposer updated S to "+fmt.Sprintf("%v", S)+" for index "+fmt.Sprintf("%v", message.instance), 0)
+			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer updated S to "+fmt.Sprintf("%v", S)+" for index "+fmt.Sprintf("%v", message.instance), 2)
 		} else {
 			//  if any reply in R has S’ > S: S, P ← S’, F’ from any reply with maximum S’
 			for i := 0; i < len(responsesArray); i++ {
@@ -486,7 +491,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 						ThreadId:   responsesArray[i].F.ThreadId,
 						Ids:        responsesArray[i].F.Ids,
 					}
-					prop.debug("proposer received a higher S, hence updated S to "+fmt.Sprintf("%v", S)+" and P to "+fmt.Sprintf("%v", P)+" for index "+fmt.Sprintf("%v", message.instance), 0)
+					prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer received a higher S, hence updated S to "+fmt.Sprintf("%v", S)+" and P to "+fmt.Sprintf("priority: %v, replica:%v, thread:%v, and ids:%v", P.Priority, P.ProposerId, P.ThreadId, P.Ids[0])+" for index "+fmt.Sprintf("%v", message.instance), 2)
 				}
 			}
 		}
