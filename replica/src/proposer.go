@@ -378,7 +378,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 		}
 
 		responses := make(chan *RecorderResponse, prop.numReplicas)
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10)*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(100)*time.Second)
 		prop.debug("proposer sending rpc in parallel ", -1)
 		wg := sync.WaitGroup{}
 		for i := 0; i < prop.numReplicas; i++ {
@@ -430,6 +430,11 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 				break
 			}
 		}
+		
+		if len(responsesArray)==0{
+			panic("should this happen?")
+		}
+		
 		// If all replies in R have S’ = S and S%4 = 0
 		allRepliesHaveS := true
 		for i := 0; i < len(responsesArray); i++ {

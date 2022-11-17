@@ -51,11 +51,11 @@ pkill client
 
 echo "Killed previously running instances"
 
-nohup ./${raxos_path} --name 1 --debugOn --debugLevel 7 --batchSize 1 --pipelineLength 1 >${output_path}1.log &
-nohup ./${raxos_path} --name 2 --debugOn --debugLevel 7 --batchSize 1 --pipelineLength 1 >${output_path}2.log &
-nohup ./${raxos_path} --name 3 --debugOn --debugLevel 7 --batchSize 1 --pipelineLength 1 >${output_path}3.log &
-nohup ./${raxos_path} --name 4 --debugOn --debugLevel 7 --batchSize 1 --pipelineLength 1 >${output_path}4.log &
-nohup ./${raxos_path} --name 5 --debugOn --debugLevel 7 --batchSize 1 --pipelineLength 1 >${output_path}5.log &
+nohup ./${raxos_path} --name 1 --debugOn --debugLevel 7 --batchSize 50 --pipelineLength 1 >${output_path}1.log &
+nohup ./${raxos_path} --name 2 --debugOn --debugLevel 7 --batchSize 50 --pipelineLength 1 >${output_path}2.log &
+nohup ./${raxos_path} --name 3 --debugOn --debugLevel 7 --batchSize 50 --pipelineLength 1 >${output_path}3.log &
+nohup ./${raxos_path} --name 4 --debugOn --debugLevel 7 --batchSize 50 --pipelineLength 1 >${output_path}4.log &
+nohup ./${raxos_path} --name 5 --debugOn --debugLevel 7 --batchSize 50 --pipelineLength 1 >${output_path}5.log &
 
 echo "Started 5 servers"
 
@@ -69,7 +69,7 @@ sleep 3
 
 echo "Starting client[s]"
 
-nohup ./${ctl_path} --name 21 --debugOn --debugLevel 4 --requestType request --arrivalRate "${arrivalRate}" --batchSize 1 >${output_path}21.log &
+nohup ./${ctl_path} --name 21 --debugOn --debugLevel 4 --requestType request --arrivalRate "${arrivalRate}" --batchSize 100 >${output_path}21.log &
 
 sleep 200
 
