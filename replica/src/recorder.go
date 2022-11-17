@@ -154,7 +154,14 @@ func (r *Recorder) max(oldValue Value, p *ProposerMessage_Proposal) Value {
 				}
 				return maxm
 			} else if maxm.thread_id == p.ThreadId {
-				panic("should not happen") // todo remove this when you implement hedging, for all single proposer tests this should be there
+				// same proposal
+				maxm = Value{
+					priority:    p.Priority,
+					proposer_id: p.ProposerId,
+					thread_id:   p.ThreadId,
+					ids:         p.Ids,
+				}
+				return maxm
 			}
 		}
 	}
@@ -193,12 +200,13 @@ func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (in
 	re.instanceCreationMutex.Unlock()
 
 	re.slots[index].Mutex.Lock()
+	re.debug("recorder processing esp for s  "+fmt.Sprintf("%v", s)+" for index "+fmt.Sprintf("%v", index)+" for proposal "+fmt.Sprintf("%v", p), 2)
 	if re.slots[index].S == s {
-		re.debug("recorder received esp for the same s  "+" for index "+fmt.Sprintf("%v", index), 2)
+		re.debug("recorder received esp for the same s  "+" for index "+fmt.Sprintf("%v", index), -1)
 		re.slots[index].A = re.max(re.slots[index].A, p)
 	} else if re.slots[index].S < s {
 		if re.slots[index].S+1 < s {
-			re.debug("recorder received esp for s greater than one step  "+" for index "+fmt.Sprintf("%v", index), 2)
+			re.debug("recorder received esp for s greater than one step  "+" for index "+fmt.Sprintf("%v", index), -1)
 			re.slots[index].A = Value{
 				priority:    -1,
 				proposer_id: -1,
@@ -206,7 +214,7 @@ func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (in
 				ids:         nil,
 			}
 		} else {
-			re.debug("recorder received esp for s with one step ahead "+" for index "+fmt.Sprintf("%v", index), 2)
+			re.debug("recorder received esp for s with one step ahead "+" for index "+fmt.Sprintf("%v", index), -1)
 		}
 		re.slots[index].S = s
 		re.slots[index].F = Value{
@@ -227,7 +235,7 @@ func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (in
 	returnS := re.slots[index].S
 	returnF := re.slots[index].F
 	returnM := re.slots[index].M
-
+	re.debug("recorder finished processing esp for s  "+fmt.Sprintf("%v", s)+" for index "+fmt.Sprintf("%v", index)+" for proposal "+fmt.Sprintf("%v", p), -1)
 	re.slots[index].Mutex.Unlock()
 
 	return int64(returnS), returnF, returnM
@@ -307,11 +315,11 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 		Ids:        M.ids,
 	}
 
-	re.debug("recorder responding to esp request  "+fmt.Sprintf("%v", req)+" with response "+fmt.Sprintf("%v", response)+" for index "+fmt.Sprintf("%v", req.Index), 0)
+	re.debug("recorder responding to esp request  "+fmt.Sprintf("%v", req)+" with response "+fmt.Sprintf("%v", response)+" for index "+fmt.Sprintf("%v", req.Index), -1)
 
 	// Mark the time of the proposal message for the proposer
 	proposer := req.Sender
-	*re.lastSeenTimeProposers[proposer] = time.Now()
+	*re.lastSeenTimeProposers[proposer-1] = time.Now()
 	re.debug("recorder updated the last seen times  "+fmt.Sprintf("%v", re.lastSeenTimeProposers)+" for index "+fmt.Sprintf("%v", req.Index), -1)
 	return &response
 }

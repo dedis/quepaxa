@@ -51,11 +51,11 @@ pkill client
 
 echo "Killed previously running instances"
 
-nohup ./${raxos_path} --name 0 --debugOn --debugLevel 6 --batchSize 50 --pipelineLength 10 >${output_path}0.log &
-nohup ./${raxos_path} --name 1 --debugOn --debugLevel 6 --batchSize 50 --pipelineLength 10 >${output_path}1.log &
-nohup ./${raxos_path} --name 2 --debugOn --debugLevel 6 --batchSize 50 --pipelineLength 10 >${output_path}2.log &
-nohup ./${raxos_path} --name 3 --debugOn --debugLevel 6 --batchSize 50 --pipelineLength 10 >${output_path}3.log &
-nohup ./${raxos_path} --name 4 --debugOn --debugLevel 6 --batchSize 50 --pipelineLength 10 >${output_path}4.log &
+nohup ./${raxos_path} --name 1 --debugOn --debugLevel 7 --batchSize 1 --pipelineLength 1 >${output_path}1.log &
+nohup ./${raxos_path} --name 2 --debugOn --debugLevel 7 --batchSize 1 --pipelineLength 1 >${output_path}2.log &
+nohup ./${raxos_path} --name 3 --debugOn --debugLevel 7 --batchSize 1 --pipelineLength 1 >${output_path}3.log &
+nohup ./${raxos_path} --name 4 --debugOn --debugLevel 7 --batchSize 1 --pipelineLength 1 >${output_path}4.log &
+nohup ./${raxos_path} --name 5 --debugOn --debugLevel 7 --batchSize 1 --pipelineLength 1 >${output_path}5.log &
 
 echo "Started 5 servers"
 
@@ -69,7 +69,7 @@ sleep 3
 
 echo "Starting client[s]"
 
-nohup ./${ctl_path} --name 21 --debugOn --debugLevel 4 --requestType request --arrivalRate "${arrivalRate}" --batchSize 50 >${output_path}21.log &
+nohup ./${ctl_path} --name 21 --debugOn --debugLevel 4 --requestType request --arrivalRate "${arrivalRate}" --batchSize 1 >${output_path}21.log &
 
 sleep 200
 
@@ -79,10 +79,10 @@ echo "Completed Client[s]"
 
 echo "Sent status to print log"
 
-sleep 20
+sleep 50
 
-python3 experiment/python/overlay-test.py ${output_path}0-consensus.txt ${output_path}1-consensus.txt ${output_path}2-consensus.txt ${output_path}3-consensus.txt ${output_path}4-consensus.txt >${output_path}local-test-consensus.log
-python3 experiment/python/overlay-test.py ${output_path}0-mempool.txt ${output_path}1-mempool.txt ${output_path}2-mempool.txt ${output_path}3-mempool.txt ${output_path}4-mempool.txt >${output_path}local-test-mempool.log
+python3 experiment/python/overlay-test.py ${output_path}5-consensus.txt ${output_path}1-consensus.txt ${output_path}2-consensus.txt ${output_path}3-consensus.txt ${output_path}4-consensus.txt >${output_path}local-test-consensus.log
+python3 experiment/python/overlay-test.py ${output_path}5-mempool.txt ${output_path}1-mempool.txt ${output_path}2-mempool.txt ${output_path}3-mempool.txt ${output_path}4-mempool.txt >${output_path}local-test-mempool.log
 
 pkill replica
 pkill replica

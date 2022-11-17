@@ -18,7 +18,7 @@ type Proposer struct {
 	proposerToProxyChan      chan ProposeResponse
 	proxyToProposerFetchChan chan FetchRequest
 	proposerToProxyFetchChan chan FetchResposne
-	lastSeenTimes            []*time.Time
+	lastSeenTimes            []*time.Time // use proposer name - 1 as index
 	debugOn                  bool // if turned on, the debug messages will be print on the console
 	debugLevel               int  // debug level
 	hi                       int  // hi priority
@@ -344,13 +344,13 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 	//}
 
 	// for experimental purposes, to be removed in later versions
-	if prop.name != 1 {
-		prop.debug("proposer did not propose because i am not the replica 1 "+" for index "+fmt.Sprintf("%v", message.instance), 0)
-		return ProposeResponse{
-			index:     -1,
-			decisions: nil,
-		} //todo change
-	}
+	//if prop.name != 1 {
+	//	prop.debug("proposer did not propose because i am not the replica 1 "+" for index "+fmt.Sprintf("%v", message.instance), 0)
+	//	return ProposeResponse{
+	//		index:     -1,
+	//		decisions: nil,
+	//	} //todo change
+	//}
 
 	for true {
 
@@ -479,7 +479,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 		if allRepliesHaveS {
 			S = S + 1
-			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer updated S to "+fmt.Sprintf("%v", S)+" for index "+fmt.Sprintf("%v", message.instance), 2)
+			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer updated S to "+fmt.Sprintf("%v", S)+" for index "+fmt.Sprintf("%v", message.instance)+" and P to "+fmt.Sprintf("priority: %v, replica:%v, thread:%v, and ids:%v", P.Priority, P.ProposerId, P.ThreadId, P.Ids[0]), 2)
 		} else {
 			//  if any reply in R has S’ > S: S, P ← S’, F’ from any reply with maximum S’
 			for i := 0; i < len(responsesArray); i++ {

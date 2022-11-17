@@ -238,13 +238,13 @@ func (pr *Proxy) debug(message string, level int) {
 	}
 }
 
-// return the pre-agreed, non changing waiting time for the instance by the proposer
+// return the pre-agreed, non changing waiting time for the instance by the proposer todo
 
 func (pr *Proxy) getLeaderWait(instance int) int {
 
 	if pr.leaderMode == 0 {
 		// fixed order
-		if pr.name == 0 {
+		if pr.name == 1 {
 			return 0
 		} else {
 			return int(pr.name * pr.leaderTimeout)

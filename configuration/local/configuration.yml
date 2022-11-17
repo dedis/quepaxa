@@ -2,23 +2,23 @@
 # name and ip:port should be unique
 # to add more peers or clients: add new lines following the same structure
 peers:
-  - name: 0
+  - name: 1 # should always start from 1, else there is a bug with time array 
     ip: 0.0.0.0
     proxyport: 9000
     recorderport: 9001
-  - name: 1
+  - name: 2
     ip: 0.0.0.0
     proxyport: 9002
     recorderport: 9003
-  - name: 2
+  - name: 3
     ip: 0.0.0.0
     proxyport: 9004
     recorderport: 9005
-  - name: 3
+  - name: 4
     ip: 0.0.0.0
     proxyport: 9006
     recorderport: 9007
-  - name: 4
+  - name: 5
     ip: 0.0.0.0
     proxyport: 9008
     recorderport: 9009
