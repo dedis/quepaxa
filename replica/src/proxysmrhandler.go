@@ -185,7 +185,7 @@ func (pr *Proxy) revokeInstance(i int64) {
 		instance:             i,
 		proposalStr:          strProposals,
 		proposalBtch:         btchProposals,
-		msWait:               pr.getLeaderWait(int(i)),
+		msWait:               0,
 		lastDecidedIndexes:   pr.lastDecidedIndexes,
 		lastDecidedDecisions: pr.lastDecidedDecisions,
 	}

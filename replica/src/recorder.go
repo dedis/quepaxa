@@ -320,7 +320,7 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 	// Mark the time of the proposal message for the proposer
 	proposer := req.Sender
 	*re.lastSeenTimeProposers[proposer-1] = time.Now()
-	re.debug("recorder updated the last seen times  "+fmt.Sprintf("%v", re.lastSeenTimeProposers)+" for index "+fmt.Sprintf("%v", req.Index), -1)
+	re.debug("recorder updated the last seen times  "+fmt.Sprintf("%v", re.lastSeenTimeProposers)+" for index "+fmt.Sprintf("%v", req.Index), 9)
 	return &response
 }
 

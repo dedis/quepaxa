@@ -26,13 +26,14 @@ type Server struct {
 	proposerToProxyFetchChan chan FetchResposne
 
 	lastSeenTimeProposers []*time.Time // last seen times of each proposer
-	
-	cfg          configuration.InstanceConfig // configuration of clients and replicas
-	numProposers int                          // number of proposers == pipeline length
-	store        *ClientBatchStore            // shared client batch store
-	serverMode   int                          // todo use this in the proposer code for the optimizations
-	debugOn      bool
-	debugLevel   int
+
+	cfg           configuration.InstanceConfig // configuration of clients and replicas
+	numProposers  int                          // number of proposers == pipeline length
+	store         *ClientBatchStore            // shared client batch store
+	serverMode    int                          // todo use this in the proposer code for the optimizations
+	debugOn       bool
+	debugLevel    int
+	leaderTimeout int64
 }
 
 // from proxy to proposer
@@ -126,7 +127,7 @@ func (s *Server) createProposers() {
 		// create N gRPC connections
 		peers := s.setupgRPC()
 		hi := 10000
-		newProposer := NewProposer(s.name, int64(i), peers, s.proxyToProposerChan, s.proposerToProxyChan, s.proxyToProposerFetchChan, s.proposerToProxyFetchChan, s.lastSeenTimeProposers, s.debugOn, s.debugLevel, hi, s.serverMode)
+		newProposer := NewProposer(s.name, int64(i), peers, s.proxyToProposerChan, s.proposerToProxyChan, s.proxyToProposerFetchChan, s.proposerToProxyFetchChan, s.lastSeenTimeProposers, s.debugOn, s.debugLevel, hi, s.serverMode, s.leaderTimeout)
 		s.ProposerInstances = append(s.ProposerInstances, newProposer)
 		s.ProposerInstances[len(s.ProposerInstances)-1].runProposer()
 	}
@@ -155,6 +156,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		debugOn:                  debugOn,
 		debugLevel:               debugLevel,
 		name:                     name,
+		leaderTimeout:            leaderTimeout,
 	}
 
 	// allocate the lastSeenTimeProposers

@@ -19,15 +19,16 @@ type Proposer struct {
 	proxyToProposerFetchChan chan FetchRequest
 	proposerToProxyFetchChan chan FetchResposne
 	lastSeenTimes            []*time.Time // use proposer name - 1 as index
-	debugOn                  bool         // if turned on, the debug messages will be print on the console
-	debugLevel               int          // debug level
-	hi                       int          // hi priority
-	serverMode               int          // if 1, use the fast path LAN optimizations
+	leaderTimeout            int64
+	debugOn                  bool // if turned on, the debug messages will be print on the console
+	debugLevel               int  // debug level
+	hi                       int  // hi priority
+	serverMode               int  // if 1, use the fast path LAN optimizations
 }
 
 // instantiate a new Proposer
 
-func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, lastSeenTimes []*time.Time, debugOn bool, debugLevel int, hi int, serverMode int) *Proposer {
+func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, lastSeenTimes []*time.Time, debugOn bool, debugLevel int, hi int, serverMode int, leaderTimeout int64) *Proposer {
 
 	pr := Proposer{
 		numReplicas:              len(peers),
@@ -39,6 +40,7 @@ func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan c
 		proxyToProposerFetchChan: proxyToProposerFetchChan,
 		proposerToProxyFetchChan: proposerToProxyFetchChan,
 		lastSeenTimes:            lastSeenTimes,
+		leaderTimeout:            leaderTimeout,
 		debugOn:                  debugOn,
 		debugLevel:               debugLevel,
 		hi:                       hi,
@@ -332,25 +334,20 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 	decidedSlots := prop.extractDecidedSlots(message.lastDecidedIndexes, message.lastDecidedDecisions)
 
-	// todo add msWait check for non-leader proposals
+	// sleep for msWait
+	time.Sleep(time.Duration(message.msWait) * time.Millisecond)
 
-	// for experimental purposes, to be removed in later versions
-	//if message.msWait != 0 {
-	//	prop.debug("proposer did not propose because i am not the leader ", 0)
-	//	return ProposeResponse{
-	//		index:     -1,
-	//		decisions: nil,
-	//	} //todo change
-	//}
+	// if there is no proposal from anyone, propose, else return
 
-	// for experimental purposes, to be removed in later versions
-	//if prop.name != 1 {
-	//	prop.debug("proposer did not propose because i am not the replica 1 "+" for index "+fmt.Sprintf("%v", message.instance), 0)
-	//	return ProposeResponse{
-	//		index:     -1,
-	//		decisions: nil,
-	//	} //todo change
-	//}
+	if !prop.noProposalUntilNow() {
+		prop.debug("proposer did not propose because someone else has proposed ", 9)
+		return ProposeResponse{
+			index:     -1,
+			decisions: nil,
+		}
+	}
+
+	prop.debug("proposers view of the time array "+fmt.Sprintf("%v", prop.lastSeenTimes), -1)
 
 	for true {
 
@@ -400,10 +397,10 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 				if resp != nil && resp.S > 0 {
 					responses <- resp
-				}else{
+				} else {
 					//panic("response :"+fmt.Sprintf("%v", resp))
 				}
-				
+
 				prop.debug("proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v, and M:%v", resp.S, resp.F, resp.M)+" for index "+fmt.Sprintf("%v", message.instance), -1)
 				return
 
@@ -533,4 +530,19 @@ func (prop *Proposer) runProposer() {
 			}
 		}
 	}()
+}
+
+// have I seen any proposal from anyone else, within the duration time.Now - leader timeout : time.Now
+
+func (prop *Proposer) noProposalUntilNow() bool {
+	for i := 0; i < len(prop.lastSeenTimes); i++ {
+		if int64(i+1) == prop.name { // this hardcodes the fact that node ids start with 1
+			continue
+		}
+		if time.Now().Sub(*prop.lastSeenTimes[i]).Milliseconds() < prop.leaderTimeout {
+			return false
+		}
+	}
+
+	return true
 }

@@ -14,7 +14,7 @@ func main() {
 	name := flag.Int64("name", 1, "name of the replica")
 	logFilePath := flag.String("logFilePath", "logs/", "log file path")
 	batchSize := flag.Int64("batchSize", 50, "replica batch size")
-	leaderTimeout := flag.Int64("leaderTimeout", 500000, "leader timeout in milli seconds")
+	leaderTimeout := flag.Int64("leaderTimeout", 50, "leader timeout in milli seconds")
 	pipelineLength := flag.Int64("pipelineLength", 50, "pipeline length maximum number of outstanding proposals")
 	benchmark := flag.Int64("benchmark", 0, "Benchmark: 0 for echo service, 1 for KV store and 2 for Redis ")
 	debugOn := flag.Bool("debugOn", false, "true / false")
