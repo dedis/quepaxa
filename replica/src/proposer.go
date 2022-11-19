@@ -548,7 +548,7 @@ func (prop *Proposer) noProposalUntilNow() bool {
 		if int64(i+1) == prop.name { // this hardcodes the fact that node ids start with 1
 			continue
 		}
-		if time.Now().Sub(*prop.lastSeenTimes[i]).Milliseconds() < prop.leaderTimeout {
+		if time.Now().Sub(*prop.lastSeenTimes[i]).Milliseconds() < prop.leaderTimeout*int64(i+1) {
 			return false
 		}
 	}
