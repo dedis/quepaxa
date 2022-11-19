@@ -337,17 +337,26 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 	// sleep for msWait
 	time.Sleep(time.Duration(message.msWait) * time.Millisecond)
 
+	timeStr := ""
+
+	if prop.debugOn {
+
+		for y := 0; y < len(prop.lastSeenTimes); y++ {
+			timeStr = timeStr + fmt.Sprintf(": %v", time.Now().Sub(*prop.lastSeenTimes[y]).Milliseconds())
+		}
+	}
+
 	// if there is no proposal from anyone, propose, else return
 
 	if !prop.noProposalUntilNow() {
-		prop.debug("proposer did not propose because someone else has proposed ", 9)
+		prop.debug("proposer did not propose because someone else has proposed "+timeStr, 9)
 		return ProposeResponse{
 			index:     -1,
 			decisions: nil,
 		}
 	}
 
-	prop.debug("proposers view of the time array "+fmt.Sprintf("%v", prop.lastSeenTimes), -1)
+	prop.debug("proposer proposes "+timeStr, 9)
 
 	for true {
 
