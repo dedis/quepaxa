@@ -19,10 +19,10 @@ type Proposer struct {
 	proxyToProposerFetchChan chan FetchRequest
 	proposerToProxyFetchChan chan FetchResposne
 	lastSeenTimes            []*time.Time // use proposer name - 1 as index
-	debugOn                  bool // if turned on, the debug messages will be print on the console
-	debugLevel               int  // debug level
-	hi                       int  // hi priority
-	serverMode               int  // if 1, use the fast path LAN optimizations
+	debugOn                  bool         // if turned on, the debug messages will be print on the console
+	debugLevel               int          // debug level
+	hi                       int          // hi priority
+	serverMode               int          // if 1, use the fast path LAN optimizations
 }
 
 // instantiate a new Proposer
@@ -394,13 +394,17 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 				})
 
 				if err != nil {
+					//panic(fmt.Sprintf("%v", err))
 					return
 				}
 
 				if resp != nil && resp.S > 0 {
 					responses <- resp
+				}else{
+					//panic("response :"+fmt.Sprintf("%v", resp))
 				}
-				prop.debug("proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v, and M:%v",resp.S, resp.F, resp.M)+" for index "+fmt.Sprintf("%v", message.instance), -1)
+				
+				prop.debug("proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v, and M:%v", resp.S, resp.F, resp.M)+" for index "+fmt.Sprintf("%v", message.instance), -1)
 				return
 
 			}(prop.peers[i], Pi[i], S, decidedSlots)
@@ -420,21 +424,21 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 			responsesArray = append(responsesArray, *r)
 			// close the channel once a majority of the replies are collected
 			if len(responsesArray) == (prop.numReplicas/2)+1 {
-				for i:=0; i< (prop.numReplicas/2)+1; i++{
-					prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v,%v,%v,%v, and M:%v,%v,%v",responsesArray[i].S, responsesArray[i].F.Priority,responsesArray[i].F.ProposerId,responsesArray[i].F.ThreadId,responsesArray[i].F.Ids[0], responsesArray[i].M.Priority,responsesArray[i].M.ProposerId,responsesArray[i].M.ThreadId)+" for index "+fmt.Sprintf("%v", message.instance), 2)
-				}				
-				
+				for i := 0; i < (prop.numReplicas/2)+1; i++ {
+					prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v,%v,%v,%v, and M:%v,%v,%v", responsesArray[i].S, responsesArray[i].F.Priority, responsesArray[i].F.ProposerId, responsesArray[i].F.ThreadId, responsesArray[i].F.Ids[0], responsesArray[i].M.Priority, responsesArray[i].M.ProposerId, responsesArray[i].M.ThreadId)+" for index "+fmt.Sprintf("%v", message.instance), 2)
+				}
+
 				if len(responsesArray) != (prop.numReplicas/2)+1 {
 					panic("should not happen")
 				}
 				break
 			}
 		}
-		
-		if len(responsesArray)==0{
+
+		if len(responsesArray) == 0 {
 			panic("should this happen?")
 		}
-		
+
 		// If all replies in R have S’ = S and S%4 = 0
 		allRepliesHaveS := true
 		for i := 0; i < len(responsesArray); i++ {

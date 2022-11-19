@@ -200,7 +200,7 @@ func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (in
 	re.instanceCreationMutex.Unlock()
 
 	re.slots[index].Mutex.Lock()
-	re.debug("recorder processing esp for s  "+fmt.Sprintf("%v", s)+" for index "+fmt.Sprintf("%v", index)+" for proposal "+fmt.Sprintf("%v", p), 2)
+	re.debug("recorder processing esp for s  "+fmt.Sprintf("%v", s)+" for index "+fmt.Sprintf("%v", index)+" for proposal "+fmt.Sprintf("pID: %v, tID: %v, prio:%v, initRequest: %v", p.ProposerId, p.ThreadId, p.Priority, p.Ids[0]), 2)
 	if re.slots[index].S == s {
 		re.debug("recorder received esp for the same s  "+" for index "+fmt.Sprintf("%v", index), -1)
 		re.slots[index].A = re.max(re.slots[index].A, p)

@@ -16,6 +16,9 @@ func (gc *GRPCConnection) ESP(ctx context.Context, req *ProposerMessage) (*Recor
 	var response *RecorderResponse
 	response = gc.Recorder.HandleESP(req)
 	gc.Recorder.debug("recorder responded to esp request "+fmt.Sprintf("%v", response), -1)
+	if response == nil {
+		panic("should this happen?")
+	}
 	return response, nil
 }
 

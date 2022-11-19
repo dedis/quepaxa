@@ -19,17 +19,18 @@ rm ${output_path}2.log
 rm ${output_path}3.log
 rm ${output_path}4.log
 
-rm ${output_path}0-consensus.txt
+
 rm ${output_path}1-consensus.txt
 rm ${output_path}2-consensus.txt
 rm ${output_path}3-consensus.txt
 rm ${output_path}4-consensus.txt
+rm ${output_path}5-consensus.txt
 
-rm ${output_path}0-mempool.txt
 rm ${output_path}1-mempool.txt
 rm ${output_path}2-mempool.txt
 rm ${output_path}3-mempool.txt
 rm ${output_path}4-mempool.txt
+rm ${output_path}5-mempool.txt
 
 rm ${output_path}21.txt
 rm ${output_path}21.log
@@ -51,11 +52,11 @@ pkill client
 
 echo "Killed previously running instances"
 
-nohup ./${raxos_path} --name 1 --debugOn --debugLevel 7 --batchSize 50 --pipelineLength 1 >${output_path}1.log &
-nohup ./${raxos_path} --name 2 --debugOn --debugLevel 7 --batchSize 50 --pipelineLength 1 >${output_path}2.log &
-nohup ./${raxos_path} --name 3 --debugOn --debugLevel 7 --batchSize 50 --pipelineLength 1 >${output_path}3.log &
-nohup ./${raxos_path} --name 4 --debugOn --debugLevel 7 --batchSize 50 --pipelineLength 1 >${output_path}4.log &
-nohup ./${raxos_path} --name 5 --debugOn --debugLevel 7 --batchSize 50 --pipelineLength 1 >${output_path}5.log &
+nohup ./${raxos_path} --name 1 --debugOn --debugLevel 1 --batchSize 50 --pipelineLength 1 >${output_path}1.log &
+nohup ./${raxos_path} --name 2 --debugOn --debugLevel 1 --batchSize 50 --pipelineLength 1 >${output_path}2.log &
+nohup ./${raxos_path} --name 3 --debugOn --debugLevel 1 --batchSize 50 --pipelineLength 1 >${output_path}3.log &
+nohup ./${raxos_path} --name 4 --debugOn --debugLevel 1 --batchSize 50 --pipelineLength 1 >${output_path}4.log &
+nohup ./${raxos_path} --name 5 --debugOn --debugLevel 1 --batchSize 50 --pipelineLength 1 >${output_path}5.log &
 
 echo "Started 5 servers"
 

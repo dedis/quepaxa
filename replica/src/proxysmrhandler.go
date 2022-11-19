@@ -105,7 +105,7 @@ func (pr *Proxy) updateStateMachine(sendResponse bool) {
 				}
 			}
 
-			pr.debug("proxy has all client batches to commit  "+fmt.Sprintf("%v", pr.replicatedLog[i]), 1)
+			pr.debug("proxy has all client batches to commit  "+fmt.Sprintf("%v", i), 0)
 
 			var responseBatches []*client.ClientBatch
 			for j := 0; j < len(pr.replicatedLog[i].decidedBatch); j++ {
@@ -225,7 +225,7 @@ func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 		pr.replicatedLog[message.index].decided = true
 		pr.replicatedLog[message.index].decidedBatch = message.decisions
 
-		pr.debug("proxy decided as a result of propose "+fmt.Sprintf(" for instance %v with values", message.index, message.decisions), 1)
+		pr.debug("proxy decided as a result of propose "+fmt.Sprintf(" for instance %v with initial value", message.index, message.decisions[0]), 1)
 
 		if !pr.decidedTheProposedValue(message.index, message.decisions) {
 			pr.debug("proxy decided  a different proposal, hence putting back stuff to propose later", 0)
