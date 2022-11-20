@@ -24,11 +24,12 @@ type Proposer struct {
 	debugLevel               int  // debug level
 	hi                       int  // hi priority
 	serverMode               int  // if 1, use the fast path LAN optimizations
+	leaderMode               int
 }
 
 // instantiate a new Proposer
 
-func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, lastSeenTimes []*time.Time, debugOn bool, debugLevel int, hi int, serverMode int, leaderTimeout int64) *Proposer {
+func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, lastSeenTimes []*time.Time, debugOn bool, debugLevel int, hi int, serverMode int, leaderTimeout int64, leaderMode int) *Proposer {
 
 	pr := Proposer{
 		numReplicas:              len(peers),
@@ -45,6 +46,7 @@ func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan c
 		debugLevel:               debugLevel,
 		hi:                       hi,
 		serverMode:               serverMode,
+		leaderMode:               leaderMode,
 	}
 
 	pr.debug("created a new proposer "+fmt.Sprintf("%v", pr), -1)
@@ -544,14 +546,28 @@ func (prop *Proposer) runProposer() {
 // have I seen any proposal from anyone else, within the duration time.Now - leader timeout : time.Now
 
 func (prop *Proposer) noProposalUntilNow() bool {
-	for i := 0; i < len(prop.lastSeenTimes); i++ {
-		if int64(i+1) == prop.name { // this hardcodes the fact that node ids start with 1
-			continue
-		}
-		if time.Now().Sub(*prop.lastSeenTimes[i]).Milliseconds() < prop.leaderTimeout*int64(i+1) {
-			return false
-		}
-	}
 
-	return true
+	if prop.leaderMode == 0 {
+		// fixed order
+		for i := 0; i < len(prop.lastSeenTimes); i++ {
+			if int64(i+1) == prop.name { // this hardcodes the fact that node ids start with 1
+				continue
+			}
+			if time.Now().Sub(*prop.lastSeenTimes[i]).Milliseconds() < prop.leaderTimeout*int64(i+1) {
+				return false
+			}
+		}
+
+		return true
+
+	} else if prop.leaderMode == 1 {
+		// todo
+		// static MAB
+		panic("not implemented")
+	} else if prop.leaderMode == 2 {
+		// todo
+		// dynamic MAB
+		panic("not implemented")
+	}
+	panic("should not happen")
 }

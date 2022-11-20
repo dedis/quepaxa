@@ -34,6 +34,7 @@ type Server struct {
 	debugOn       bool
 	debugLevel    int
 	leaderTimeout int64
+	leaderMode    int
 }
 
 // from proxy to proposer
@@ -127,7 +128,7 @@ func (s *Server) createProposers() {
 		// create N gRPC connections
 		peers := s.setupgRPC()
 		hi := 10000
-		newProposer := NewProposer(s.name, int64(i), peers, s.proxyToProposerChan, s.proposerToProxyChan, s.proxyToProposerFetchChan, s.proposerToProxyFetchChan, s.lastSeenTimeProposers, s.debugOn, s.debugLevel, hi, s.serverMode, s.leaderTimeout)
+		newProposer := NewProposer(s.name, int64(i), peers, s.proxyToProposerChan, s.proposerToProxyChan, s.proxyToProposerFetchChan, s.proposerToProxyFetchChan, s.lastSeenTimeProposers, s.debugOn, s.debugLevel, hi, s.serverMode, s.leaderTimeout, s.leaderMode)
 		s.ProposerInstances = append(s.ProposerInstances, newProposer)
 		s.ProposerInstances[len(s.ProposerInstances)-1].runProposer()
 	}
@@ -157,6 +158,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		debugLevel:               debugLevel,
 		name:                     name,
 		leaderTimeout:            leaderTimeout,
+		leaderMode:               leaderMode,
 	}
 
 	// allocate the lastSeenTimeProposers

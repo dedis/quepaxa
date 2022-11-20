@@ -129,9 +129,9 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		leaderMode:               leaderMode,
 		serverMode:               serverMode, // for the proposer
 	}
-	
+
 	// initialize the genenesis
-	
+
 	pr.replicatedLog = append(pr.replicatedLog, Slot{
 		proposedBatch: []string{"nil"},
 		decidedBatch:  []string{"nil"},
@@ -244,11 +244,8 @@ func (pr *Proxy) getLeaderWait(instance int) int {
 
 	if pr.leaderMode == 0 {
 		// fixed order
-		if pr.name == 1 {
-			return 0
-		} else {
-			return int(pr.name * pr.leaderTimeout)
-		}
+		return int((pr.name - 1) * pr.leaderTimeout) // assumes that node names start with 1
+
 	} else if pr.leaderMode == 1 {
 		// todo
 		// static MAB
@@ -258,5 +255,5 @@ func (pr *Proxy) getLeaderWait(instance int) int {
 		// dynamic MAB
 		return 0
 	}
-	return 10
+	panic("should not happen")
 }
