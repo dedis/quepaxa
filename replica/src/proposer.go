@@ -78,7 +78,7 @@ func (prop *Proposer) findClientByName(rn int64) peer {
 // select a random grpc client that is not self
 
 func (prop *Proposer) getRandomClient() peer {
-	rn := rand.Intn(prop.numReplicas)+1
+	rn := rand.Intn(prop.numReplicas) + 1
 	for int64(rn) == prop.name {
 		rn = rand.Intn(prop.numReplicas)
 	}
@@ -350,7 +350,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 	// if there is no proposal from anyone, propose, else return
 
-	if !prop.noProposalUntilNow() {
+	if !prop.noProposalUntilNow(message.leaderSequence) {
 		prop.debug("proposer did not propose because someone else has proposed "+timeStr, 9)
 		return ProposeResponse{
 			index:     -1,
@@ -543,31 +543,44 @@ func (prop *Proposer) runProposer() {
 	}()
 }
 
-// have I seen any proposal from anyone else, within the duration time.Now - leader timeout : time.Now
+// have I seen any proposal from any proposer with a lower index in the sequence, within the duration time.Now - leader timeout : time.Now
 
-func (prop *Proposer) noProposalUntilNow() bool {
+func (prop *Proposer) noProposalUntilNow(leaderSequence []int64) bool {
 
-	if prop.leaderMode == 0 {
-		// fixed order
-		for i := 0; i < len(prop.lastSeenTimes); i++ {
-			if int64(i+1) == prop.name { // this hardcodes the fact that node ids start with 1
-				continue
-			}
-			if time.Now().Sub(*prop.lastSeenTimes[i]).Milliseconds() < prop.leaderTimeout*int64(i+1) && int64(i+1) < prop.name{
-				return false
-			}
+	for i := 0; i < len(prop.lastSeenTimes); i++ {
+		if int64(i+1) == prop.name { // this hardcodes the fact that node ids start with 1
+			continue
 		}
+		if time.Now().Sub(*prop.lastSeenTimes[i]).Milliseconds() < prop.getTimeout(int64(i+1), leaderSequence) && prop.isBeforeMyIndex(int64(i+1), leaderSequence) {
+			return false
+		}
+	}
 
-		return true
+	return true
 
-	} else if prop.leaderMode == 1 {
-		// todo
-		// static MAB
-		panic("not implemented")
-	} else if prop.leaderMode == 2 {
-		// todo
-		// dynamic MAB
-		panic("not implemented")
+}
+
+// in the given sequence, is i before my index
+
+func (prop *Proposer) isBeforeMyIndex(i int64, sequence []int64) bool {
+	for j := 0; j < len(sequence); j++ {
+		if sequence[j] == i {
+			return true
+		}
+		if sequence[j] == prop.name {
+			return false
+		}
+	}
+	panic("should not happen")
+}
+
+// assign the timeout depending on the position in the sequence
+
+func (prop *Proposer) getTimeout(i int64, sequence []int64) int64 {
+	for j := 0; j < len(sequence); j++ {
+		if sequence[j] == i {
+			return prop.leaderTimeout * int64(j+1)
+		}
 	}
 	panic("should not happen")
 }

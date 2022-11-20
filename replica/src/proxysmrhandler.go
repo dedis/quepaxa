@@ -185,9 +185,10 @@ func (pr *Proxy) revokeInstance(i int64) {
 		instance:             i,
 		proposalStr:          strProposals,
 		proposalBtch:         btchProposals,
-		msWait:               0,
+		msWait:               int(pr.getLeaderWait(pr.getLeaderSequence(i))),
 		lastDecidedIndexes:   pr.lastDecidedIndexes,
 		lastDecidedDecisions: pr.lastDecidedDecisions,
+		leaderSequence:       pr.getLeaderSequence(i),
 	}
 
 	pr.proxyToProposerChan <- newProposalRequest
@@ -318,4 +319,49 @@ func (pr *Proxy) handleFetchResponse(response FetchResposne) {
 		pr.debug("the state of the next instance is "+fmt.Sprintf("%v", pr.replicatedLog[pr.committedIndex+1]), 1)
 	}
 	pr.updateStateMachine(true)
+}
+
+// return the immutable leader sequence for instance
+
+func (pr *Proxy) getLeaderSequence(instance int64) []int64 {
+	if pr.leaderMode == 0 {
+		// fixed order
+		// assumes that node names start with 1
+		rA := make([]int64, 0)
+
+		for i := 0; i < pr.numReplicas; i++ {
+			rA = append(rA, int64(i+1))
+		}
+
+		return rA
+	} else if pr.leaderMode == 1 {
+		// todo
+		// round robin
+		panic("not implemented")
+	} else if pr.leaderMode == 2 {
+		// todo
+		// static MAB
+		panic("not implemented")
+	} else if pr.leaderMode == 3 {
+		// todo
+		// dynamic MAB
+		panic("not implemented")
+	} else if pr.leaderMode == 4 {
+		// todo
+		// round trip
+		panic("not implemented")
+	}
+	panic("should not happen")
+}
+
+// return the pre-agreed, non changing waiting time for the instance by the proposer todo
+
+func (pr *Proxy) getLeaderWait(sequence []int64) int64 {
+
+	for j := 0; j < len(sequence); j++ {
+		if sequence[j] == pr.name {
+			return pr.leaderTimeout * int64(j)
+		}
+	}
+	panic("should not happen")
 }

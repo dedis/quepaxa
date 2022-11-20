@@ -237,23 +237,3 @@ func (pr *Proxy) debug(message string, level int) {
 		fmt.Printf("%s\n", message)
 	}
 }
-
-// return the pre-agreed, non changing waiting time for the instance by the proposer todo
-
-func (pr *Proxy) getLeaderWait(instance int) int {
-
-	if pr.leaderMode == 0 {
-		// fixed order
-		return int((pr.name - 1) * pr.leaderTimeout) // assumes that node names start with 1
-
-	} else if pr.leaderMode == 1 {
-		// todo
-		// static MAB
-		return 0
-	} else if pr.leaderMode == 2 {
-		// todo
-		// dynamic MAB
-		return 0
-	}
-	panic("should not happen")
-}

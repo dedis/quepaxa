@@ -58,6 +58,7 @@ type ProposeRequest struct {
 	msWait               int                  // number of milliseconds to wait before proposing
 	lastDecidedIndexes   []int                //slots that were previously decided
 	lastDecidedDecisions [][]string           // for each lastDecidedIndex, the string array of client batches decided
+	leaderSequence       []int64
 }
 
 // ProposeResponse is the message type sent from proposer to proxy

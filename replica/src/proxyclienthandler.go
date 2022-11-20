@@ -39,9 +39,10 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 				instance:             proposeIndex,
 				proposalStr:          strProposals,
 				proposalBtch:         btchProposals,
-				msWait:               pr.getLeaderWait(int(proposeIndex)),
+				msWait: int(pr.getLeaderWait(pr.getLeaderSequence(proposeIndex))),
 				lastDecidedIndexes:   pr.lastDecidedIndexes,
 				lastDecidedDecisions: pr.lastDecidedDecisions,
+				leaderSequence:       pr.getLeaderSequence(proposeIndex),
 			}
 
 			pr.proxyToProposerChan <- newProposalRequest
