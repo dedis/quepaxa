@@ -78,7 +78,7 @@ func (prop *Proposer) findClientByName(rn int64) peer {
 // select a random grpc client that is not self
 
 func (prop *Proposer) getRandomClient() peer {
-	rn := rand.Intn(prop.numReplicas)
+	rn := rand.Intn(prop.numReplicas)+1
 	for int64(rn) == prop.name {
 		rn = rand.Intn(prop.numReplicas)
 	}
@@ -553,7 +553,7 @@ func (prop *Proposer) noProposalUntilNow() bool {
 			if int64(i+1) == prop.name { // this hardcodes the fact that node ids start with 1
 				continue
 			}
-			if time.Now().Sub(*prop.lastSeenTimes[i]).Milliseconds() < prop.leaderTimeout*int64(i+1) {
+			if time.Now().Sub(*prop.lastSeenTimes[i]).Milliseconds() < prop.leaderTimeout*int64(i+1) && int64(i+1) < prop.name{
 				return false
 			}
 		}
