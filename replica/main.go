@@ -19,7 +19,7 @@ func main() {
 	benchmark := flag.Int64("benchmark", 0, "Benchmark: 0 for echo service, 1 for KV store and 2 for Redis ")
 	debugOn := flag.Bool("debugOn", false, "true / false")
 	debugLevel := flag.Int("debugLevel", 0, "debug level")
-	leaderMode := flag.Int("leaderMode", 0, "mode of leader change: 0 for fixed leader order, 1 for round robin")
+	leaderMode := flag.Int("leaderMode", 0, "mode of leader change: 0 for fixed leader order")
 	serverMode := flag.Int("serverMode", 0, "0 for non-lan-optimized, 1 for lan optimized")
 	flag.Parse()
 

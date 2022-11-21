@@ -93,6 +93,9 @@ func (pr *Proxy) sendClientResponse(batches []*client.ClientBatch) {
 func (pr *Proxy) updateStateMachine(sendResponse bool) {
 	for i := pr.committedIndex + 1; i < int64(len(pr.replicatedLog)); i++ {
 		if pr.replicatedLog[i].decided == true {
+			if len(pr.replicatedLog[i].decidedBatch) == 0 {
+				panic("should not happen")
+			}
 			pr.debug("proxy calling update state machine and found a new decided slot  "+fmt.Sprintf("%v", i), 1)
 
 			for j := 0; j < len(pr.replicatedLog[i].decidedBatch); j++ {
@@ -242,7 +245,7 @@ func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 		pr.updateStateMachine(true)
 
 		// look at the last time committed, and revoke if needed using no-ops
-		if time.Now().Sub(pr.lastTimeCommitted).Milliseconds() > int64(pr.leaderTimeout*100) {
+		if time.Now().Sub(pr.lastTimeCommitted).Milliseconds() > int64(pr.leaderTimeout*100000) {
 			// revoke all the instances from last committed index
 			pr.debug("proxy revoking because has not committed anything recently  ", 5)
 			pr.revokeInstances()
@@ -291,7 +294,9 @@ func (pr *Proxy) handleRecorderResponse(message Decision) {
 	for i := 0; i < len(message.indexes); i++ {
 		index := message.indexes[i]
 		batches := message.decisions[i]
-
+		if len(batches) == 0 {
+			panic("should not happen")
+		}
 		if pr.replicatedLog[index].decided == false {
 			pr.replicatedLog[index].decided = true
 			pr.replicatedLog[index].decidedBatch = batches
@@ -338,26 +343,14 @@ func (pr *Proxy) getLeaderSequence(instance int64) []int64 {
 
 		return rA
 	} else if pr.leaderMode == 1 {
-		// round robin
-		rA := make([]int64, 0)
-		for i := instance%int64(pr.numReplicas) + 1; i < int64(pr.numReplicas)+1; i++ {
-			rA = append(rA, i)
-		}
-		for i := int64(1); i < instance%int64(pr.numReplicas)+1; i++ {
-			rA = append(rA, i)
-		}
-
-		pr.debug("proxy leader sequence for instance "+fmt.Sprintf("%v is %v", instance, rA), 9)
-		return rA
-	} else if pr.leaderMode == 2 {
 		// todo
 		// static MAB
 		panic("not implemented")
-	} else if pr.leaderMode == 3 {
+	} else if pr.leaderMode == 2 {
 		// todo
 		// dynamic MAB
 		panic("not implemented")
-	} else if pr.leaderMode == 4 {
+	} else if pr.leaderMode == 3 {
 		// todo
 		// round trip
 		panic("not implemented")
