@@ -351,14 +351,14 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 	// if there is no proposal from anyone, propose, else return
 
 	if !prop.noProposalUntilNow(message.leaderSequence) {
-		prop.debug("proposer did not propose because someone else has proposed "+timeStr, 9)
+		prop.debug("proposer did not propose for instance "+fmt.Sprintf("%v", message.instance)+" because someone else has proposed "+timeStr, 9)
 		return ProposeResponse{
 			index:     -1,
 			decisions: nil,
 		}
 	}
 
-	prop.debug("proposer proposes "+timeStr, 9)
+	prop.debug("proposer proposes for instance " +fmt.Sprintf("%v ", message.instance)+ timeStr, 9)
 
 	for true {
 

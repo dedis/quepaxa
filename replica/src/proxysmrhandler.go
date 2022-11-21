@@ -220,37 +220,40 @@ func (pr *Proxy) revokeInstances() {
 
 func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 
-	pr.debug("proxy received a proposal response from the proxy  "+fmt.Sprintf("%v", message), -1)
+	if message.index != -1 && message.decisions != nil {
 
-	if pr.replicatedLog[message.index].decided == false {
-		pr.replicatedLog[message.index].decided = true
-		pr.replicatedLog[message.index].decidedBatch = message.decisions
+		pr.debug("proxy received a proposal response from the proxy  "+fmt.Sprintf("%v", message), -1)
 
-		pr.debug("proxy decided as a result of propose "+fmt.Sprintf(" for instance %v with initial value", message.index, message.decisions[0]), 1)
+		if pr.replicatedLog[message.index].decided == false {
+			pr.replicatedLog[message.index].decided = true
+			pr.replicatedLog[message.index].decidedBatch = message.decisions
 
-		if !pr.decidedTheProposedValue(message.index, message.decisions) {
-			pr.debug("proxy decided  a different proposal, hence putting back stuff to propose later", 0)
-			pr.toBeProposed = append(pr.toBeProposed, pr.replicatedLog[message.index].proposedBatch...)
+			pr.debug("proxy decided as a result of propose "+fmt.Sprintf(" for instance %v with initial value", message.index, message.decisions[0]), 1)
+
+			if !pr.decidedTheProposedValue(message.index, message.decisions) {
+				pr.debug("proxy decided  a different proposal, hence putting back stuff to propose later", 0)
+				pr.toBeProposed = append(pr.toBeProposed, pr.replicatedLog[message.index].proposedBatch...)
+			}
+			// remove the decided batches from toBeProposed
+			pr.removeDecidedItemsFromFutureProposals(pr.replicatedLog[message.index].decidedBatch)
 		}
-		// remove the decided batches from toBeProposed
-		pr.removeDecidedItemsFromFutureProposals(pr.replicatedLog[message.index].decidedBatch)
+
+		// update SMR -- if all entries are available
+		pr.updateStateMachine(true)
+
+		// look at the last time committed, and revoke if needed using no-ops
+		if time.Now().Sub(pr.lastTimeCommitted).Milliseconds() > int64(pr.leaderTimeout*100) {
+			// revoke all the instances from last committed index
+			pr.debug("proxy revoking because has not committed anything recently  ", 5)
+			pr.revokeInstances()
+			//todo we loose optimistic liveness here, not sure how to fix that
+		}
+
+		// add the decided value to proxy's lastDecidedIndexes, lastDecidedDecisions
+		pr.lastDecidedIndexes = append(pr.lastDecidedIndexes, message.index)
+		pr.lastDecidedDecisions = append(pr.lastDecidedDecisions, message.decisions)
+
 	}
-
-	// update SMR -- if all entries are available
-	pr.updateStateMachine(true)
-
-	// look at the last time committed, and revoke if needed using no-ops
-	if time.Now().Sub(pr.lastTimeCommitted).Milliseconds() > int64(pr.leaderTimeout*100) {
-		// revoke all the instances from last committed index
-		pr.debug("proxy revoking because has not committed anything recently  ", 5)
-		pr.revokeInstances()
-		//todo we loose optimistic liveness here, not sure how to fix that
-	}
-
-	// add the decided value to proxy's lastDecidedIndexes, lastDecidedDecisions
-	pr.lastDecidedIndexes = append(pr.lastDecidedIndexes, message.index)
-	pr.lastDecidedDecisions = append(pr.lastDecidedDecisions, message.decisions)
-
 }
 
 // return the highest from the array
