@@ -335,9 +335,17 @@ func (pr *Proxy) getLeaderSequence(instance int64) []int64 {
 
 		return rA
 	} else if pr.leaderMode == 1 {
-		// todo
 		// round robin
-		panic("not implemented")
+		rA := make([]int64, 0)
+		for i := instance%int64(pr.numReplicas) + 1; i < int64(pr.numReplicas)+1; i++ {
+			rA = append(rA, i)
+		}
+		for i := int64(1); i < instance%int64(pr.numReplicas)+1; i++ {
+			rA = append(rA, i)
+		}
+
+		pr.debug("proxy leader sequence for instance "+fmt.Sprintf("%v is %v", instance, rA), 9)
+		return rA
 	} else if pr.leaderMode == 2 {
 		// todo
 		// static MAB
