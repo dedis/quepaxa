@@ -18,7 +18,7 @@ type Proposer struct {
 	proposerToProxyChan      chan ProposeResponse
 	proxyToProposerFetchChan chan FetchRequest
 	proposerToProxyFetchChan chan FetchResposne
-	lastSeenTimes            []*time.Time // use proposer name - 1 as index
+	lastSeenTimes            [][]*time.Time // use proposer name - 1 as index
 	leaderTimeout            int64
 	debugOn                  bool // if turned on, the debug messages will be print on the console
 	debugLevel               int  // debug level
@@ -29,7 +29,7 @@ type Proposer struct {
 
 // instantiate a new Proposer
 
-func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, lastSeenTimes []*time.Time, debugOn bool, debugLevel int, hi int, serverMode int, leaderTimeout int64, leaderMode int) *Proposer {
+func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, lastSeenTimes [][]*time.Time, debugOn bool, debugLevel int, hi int, serverMode int, leaderTimeout int64, leaderMode int) *Proposer {
 
 	pr := Proposer{
 		numReplicas:              len(peers),
@@ -343,14 +343,14 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 	if prop.debugOn {
 
-		for y := 0; y < len(prop.lastSeenTimes); y++ {
-			timeStr = timeStr + fmt.Sprintf(": %v", time.Now().Sub(*prop.lastSeenTimes[y]).Milliseconds())
+		for y := 0; y < len(prop.lastSeenTimes[message.instance]); y++ {
+			timeStr = timeStr + fmt.Sprintf(": %v", time.Now().Sub(*prop.lastSeenTimes[message.instance][y]).Milliseconds())
 		}
 	}
 
 	// if there is no proposal from anyone, propose, else return
 
-	if !prop.noProposalUntilNow(message.leaderSequence) {
+	if !prop.noProposalUntilNow(message.instance, message.leaderSequence) {
 		prop.debug("proposer did not propose for instance "+fmt.Sprintf("%v", message.instance)+" because someone else has proposed "+timeStr, 9)
 		return ProposeResponse{
 			index:     -1,
@@ -545,13 +545,13 @@ func (prop *Proposer) runProposer() {
 
 // have I seen any proposal from any proposer with a lower index in the sequence, within the duration time.Now - leader timeout : time.Now
 
-func (prop *Proposer) noProposalUntilNow(leaderSequence []int64) bool {
+func (prop *Proposer) noProposalUntilNow(instance int64, leaderSequence []int64) bool {
 
-	for i := 0; i < len(prop.lastSeenTimes); i++ {
+	for i := 0; i < len(prop.lastSeenTimes[instance]); i++ {
 		if int64(i+1) == prop.name { // this hardcodes the fact that node ids start with 1
 			continue
 		}
-		if time.Now().Sub(*prop.lastSeenTimes[i]).Milliseconds() < prop.getTimeout(int64(i+1), leaderSequence) && prop.isBeforeMyIndex(int64(i+1), leaderSequence) {
+		if time.Now().Sub(*prop.lastSeenTimes[instance][i]).Milliseconds() < prop.getTimeout(int64(i+1), leaderSequence) && prop.isBeforeMyIndex(int64(i+1), leaderSequence) {
 			return false
 		}
 	}
