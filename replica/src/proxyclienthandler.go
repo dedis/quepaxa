@@ -26,12 +26,13 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 			}
 			msWait := int(pr.getLeaderWait(pr.getLeaderSequence(proposeIndex)))
 			if pr.instanceTimeouts[proposeIndex] != nil {
-				panic("should this happen?")
+				pr.instanceTimeouts[proposeIndex].Cancel()
 			}
 			pr.instanceTimeouts[proposeIndex] = common.NewTimerWithCancel(time.Duration(msWait) * time.Millisecond)
 			pr.instanceTimeouts[proposeIndex].SetTimeoutFuntion(func() {
 				pr.proposeRequestIndex <- ProposeRequestIndex{index: proposeIndex}
 			})
+			pr.lastProposedIndex = proposeIndex
 			pr.instanceTimeouts[proposeIndex].Start()
 
 		}
@@ -93,8 +94,12 @@ func (pr *Proxy) printConsensusLog() {
 // propose to index after a timeout
 
 func (pr *Proxy) proposeToIndex(proposeIndex int64) {
-
-	if pr.replicatedLog[proposeIndex].decided == true {
+	pr.instanceTimeouts[proposeIndex] = nil
+	if int64(len(pr.replicatedLog)) > proposeIndex && pr.replicatedLog[proposeIndex].decided == true {
+		pr.debug("did not propose for index "+fmt.Sprintf("%v", proposeIndex)+" because it was decided", 9)
+		return
+	} else if len(pr.toBeProposed) == 0 {
+		pr.debug("did not propose for index "+fmt.Sprintf("%v", proposeIndex)+" because nothing to propose", 9)
 		return
 	}
 
@@ -142,7 +147,6 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 
 	// reset the variables
 	pr.toBeProposed = make([]string, 0)
-	pr.lastProposedIndex = proposeIndex
 	pr.lastDecidedIndexes = make([]int, 0)
 	pr.lastDecidedDecisions = make([][]string, 0)
 }

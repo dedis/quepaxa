@@ -201,6 +201,11 @@ func (pr *Proxy) Run() {
 		for true {
 
 			select {
+			case proposeRequest := <-pr.proposeRequestIndex:
+				pr.debug("proxy received internal propose request", 1)
+				pr.proposeToIndex(proposeRequest.index)
+				break
+				
 			case inpputMessage := <-pr.incomingChan:
 
 				pr.debug("Received client  message", -1)
@@ -233,11 +238,6 @@ func (pr *Proxy) Run() {
 			case fetchResponse := <-pr.proposerToProxyFetchChan:
 				pr.debug("proxy received fetch response", 1)
 				pr.handleFetchResponse(fetchResponse)
-				break
-
-			case proposeRequest := <-pr.proposeRequestIndex:
-				pr.debug("proxy received internal propose request", 1)
-				pr.proposeToIndex(proposeRequest.index)
 				break
 
 			}
