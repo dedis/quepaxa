@@ -18,7 +18,7 @@ type Proposer struct {
 	proposerToProxyChan      chan ProposeResponse
 	proxyToProposerFetchChan chan FetchRequest
 	proposerToProxyFetchChan chan FetchResposne
-	lastSeenTimes            [][]*time.Time // use proposer name - 1 as index
+	//lastSeenTimes            [][]*time.Time // use proposer name - 1 as index
 	leaderTimeout            int64
 	debugOn                  bool // if turned on, the debug messages will be print on the console
 	debugLevel               int  // debug level
@@ -40,7 +40,7 @@ func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan c
 		proposerToProxyChan:      proposerToProxyChan,
 		proxyToProposerFetchChan: proxyToProposerFetchChan,
 		proposerToProxyFetchChan: proposerToProxyFetchChan,
-		lastSeenTimes:            lastSeenTimes,
+		//lastSeenTimes:            lastSeenTimes,
 		leaderTimeout:            leaderTimeout,
 		debugOn:                  debugOn,
 		debugLevel:               debugLevel,
@@ -337,28 +337,28 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 	decidedSlots := prop.extractDecidedSlots(message.lastDecidedIndexes, message.lastDecidedDecisions)
 
 	// sleep for msWait
-	time.Sleep(time.Duration(message.msWait) * time.Millisecond)
+	//time.Sleep(time.Duration(message.msWait) * time.Millisecond)
 
-	timeStr := ""
-
-	if prop.debugOn {
-
-		for y := 0; y < len(prop.lastSeenTimes[message.instance]); y++ {
-			timeStr = timeStr + fmt.Sprintf(": %v", time.Now().Sub(*prop.lastSeenTimes[message.instance][y]).Milliseconds())
-		}
-	}
+	//timeStr := ""
+	//
+	//if prop.debugOn {
+	//
+	//	for y := 0; y < len(prop.lastSeenTimes[message.instance]); y++ {
+	//		timeStr = timeStr + fmt.Sprintf(": %v", time.Now().Sub(*prop.lastSeenTimes[message.instance][y]).Milliseconds())
+	//	}
+	//}
 
 	// if there is no proposal from anyone, propose, else return
 
-	if !prop.noProposalUntilNow(message.instance, message.leaderSequence) {
-		prop.debug("proposer did not propose for instance "+fmt.Sprintf("%v", message.instance)+" because someone else has proposed "+timeStr, 9)
-		return ProposeResponse{
-			index:     -1,
-			decisions: nil,
-		}
-	}
+	//if !prop.noProposalUntilNow(message.instance, message.leaderSequence) {
+	//	prop.debug("proposer did not propose for instance "+fmt.Sprintf("%v", message.instance)+" because someone else has proposed "+timeStr, 9)
+	//	return ProposeResponse{
+	//		index:     -1,
+	//		decisions: nil,
+	//	}
+	//}
 
-	prop.debug("proposer proposes for instance "+fmt.Sprintf("%v ", message.instance)+timeStr, 9)
+	//prop.debug("proposer proposes for instance "+fmt.Sprintf("%v ", message.instance)+timeStr, 9)
 
 	for true {
 
@@ -545,41 +545,41 @@ func (prop *Proposer) runProposer() {
 
 // have I seen any proposal from any proposer with a lower index in the sequence, within the duration time.Now - leader timeout : time.Now
 
-func (prop *Proposer) noProposalUntilNow(instance int64, leaderSequence []int64) bool {
-
-	for i := 0; i < len(prop.lastSeenTimes[instance]); i++ {
-		if int64(i+1) == prop.name { // this hardcodes the fact that node ids start with 1
-			continue
-		}
-		if time.Now().Sub(*prop.lastSeenTimes[instance][i]).Milliseconds() < prop.getTimeout(int64(i+1), leaderSequence) && prop.isJustBeforeMyIndex(int64(i+1), leaderSequence) {
-			return false
-		}
-	}
-
-	return true
-
-}
+//func (prop *Proposer) noProposalUntilNow(instance int64, leaderSequence []int64) bool {
+//
+//	for i := 0; i < len(prop.lastSeenTimes[instance]); i++ {
+//		if int64(i+1) == prop.name { // this hardcodes the fact that node ids start with 1
+//			continue
+//		}
+//		if time.Now().Sub(*prop.lastSeenTimes[instance][i]).Milliseconds() < prop.getTimeout(int64(i+1), leaderSequence) && prop.isJustBeforeMyIndex(int64(i+1), leaderSequence) {
+//			return false
+//		}
+//	}
+//
+//	return true
+//
+//}
 
 // in the given sequence, is i just before my index
 
-func (prop *Proposer) isJustBeforeMyIndex(i int64, sequence []int64) bool {
-
-	// 0, 1,2, 4, 3 (5)
-	for j := 0; j < len(sequence)-1; j++ {
-		if sequence[j] == i && sequence[j+1] == prop.name {
-			return true
-		}
-	}
-	return false
-}
+//func (prop *Proposer) isJustBeforeMyIndex(i int64, sequence []int64) bool {
+//
+//	// 0, 1,2, 4, 3 (5)
+//	for j := 0; j < len(sequence)-1; j++ {
+//		if sequence[j] == i && sequence[j+1] == prop.name {
+//			return true
+//		}
+//	}
+//	return false
+//}
 
 // assign the timeout depending on the position in the sequence
 
-func (prop *Proposer) getTimeout(i int64, sequence []int64) int64 {
-	for j := 0; j < len(sequence); j++ {
-		if sequence[j] == i {
-			return prop.leaderTimeout * int64(j+1)
-		}
-	}
-	panic("should not happen")
-}
+//func (prop *Proposer) getTimeout(i int64, sequence []int64) int64 {
+//	for j := 0; j < len(sequence); j++ {
+//		if sequence[j] == i {
+//			return prop.leaderTimeout * int64(j+1)
+//		}
+//	}
+//	panic("should not happen")
+//}

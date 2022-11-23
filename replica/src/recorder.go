@@ -34,7 +34,7 @@ type Recorder struct {
 	server                *grpc.Server // gRPC server
 	connection            *GRPCConnection
 	clientBatches         *ClientBatchStore
-	lastSeenTimeProposers [][]*time.Time // last seen times of each proposer
+	//lastSeenTimeProposers [][]*time.Time // last seen times of each proposer
 	recorderToProxyChan   chan Decision
 	name                  int64
 	slots                 []RecorderSlot // recorder side replicated log
@@ -54,7 +54,7 @@ func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchSto
 		server:                nil,
 		connection:            nil,
 		clientBatches:         clientBatches,
-		lastSeenTimeProposers: lastSeenTimeProposers,
+		//lastSeenTimeProposers: lastSeenTimeProposers,
 		recorderToProxyChan:   recorderToProxyChan,
 		name:                  name,
 		slots:                 make([]RecorderSlot, 0),
@@ -318,9 +318,9 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 	re.debug("recorder responding to esp request  "+fmt.Sprintf("%v", req)+" with response "+fmt.Sprintf("%v", response)+" for index "+fmt.Sprintf("%v", req.Index), -1)
 
 	// Mark the time of the proposal message for the proposer
-	proposer := req.Sender
-	*re.lastSeenTimeProposers[req.Index][proposer-1] = time.Now()
-	re.debug("recorder updated the last seen times  "+fmt.Sprintf("%v", re.lastSeenTimeProposers)+" for index "+fmt.Sprintf("%v", req.Index), -1)
+	//proposer := req.Sender
+	//*re.lastSeenTimeProposers[req.Index][proposer-1] = time.Now()
+	//re.debug("recorder updated the last seen times  "+fmt.Sprintf("%v", re.lastSeenTimeProposers)+" for index "+fmt.Sprintf("%v", req.Index), -1)
 	return &response
 }
 

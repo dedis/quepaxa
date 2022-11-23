@@ -82,6 +82,9 @@ type Proxy struct {
 
 	leaderMode int // leader change mode
 	serverMode int
+
+	instanceTimeouts    []*common.TimerWithCancel
+	proposeRequestIndex chan ProposeRequestIndex
 }
 
 // instantiate a new proxy
@@ -127,7 +130,9 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		lastDecidedIndexes:       make([]int, 0),
 		lastDecidedDecisions:     make([][]string, 0),
 		leaderMode:               leaderMode,
-		serverMode:               serverMode, // for the proposer
+		serverMode:               serverMode,                               // for the proposer
+		instanceTimeouts:         make([]*common.TimerWithCancel, 1000000), // assumes that number of instances do not exceed 1000000, todo increase if not sufficient
+		proposeRequestIndex:      make(chan ProposeRequestIndex, 10000),
 	}
 
 	// initialize the genenesis
@@ -181,6 +186,12 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 	return &pr
 }
 
+// propose request is an internal notification
+
+type ProposeRequestIndex struct {
+	index int64
+}
+
 /*
 	the main loop of the proxy
 */
@@ -223,7 +234,14 @@ func (pr *Proxy) Run() {
 				pr.debug("proxy received fetch response", 1)
 				pr.handleFetchResponse(fetchResponse)
 				break
+
+			case proposeRequest := <-pr.proposeRequestIndex:
+				pr.debug("proxy received internal propose request", 1)
+				pr.proposeToIndex(proposeRequest.index)
+				break
+
 			}
+
 		}
 	}()
 }

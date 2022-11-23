@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"raxos/common"
 	"raxos/proto/client"
 	"strconv"
+	"time"
 )
 
 // handler for new client batches
@@ -18,58 +20,20 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 
 	if len(pr.toBeProposed) >= pr.batchSize { // if we have a sufficient batch size
 		if pr.lastProposedIndex-pr.committedIndex < pr.pipelineLength {
-			// send a new proposal Request to the ProposersChan
-			strProposals := pr.toBeProposed
-			btchProposals := make([]client.ClientBatch, 0)
-
-			for i := 0; i < len(strProposals); i++ {
-				btch, ok := pr.clientBatchStore.Get(strProposals[i])
-				if !ok {
-					panic("batch not found for the id")
-				}
-				btchProposals = append(btchProposals, btch)
-			}
-
-			proposeIndex := pr.lastProposedIndex + 1	
+			proposeIndex := pr.lastProposedIndex + 1
 			for proposeIndex+1 <= int64(len(pr.replicatedLog)) {
 				proposeIndex++
 			}
-
-			newProposalRequest := ProposeRequest{
-				instance:             proposeIndex,
-				proposalStr:          strProposals,
-				proposalBtch:         btchProposals,
-				msWait: int(pr.getLeaderWait(pr.getLeaderSequence(proposeIndex))),
-				lastDecidedIndexes:   pr.lastDecidedIndexes,
-				lastDecidedDecisions: pr.lastDecidedDecisions,
-				leaderSequence:       pr.getLeaderSequence(proposeIndex),
+			msWait := int(pr.getLeaderWait(pr.getLeaderSequence(proposeIndex)))
+			if pr.instanceTimeouts[proposeIndex] != nil {
+				panic("should this happen?")
 			}
+			pr.instanceTimeouts[proposeIndex] = common.NewTimerWithCancel(time.Duration(msWait) * time.Millisecond)
+			pr.instanceTimeouts[proposeIndex].SetTimeoutFuntion(func() {
+				pr.proposeRequestIndex <- ProposeRequestIndex{index: proposeIndex}
+			})
+			pr.instanceTimeouts[proposeIndex].Start()
 
-			pr.proxyToProposerChan <- newProposalRequest
-			pr.debug("proxy sent a proposal request to proposer  "+fmt.Sprintf("%v", newProposalRequest), -1)
-			// create the slot index
-			for len(pr.replicatedLog) < int(proposeIndex+1) {
-				// create the new entry
-				pr.replicatedLog = append(pr.replicatedLog, Slot{
-					proposedBatch: nil,
-					decidedBatch:  nil,
-					decided:       false,
-					committed:     false,
-				})
-			}
-
-			pr.replicatedLog[proposeIndex] = Slot{
-				proposedBatch: strProposals,
-				decidedBatch:  pr.replicatedLog[proposeIndex].decidedBatch,
-				decided:       pr.replicatedLog[proposeIndex].decided,
-				committed:     pr.replicatedLog[proposeIndex].committed,
-			}
-
-			// reset the variables
-			pr.toBeProposed = make([]string, 0)
-			pr.lastProposedIndex++
-			pr.lastDecidedIndexes = make([]int, 0)
-			pr.lastDecidedDecisions = make([][]string, 0)
 		}
 	}
 }
@@ -126,4 +90,59 @@ func (pr *Proxy) printConsensusLog() {
 	}
 }
 
+// propose to index after a timeout
 
+func (pr *Proxy) proposeToIndex(proposeIndex int64) {
+
+	if pr.replicatedLog[proposeIndex].decided == true {
+		return
+	}
+
+	// send a new proposal Request to the ProposersChan
+	strProposals := pr.toBeProposed
+	btchProposals := make([]client.ClientBatch, 0)
+
+	for i := 0; i < len(strProposals); i++ {
+		btch, ok := pr.clientBatchStore.Get(strProposals[i])
+		if !ok {
+			panic("batch not found for the id")
+		}
+		btchProposals = append(btchProposals, btch)
+	}
+
+	newProposalRequest := ProposeRequest{
+		instance:             proposeIndex,
+		proposalStr:          strProposals,
+		proposalBtch:         btchProposals,
+		msWait:               int(pr.getLeaderWait(pr.getLeaderSequence(proposeIndex))),
+		lastDecidedIndexes:   pr.lastDecidedIndexes,
+		lastDecidedDecisions: pr.lastDecidedDecisions,
+		leaderSequence:       pr.getLeaderSequence(proposeIndex),
+	}
+
+	pr.proxyToProposerChan <- newProposalRequest
+	pr.debug("proxy sent a proposal request to proposer  "+fmt.Sprintf("%v", newProposalRequest), -1)
+	// create the slot index
+	for len(pr.replicatedLog) < int(proposeIndex+1) {
+		// create the new entry
+		pr.replicatedLog = append(pr.replicatedLog, Slot{
+			proposedBatch: nil,
+			decidedBatch:  nil,
+			decided:       false,
+			committed:     false,
+		})
+	}
+
+	pr.replicatedLog[proposeIndex] = Slot{
+		proposedBatch: strProposals,
+		decidedBatch:  pr.replicatedLog[proposeIndex].decidedBatch,
+		decided:       pr.replicatedLog[proposeIndex].decided,
+		committed:     pr.replicatedLog[proposeIndex].committed,
+	}
+
+	// reset the variables
+	pr.toBeProposed = make([]string, 0)
+	pr.lastProposedIndex = proposeIndex
+	pr.lastDecidedIndexes = make([]int, 0)
+	pr.lastDecidedDecisions = make([][]string, 0)
+}
