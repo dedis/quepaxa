@@ -30,7 +30,7 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 				btchProposals = append(btchProposals, btch)
 			}
 
-			proposeIndex := pr.lastProposedIndex + 1
+			proposeIndex := pr.lastProposedIndex + 1	
 			for proposeIndex+1 <= int64(len(pr.replicatedLog)) {
 				proposeIndex++
 			}
@@ -125,3 +125,5 @@ func (pr *Proxy) printConsensusLog() {
 		}
 	}
 }
+
+

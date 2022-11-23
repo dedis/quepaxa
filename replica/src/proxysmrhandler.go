@@ -138,6 +138,8 @@ func (pr *Proxy) updateStateMachine(sendResponse bool) {
 
 func (pr *Proxy) revokeInstance(i int64) {
 
+	// todo change this method to reflect the proxy handling the waiting time in a non blocking manner
+
 	pr.debug("proxy revoking instance  "+fmt.Sprintf("%v", pr.replicatedLog[i]), 0)
 
 	if pr.replicatedLog[i].decided == true {
