@@ -402,14 +402,14 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 				})
 
 				if err != nil {
-					//panic(fmt.Sprintf("%v", err))
+					panic(fmt.Sprintf("%v", err))
 					return
 				}
 
 				if resp != nil && resp.S > 0 {
 					responses <- resp
 				} else {
-					//panic("response :"+fmt.Sprintf("%v", resp))
+					panic("response :"+fmt.Sprintf("%v %v",err, resp))
 				}
 
 				prop.debug("proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v, and M:%v", resp.S, resp.F, resp.M)+" for index "+fmt.Sprintf("%v", message.instance), -1)
@@ -443,7 +443,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 			}
 		}
 
-		if len(responsesArray) == 0 {
+		if len(responsesArray) < (prop.numReplicas/2)+1 {
 			panic("should this happen?")
 		}
 

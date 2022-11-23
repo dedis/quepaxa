@@ -104,8 +104,13 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 		return
 	}
 
+	batchSize := pr.batchSize
+	if len(pr.toBeProposed) < batchSize {
+		batchSize = len(pr.toBeProposed)
+	}
+
 	// send a new proposal Request to the ProposersChan
-	strProposals := pr.toBeProposed
+	strProposals := pr.toBeProposed[0:batchSize]
 	btchProposals := make([]client.ClientBatch, 0)
 
 	for i := 0; i < len(strProposals); i++ {
@@ -147,7 +152,7 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 	}
 
 	// reset the variables
-	pr.toBeProposed = make([]string, 0)
+	pr.toBeProposed = pr.toBeProposed[batchSize:]
 	pr.lastDecidedIndexes = make([]int, 0)
 	pr.lastDecidedDecisions = make([][]string, 0)
 }
