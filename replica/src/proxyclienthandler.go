@@ -25,6 +25,7 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 				proposeIndex++
 			}
 			msWait := int(pr.getLeaderWait(pr.getLeaderSequence(proposeIndex)))
+			msWait = msWait * int(proposeIndex-pr.committedIndex)
 			if pr.instanceTimeouts[proposeIndex] != nil {
 				pr.instanceTimeouts[proposeIndex].Cancel()
 			}

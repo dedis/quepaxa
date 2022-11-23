@@ -13,11 +13,11 @@ raxos_path="replica/bin/replica"
 ctl_path="client/bin/client"
 output_path="logs/"
 
-rm ${output_path}0.log
 rm ${output_path}1.log
 rm ${output_path}2.log
 rm ${output_path}3.log
 rm ${output_path}4.log
+rm ${output_path}5.log
 
 
 rm ${output_path}1-consensus.txt

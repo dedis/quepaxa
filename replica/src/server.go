@@ -148,7 +148,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		proxyToProposerChan:      make(chan ProposeRequest, 10000),
 		proposerToProxyChan:      make(chan ProposeResponse, 10000),
 		recorderToProxyChan:      make(chan Decision, 10000),
-		lastSeenTimeProposers:    make([][]*time.Time, 1000000), // hardcodes the number of instances to 1000000 todo increase if run for more number of instances
+		lastSeenTimeProposers:    make([][]*time.Time, 1), // hardcodes the number of instances to 1000000 todo increase if run for more number of instances
 		cfg:                      *cfg,
 		numProposers:             int(pipelineLength),
 		store:                    &ClientBatchStore{},
@@ -164,7 +164,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 
 	// allocate the lastSeenTimeProposers
 
-	for i := 0; i < 1000000; i++ {
+	for i := 0; i < 1; i++ {
 		sr.lastSeenTimeProposers[i] = make([]*time.Time, len(cfg.Peers))
 		for j := 0; j < len(cfg.Peers); j++ {
 			sr.lastSeenTimeProposers[i][j] = &time.Time{}
