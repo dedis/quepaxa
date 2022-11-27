@@ -19,7 +19,6 @@ rm ${output_path}3.log
 rm ${output_path}4.log
 rm ${output_path}5.log
 
-
 rm ${output_path}1-consensus.txt
 rm ${output_path}2-consensus.txt
 rm ${output_path}3-consensus.txt
@@ -72,7 +71,13 @@ echo "Starting client[s]"
 
 nohup ./${ctl_path} --name 21 --debugOn --debugLevel 4 --requestType request --arrivalRate "${arrivalRate}" --batchSize 50 >${output_path}21.log &
 
-sleep 200
+sleep 20
+
+echo "Slowing down the node"
+
+./${ctl_path} --name 22 --requestType status --operationType 3 --slowdown "1:500" >${output_path}status3.log
+
+sleep 180
 
 echo "Completed Client[s]"
 

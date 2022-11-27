@@ -85,6 +85,8 @@ type Proxy struct {
 
 	instanceTimeouts    []*common.TimerWithCancel
 	proposeRequestIndex chan ProposeRequestIndex
+
+	additionalDelay int // additional delay to add for proposals
 }
 
 // instantiate a new proxy
@@ -133,6 +135,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		serverMode:               serverMode,                               // for the proposer
 		instanceTimeouts:         make([]*common.TimerWithCancel, 1000000), // assumes that number of instances do not exceed 1000000, todo increase if not sufficient
 		proposeRequestIndex:      make(chan ProposeRequestIndex, 10000),
+		additionalDelay:          0,
 	}
 
 	// initialize the genenesis
@@ -205,7 +208,7 @@ func (pr *Proxy) Run() {
 				pr.debug("proxy received internal propose request", 1)
 				pr.proposeToIndex(proposeRequest.index)
 				break
-				
+
 			case inpputMessage := <-pr.incomingChan:
 
 				pr.debug("Received client  message", -1)

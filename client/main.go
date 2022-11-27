@@ -17,12 +17,12 @@ func main() {
 	testDuration := flag.Int64("testDuration", 60, "test duration in seconds")
 	arrivalRate := flag.Int64("arrivalRate", 10000, "poisson arrival rate in requests per second")
 	requestType := flag.String("requestType", "status", "request type: [status , request]")
-	operationType := flag.Int64("operationType", 1, "Type of operation for a status request: 1 (bootstrap server, 2: print log)")
+	operationType := flag.Int64("operationType", 1, "Type of operation for a status request: 1 bootstrap server, 2: print log, 3: slow down proposal speed")
 	keyLen := flag.Int64("keyLen", 8, "length of key")
 	valLen := flag.Int64("valLen", 8, "length of value")
 	debugOn := flag.Bool("debugOn", false, "turn on/off debug")
 	debugLevel := flag.Int64("debugLevel", 0, "debug level")
-
+	slowdown := flag.String("slowdown", "1:500", "node1:wait1,node2:wait2,node3:wait3")
 	flag.Parse()
 
 	cfg, err := configuration.NewInstanceConfig(*configFile, *name)
@@ -32,7 +32,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cl := cmd.New(*name, cfg, *logFilePath, *batchSize, *testDuration, *arrivalRate, *requestType, *operationType, int(*debugLevel), *debugOn, int(*keyLen), int(*valLen))
+	cl := cmd.New(*name, cfg, *logFilePath, *batchSize, *testDuration, *arrivalRate, *requestType, *operationType, int(*debugLevel), *debugOn, int(*keyLen), int(*valLen), *slowdown)
 
 	cl.StartOutgoingLinks()
 	go cl.WaitForConnections()

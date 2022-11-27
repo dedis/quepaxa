@@ -27,3 +27,6 @@ clients:
   - name: 21
     ip: 0.0.0.0
     clientport: 10000
+  - name: 22
+    ip: 0.0.0.0
+    clientport: 10001
