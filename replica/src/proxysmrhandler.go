@@ -136,79 +136,54 @@ func (pr *Proxy) updateStateMachine(sendResponse bool) {
 
 // revoke a single instance by proposing the same command proposed before
 
-func (pr *Proxy) revokeInstance(i int64) {
+func (pr *Proxy) revokeInstance(instance int64) {
 
-	// todo change this method to reflect the proxy handling the waiting time in a non blocking manner
+	pr.debug("proxy revoking instance  "+fmt.Sprintf("%v", pr.replicatedLog[instance]), 9)
 
-	pr.debug("proxy revoking instance  "+fmt.Sprintf("%v", pr.replicatedLog[i]), 0)
-
-	if pr.replicatedLog[i].decided == true {
+	if pr.replicatedLog[instance].decided == true {
 		panic("revoking an already decided entry")
 	}
 
-	strProposals := pr.replicatedLog[i].proposedBatch
+	strProposals := pr.replicatedLog[instance].proposedBatch
 
-	if strProposals == nil || len(strProposals) == 0 {
+	if strProposals != nil || len(strProposals) > 0 {
 		// I have not proposed for this index before
-		if len(pr.toBeProposed) > 0 {
-			strProposals = pr.toBeProposed
-			pr.toBeProposed = make([]string, 0)
-		} else {
-			strProposals = []string{"nil"}
-		}
+		panic("should this happen?")
 	}
+	strProposals = []string{"nil"}
 
 	btchProposals := make([]client.ClientBatch, 0)
 
-	for i := 0; i < len(strProposals); i++ {
-		if strProposals[i] == "nil" {
-			btchProposals = append(btchProposals, client.ClientBatch{
-				Sender:   -1,
-				Messages: nil,
-				Id:       "nil",
-			})
-		} else {
-			btch, ok := pr.clientBatchStore.Get(strProposals[i])
-			if !ok {
-				strProposals[i] = "nil"
-				btchProposals = append(btchProposals, client.ClientBatch{
-					Sender:   -1,
-					Messages: nil,
-					Id:       "nil",
-				})
-			} else {
-				btchProposals = append(btchProposals, btch)
-			}
-		}
-	}
+	btchProposals = append(btchProposals, client.ClientBatch{
+		Sender:   -1,
+		Messages: nil,
+		Id:       "nil",
+	})
 
 	if len(strProposals) != len(btchProposals) {
 		panic("lengths do not match")
 	}
 
 	newProposalRequest := ProposeRequest{
-		instance:             i,
+		instance:             instance,
 		proposalStr:          strProposals,
 		proposalBtch:         btchProposals,
-		msWait:               int(pr.getLeaderWait(pr.getLeaderSequence(i))),
-		lastDecidedIndexes:   pr.lastDecidedIndexes,
-		lastDecidedDecisions: pr.lastDecidedDecisions,
-		leaderSequence:       pr.getLeaderSequence(i),
+		msWait:               int(pr.getLeaderWait(pr.getLeaderSequence(instance))),
+		lastDecidedIndexes:   nil,
+		lastDecidedDecisions: nil,
+		leaderSequence:       pr.getLeaderSequence(instance),
 	}
 
 	pr.proxyToProposerChan <- newProposalRequest
 
 	pr.debug("proxy revoked instance with new Proposal Request  "+fmt.Sprintf("%v", newProposalRequest), 1)
 
-	pr.replicatedLog[i] = Slot{
+	pr.replicatedLog[instance] = Slot{
 		proposedBatch: strProposals,
-		decidedBatch:  pr.replicatedLog[i].decidedBatch,
-		decided:       pr.replicatedLog[i].decided,
-		committed:     pr.replicatedLog[i].committed,
+		decidedBatch:  pr.replicatedLog[instance].decidedBatch,
+		decided:       pr.replicatedLog[instance].decided,
+		committed:     pr.replicatedLog[instance].committed,
 	}
-
-	pr.lastDecidedIndexes = make([]int, 0)
-	pr.lastDecidedDecisions = make([][]string, 0)
 }
 
 // revoke all the instances from the last committed index to len log
@@ -247,11 +222,10 @@ func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 		pr.updateStateMachine(true)
 
 		// look at the last time committed, and revoke if needed using no-ops
-		if time.Now().Sub(pr.lastTimeCommitted).Milliseconds() > int64(pr.leaderTimeout*100000) {
+		if time.Now().Sub(pr.lastTimeCommitted).Milliseconds() > int64(pr.leaderTimeout*100000) { //todo change the revoke timeout
 			// revoke all the instances from last committed index
-			pr.debug("proxy revoking because has not committed anything recently  ", 5)
+			pr.debug("proxy revoking because it has not committed anything recently  ", 10)
 			pr.revokeInstances()
-			//todo we loose optimistic liveness here, not sure how to fix that
 		}
 
 		// add the decided value to proxy's lastDecidedIndexes, lastDecidedDecisions
@@ -306,7 +280,6 @@ func (pr *Proxy) handleRecorderResponse(message Decision) {
 			if !pr.decidedTheProposedValue(index, batches) {
 				pr.toBeProposed = append(pr.toBeProposed, pr.replicatedLog[index].proposedBatch...)
 			}
-
 			pr.removeDecidedItemsFromFutureProposals(batches)
 		}
 	}
