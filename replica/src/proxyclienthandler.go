@@ -121,6 +121,8 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 		return
 	}
 
+	pr.debug("proposing for index "+fmt.Sprintf("%v", proposeIndex), 9)
+
 	batchSize := pr.batchSize
 	if len(pr.toBeProposed) < batchSize {
 		batchSize = len(pr.toBeProposed)

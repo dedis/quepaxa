@@ -51,11 +51,11 @@ pkill client
 
 echo "Killed previously running instances"
 
-nohup ./${raxos_path} --name 1 --debugOn --debugLevel 8 --batchSize 50 --pipelineLength 5 --leaderMode 0 >${output_path}1.log &
-nohup ./${raxos_path} --name 2 --debugOn --debugLevel 8 --batchSize 50 --pipelineLength 5 --leaderMode 0 >${output_path}2.log &
-nohup ./${raxos_path} --name 3 --debugOn --debugLevel 8 --batchSize 50 --pipelineLength 5 --leaderMode 0 >${output_path}3.log &
-nohup ./${raxos_path} --name 4 --debugOn --debugLevel 8 --batchSize 50 --pipelineLength 5 --leaderMode 0 >${output_path}4.log &
-nohup ./${raxos_path} --name 5 --debugOn --debugLevel 8 --batchSize 50 --pipelineLength 5 --leaderMode 0 >${output_path}5.log &
+nohup ./${raxos_path} --name 1 --debugOn --debugLevel 10 --batchSize 1 --pipelineLength 1 --leaderMode 0 >${output_path}1.log &
+nohup ./${raxos_path} --name 2 --debugOn --debugLevel 10 --batchSize 1 --pipelineLength 1 --leaderMode 0 >${output_path}2.log &
+nohup ./${raxos_path} --name 3 --debugOn --debugLevel 10 --batchSize 1 --pipelineLength 1 --leaderMode 0 >${output_path}3.log &
+nohup ./${raxos_path} --name 4 --debugOn --debugLevel 10 --batchSize 1 --pipelineLength 1 --leaderMode 0 >${output_path}4.log &
+nohup ./${raxos_path} --name 5 --debugOn --debugLevel 10 --batchSize 1 --pipelineLength 1 --leaderMode 0 >${output_path}5.log &
 
 echo "Started 5 servers"
 
@@ -69,13 +69,13 @@ sleep 3
 
 echo "Starting client[s]"
 
-nohup ./${ctl_path} --name 21 --debugOn --debugLevel 4 --requestType request --arrivalRate "${arrivalRate}" --batchSize 50 >${output_path}21.log &
+nohup ./${ctl_path} --name 21 --debugOn --debugLevel 4 --requestType request --arrivalRate "${arrivalRate}" --batchSize 1 >${output_path}21.log &
 
 sleep 20
 
 echo "Slowing down the node"
 
-./${ctl_path} --name 22 --requestType status --operationType 3 --slowdown "1:500" >${output_path}status3.log
+#./${ctl_path} --name 22 --requestType status --operationType 3 --slowdown "1:5000,2:5000" >${output_path}status3.log
 
 sleep 180
 
@@ -87,9 +87,10 @@ echo "Sent status to print log"
 
 sleep 50
 
-python3 experiment/python/overlay-test.py ${output_path}5-consensus.txt ${output_path}1-consensus.txt ${output_path}2-consensus.txt ${output_path}3-consensus.txt ${output_path}4-consensus.txt >${output_path}local-test-consensus.log
-python3 experiment/python/overlay-test.py ${output_path}5-mempool.txt ${output_path}1-mempool.txt ${output_path}2-mempool.txt ${output_path}3-mempool.txt ${output_path}4-mempool.txt >${output_path}local-test-mempool.log
-
+python3 experiment/python/overlay-test.py ${output_path}1-consensus.txt ${output_path}2-consensus.txt ${output_path}3-consensus.txt ${output_path}4-consensus.txt >${output_path}local-test-consensus.log ${output_path}5-consensus.txt 
+python3 experiment/python/overlay-test.py ${output_path}1-mempool.txt ${output_path}2-mempool.txt ${output_path}3-mempool.txt ${output_path}4-mempool.txt >${output_path}local-test-mempool.log ${output_path}5-mempool.txt
+python3 experiment/python/throughputvstime.py throughput
+python3 experiment/python/throughputvstime.py latency
 pkill replica
 pkill replica
 pkill replica
