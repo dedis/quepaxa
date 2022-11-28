@@ -61,7 +61,8 @@ type Proxy struct {
 
 	logFilePath string // the path to write the replicated log, used for sanity checks
 
-	batchSize      int   // maximum replica side batch size
+	batchSize      int // maximum replica side batch size
+	batchTime      int64
 	pipelineLength int64 // maximum number of inflight consensus instances
 
 	clientBatchStore *ClientBatchStore // message store that stores the client batches
@@ -86,12 +87,13 @@ type Proxy struct {
 	instanceTimeouts    []*common.TimerWithCancel
 	proposeRequestIndex chan ProposeRequestIndex
 
-	additionalDelay int // additional delay to add for proposals
+	additionalDelay  int // additional delay to add for proposals
+	lastTimeProposed time.Time
 }
 
 // instantiate a new proxy
 
-func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, logFilePath string, batchSize int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server, leaderMode int, store *ClientBatchStore, serverMode int, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne) *Proxy {
+func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, logFilePath string, batchSize int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server, leaderMode int, store *ClientBatchStore, serverMode int, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, batchTime int64) *Proxy {
 
 	pr := Proxy{
 		name:                     name,
@@ -136,6 +138,8 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		instanceTimeouts:         make([]*common.TimerWithCancel, 1000000), // assumes that number of instances do not exceed 1000000, todo increase if not sufficient
 		proposeRequestIndex:      make(chan ProposeRequestIndex, 10000),
 		additionalDelay:          0,
+		batchTime:                batchTime,
+		lastTimeProposed:         time.Now(),
 	}
 
 	// initialize the genenesis

@@ -43,7 +43,6 @@ rm ${output_path}status2.log
 rm ${output_path}_latency.png
 rm ${output_path}_throughput.png
 
-
 echo "Removed old log files"
 
 pkill replica
@@ -75,17 +74,17 @@ echo "Starting client[s]"
 
 nohup ./${ctl_path} --name 21 --debugOn --debugLevel 4 --requestType request --arrivalRate "${arrivalRate}" --batchSize 50 >${output_path}21.log &
 
-sleep 10
+#sleep 10
+#
+#echo "Slowing down the node"
+#
+#./${ctl_path} --name 22 --requestType status --operationType 3 --slowdown "1:5000,2:5000" >${output_path}status3.log
+#
+#sleep 20
+#
+#./${ctl_path} --name 22 --requestType status --operationType 3 --slowdown "1:0,2:0" >${output_path}status3.log
 
-echo "Slowing down the node"
-
-./${ctl_path} --name 22 --requestType status --operationType 3 --slowdown "1:5000" >${output_path}status3.log
-
-sleep 20
-
-./${ctl_path} --name 22 --requestType status --operationType 3 --slowdown "1:0" >${output_path}status3.log
-
-sleep 180
+sleep 200
 
 echo "Completed Client[s]"
 
@@ -95,8 +94,8 @@ echo "Sent status to print log"
 
 sleep 50
 
-python3 experiment/python/overlay-test.py ${output_path}1-consensus.txt ${output_path}2-consensus.txt ${output_path}3-consensus.txt ${output_path}4-consensus.txt >${output_path}local-test-consensus.log ${output_path}5-consensus.txt 
-python3 experiment/python/overlay-test.py ${output_path}1-mempool.txt ${output_path}2-mempool.txt ${output_path}3-mempool.txt ${output_path}4-mempool.txt >${output_path}local-test-mempool.log ${output_path}5-mempool.txt
+python3 experiment/python/overlay-test.py ${output_path}1-consensus.txt ${output_path}2-consensus.txt ${output_path}3-consensus.txt ${output_path}4-consensus.txt ${output_path}5-consensus.txt >${output_path}local-test-consensus.log
+python3 experiment/python/overlay-test.py ${output_path}1-mempool.txt ${output_path}2-mempool.txt ${output_path}3-mempool.txt ${output_path}4-mempool.txt ${output_path}5-mempool.txt >${output_path}local-test-mempool.log
 python3 experiment/python/throughputvstime.py throughput
 python3 experiment/python/throughputvstime.py latency
 pkill replica

@@ -19,7 +19,7 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 	// add the batch id to the toBeProposed array
 	pr.toBeProposed = append(pr.toBeProposed, batch.Id)
 
-	if len(pr.toBeProposed) >= pr.batchSize { // if we have a sufficient batch size
+	if time.Now().Sub(pr.lastTimeProposed).Milliseconds() >= pr.batchTime {
 		if pr.lastProposedIndex-pr.committedIndex < pr.pipelineLength {
 			proposeIndex := pr.lastProposedIndex + 1
 			for proposeIndex+1 <= int64(len(pr.replicatedLog)) {
@@ -37,6 +37,7 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 			})
 			pr.lastProposedIndex = proposeIndex
 			pr.instanceTimeouts[proposeIndex].Start()
+			pr.lastTimeProposed = time.Now()
 
 		}
 	}
@@ -116,9 +117,6 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 	if int64(len(pr.replicatedLog)) > proposeIndex && pr.replicatedLog[proposeIndex].decided == true {
 		pr.debug("did not propose for index "+fmt.Sprintf("%v", proposeIndex)+" because it was decided", 9)
 		return
-	} else if len(pr.toBeProposed) == 0 {
-		pr.debug("did not propose for index "+fmt.Sprintf("%v", proposeIndex)+" because nothing to propose", 9)
-		return
 	}
 
 	pr.debug("proposing for index "+fmt.Sprintf("%v", proposeIndex), 9)
@@ -128,16 +126,29 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 		batchSize = len(pr.toBeProposed)
 	}
 
-	// send a new proposal Request to the ProposersChan
-	strProposals := pr.toBeProposed[0:batchSize]
+	strProposals := make([]string, 0)
 	btchProposals := make([]client.ClientBatch, 0)
 
-	for i := 0; i < len(strProposals); i++ {
-		btch, ok := pr.clientBatchStore.Get(strProposals[i])
-		if !ok {
-			panic("batch not found for the id")
+	if batchSize == 0 {
+		strProposals = []string{"nil"}
+		btchProposals = append(btchProposals, client.ClientBatch{
+			Sender:   -1,
+			Messages: nil,
+			Id:       "nil",
+		})
+		pr.debug("proposing empty values for index "+fmt.Sprintf("%v", proposeIndex), 9)
+	} else {
+		// send a new proposal Request to the ProposersChan
+		strProposals = pr.toBeProposed[0:batchSize]
+		btchProposals = make([]client.ClientBatch, 0)
+
+		for i := 0; i < len(strProposals); i++ {
+			btch, ok := pr.clientBatchStore.Get(strProposals[i])
+			if !ok {
+				panic("batch not found for the id")
+			}
+			btchProposals = append(btchProposals, btch)
 		}
-		btchProposals = append(btchProposals, btch)
 	}
 
 	newProposalRequest := ProposeRequest{

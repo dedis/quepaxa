@@ -317,19 +317,8 @@ func (pr *Proxy) getLeaderSequence(instance int64) []int64 {
 		}
 
 		return rA
-	} else if pr.leaderMode == 1 {
-		// todo
-		// static MAB
-		panic("not implemented")
-	} else if pr.leaderMode == 2 {
-		// todo
-		// dynamic MAB
-		panic("not implemented")
-	} else if pr.leaderMode == 3 {
-		// todo
-		// round trip
-		panic("not implemented")
 	}
+	
 	panic("should not happen")
 }
 

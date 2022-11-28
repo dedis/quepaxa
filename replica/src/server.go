@@ -35,6 +35,7 @@ type Server struct {
 	debugLevel    int
 	leaderTimeout int64
 	leaderMode    int
+	batchTime     int64
 }
 
 // from proxy to proposer
@@ -139,7 +140,7 @@ func (s *Server) createProposers() {
 	create a new server instance, inside which there are proxy instance, proposer instances and recorder instance. initialize all fields
 */
 
-func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, leaderTimeout int64, pipelineLength int64, benchmark int64, debugOn bool, debugLevel int, leaderMode int, serverMode int) *Server {
+func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, leaderTimeout int64, pipelineLength int64, benchmark int64, debugOn bool, debugLevel int, leaderMode int, serverMode int, batchTime int64) *Server {
 
 	sr := Server{
 		ProxyInstance:            nil,
@@ -160,6 +161,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		name:                     name,
 		leaderTimeout:            leaderTimeout,
 		leaderMode:               leaderMode,
+		batchTime:                batchTime,
 	}
 
 	// allocate the lastSeenTimeProposers
@@ -171,7 +173,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		}
 	}
 
-	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store, serverMode, sr.proxyToProposerFetchChan, sr.proposerToProxyFetchChan)
+	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store, serverMode, sr.proxyToProposerFetchChan, sr.proposerToProxyFetchChan, sr.batchTime)
 	sr.RecorderInstance = NewRecorder(*cfg, sr.store, sr.lastSeenTimeProposers, sr.recorderToProxyChan, name, debugOn, debugLevel)
 	return &sr
 }
