@@ -79,7 +79,7 @@ type receivedResponseBatch struct {
 	time  time.Time
 }
 
-const statusTimeout = 40              // time to wait for a status request in seconds
+const statusTimeout = 10              // time to wait for a status request in seconds
 const numOutgoingThreads = 200        // number of wire writers: since the I/O writing is expensive we delegate that task to a thread pool and separate from the critical path
 const numRequestGenerationThreads = 4 // number of  threads that generate client requests upon receiving an arrival indication
 const incomingBufferSize = 1000000    // the size of the buffer which receives all the incoming messages (client response batch messages and client status response message)

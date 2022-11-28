@@ -60,5 +60,4 @@ if metric == "throughput":
 plt.legend()
 plt.grid()
 
-plt.savefig("_"+metric+".pdf")
-
+plt.savefig("logs/_"+metric+".png")
