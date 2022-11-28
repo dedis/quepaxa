@@ -74,15 +74,15 @@ echo "Starting client[s]"
 
 nohup ./${ctl_path} --name 21 --debugOn --debugLevel 4 --requestType request --arrivalRate "${arrivalRate}" --batchSize 50 >${output_path}21.log &
 
-#sleep 10
-#
-#echo "Slowing down the node"
-#
-#./${ctl_path} --name 22 --requestType status --operationType 3 --slowdown "1:5000,2:5000" >${output_path}status3.log
-#
-#sleep 20
-#
-#./${ctl_path} --name 22 --requestType status --operationType 3 --slowdown "1:0,2:0" >${output_path}status3.log
+sleep 10
+
+echo "Slowing down the node"
+
+./${ctl_path} --name 22 --requestType status --operationType 3 --slowdown "1:5000" >${output_path}status3.log
+
+sleep 10
+
+./${ctl_path} --name 22 --requestType status --operationType 3 --slowdown "1:0" >${output_path}status3.log
 
 sleep 200
 

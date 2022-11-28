@@ -19,12 +19,12 @@ type Proposer struct {
 	proxyToProposerFetchChan chan FetchRequest
 	proposerToProxyFetchChan chan FetchResposne
 	//lastSeenTimes            [][]*time.Time // use proposer name - 1 as index
-	leaderTimeout            int64
-	debugOn                  bool // if turned on, the debug messages will be print on the console
-	debugLevel               int  // debug level
-	hi                       int  // hi priority
-	serverMode               int  // if 1, use the fast path LAN optimizations
-	leaderMode               int
+	leaderTimeout int64
+	debugOn       bool // if turned on, the debug messages will be print on the console
+	debugLevel    int  // debug level
+	hi            int  // hi priority
+	serverMode    int  // if 1, use the fast path LAN optimizations
+	leaderMode    int
 }
 
 // instantiate a new Proposer
@@ -41,12 +41,12 @@ func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan c
 		proxyToProposerFetchChan: proxyToProposerFetchChan,
 		proposerToProxyFetchChan: proposerToProxyFetchChan,
 		//lastSeenTimes:            lastSeenTimes,
-		leaderTimeout:            leaderTimeout,
-		debugOn:                  debugOn,
-		debugLevel:               debugLevel,
-		hi:                       hi,
-		serverMode:               serverMode,
-		leaderMode:               leaderMode,
+		leaderTimeout: leaderTimeout,
+		debugOn:       debugOn,
+		debugLevel:    debugLevel,
+		hi:            hi,
+		serverMode:    serverMode,
+		leaderMode:    leaderMode,
 	}
 
 	pr.debug("created a new proposer "+fmt.Sprintf("%v", pr), -1)
@@ -80,7 +80,7 @@ func (prop *Proposer) findClientByName(rn int64) peer {
 func (prop *Proposer) getRandomClient() peer {
 	rn := rand.Intn(prop.numReplicas) + 1
 	for int64(rn) == prop.name {
-		rn = rand.Intn(prop.numReplicas)
+		rn = rand.Intn(prop.numReplicas) + 1
 	}
 	return prop.findClientByName(int64(rn))
 }
@@ -409,7 +409,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 				if resp != nil && resp.S > 0 {
 					responses <- resp
 				} else {
-					panic("response :"+fmt.Sprintf("%v %v",err, resp))
+					panic("response :" + fmt.Sprintf("%v %v", err, resp))
 				}
 
 				prop.debug("proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v, and M:%v", resp.S, resp.F, resp.M)+" for index "+fmt.Sprintf("%v", message.instance), -1)
