@@ -281,8 +281,8 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 		allBatchesFound := re.findAllBatches(req.P.Ids)
 		if !allBatchesFound {
 			re.debug("recorder does not have all the client batches, hence rejecting  "+fmt.Sprintf("%v", req)+" for index "+fmt.Sprintf("%v", req.Index), 0)
-			response.ClientBatchesNotFound = true
-			return &response
+			//response.ClientBatchesNotFound = true
+			//return &response
 		}
 	}
 
