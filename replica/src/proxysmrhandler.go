@@ -318,7 +318,24 @@ func (pr *Proxy) getLeaderSequence(instance int64) []int64 {
 
 		return rA
 	}
-	
+	if pr.leaderMode == 1 {
+		// fixed order, static partition
+		// assumes that node names start with 1
+		epoch := instance/500
+		sequence := epoch % int64(pr.numReplicas) // sequence is 0-numreplicas
+
+		rA := make([]int64, 0)
+		for i := sequence; i < int64(pr.numReplicas); i++ {
+			rA = append(rA, i+1)
+		}
+		for i := int64(0); i < sequence; i++ {
+			rA = append(rA, i+1)
+		}
+		pr.debug("proxy leader sequence for instance "+fmt.Sprintf("%v is %v", instance, rA), 0)
+		return rA
+		
+	}
+
 	panic("should not happen")
 }
 
