@@ -335,6 +335,7 @@ func (pr *Proxy) getLeaderSequence(instance int64) []int64 {
 		return rA
 		
 	}
+	// todo
 
 	panic("should not happen")
 }
