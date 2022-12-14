@@ -207,7 +207,7 @@ func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 		if pr.replicatedLog[message.index].decided == false {
 			pr.replicatedLog[message.index].decided = true
 			pr.replicatedLog[message.index].decidedBatch = message.decisions
-
+			pr.updateEpochTime(message.index)
 			pr.debug("proxy decided as a result of propose "+fmt.Sprintf(" for instance %v with initial value", message.index, message.decisions[0]), 1)
 
 			if !pr.decidedTheProposedValue(message.index, message.decisions) {
@@ -276,6 +276,7 @@ func (pr *Proxy) handleRecorderResponse(message Decision) {
 		if pr.replicatedLog[index].decided == false {
 			pr.replicatedLog[index].decided = true
 			pr.replicatedLog[index].decidedBatch = batches
+			pr.updateEpochTime(index)
 			pr.debug("proxy decided from the recorder response "+fmt.Sprintf(" instance %v with batches %v", index, batches), 1)
 			if !pr.decidedTheProposedValue(index, batches) {
 				pr.toBeProposed = append(pr.toBeProposed, pr.replicatedLog[index].proposedBatch...)
@@ -302,52 +303,4 @@ func (pr *Proxy) handleFetchResponse(response FetchResposne) {
 		pr.debug("the state of the next instance is "+fmt.Sprintf("%v", pr.replicatedLog[pr.committedIndex+1]), 1)
 	}
 	pr.updateStateMachine(true)
-}
-
-// return the immutable leader sequence for instance
-
-func (pr *Proxy) getLeaderSequence(instance int64) []int64 {
-	if pr.leaderMode == 0 {
-		// fixed order
-		// assumes that node names start with 1
-		rA := make([]int64, 0)
-
-		for i := 0; i < pr.numReplicas; i++ {
-			rA = append(rA, int64(i+1))
-		}
-
-		return rA
-	}
-	if pr.leaderMode == 1 {
-		// fixed order, static partition
-		// assumes that node names start with 1
-		epoch := instance / int64(pr.epochSize)
-		sequence := epoch % int64(pr.numReplicas) // sequence is 0-numreplicas
-
-		rA := make([]int64, 0)
-		for i := sequence; i < int64(pr.numReplicas); i++ {
-			rA = append(rA, i+1)
-		}
-		for i := int64(0); i < sequence; i++ {
-			rA = append(rA, i+1)
-		}
-		pr.debug("proxy leader sequence for instance "+fmt.Sprintf("%v is %v", instance, rA), 0)
-		return rA
-
-	}
-	// todo
-
-	panic("should not happen")
-}
-
-// return the pre-agreed, non changing waiting time for the instance by the proposer todo
-
-func (pr *Proxy) getLeaderWait(sequence []int64) int64 {
-
-	for j := 0; j < len(sequence); j++ {
-		if sequence[j] == pr.name {
-			return pr.leaderTimeout * int64(j)
-		}
-	}
-	panic("should not happen")
 }

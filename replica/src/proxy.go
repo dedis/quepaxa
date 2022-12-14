@@ -90,6 +90,15 @@ type Proxy struct {
 	additionalDelay  int // additional delay to add for proposals
 	lastTimeProposed time.Time
 	epochSize        int
+
+	epochTimes []EpochTime
+}
+
+type EpochTime struct {
+	startTime time.Time
+	endTime   time.Time
+	started   bool
+	ended     bool
 }
 
 // instantiate a new proxy
@@ -142,6 +151,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		batchTime:                batchTime,
 		lastTimeProposed:         time.Now(),
 		epochSize:                epochSize,
+		epochTimes:               make([]EpochTime, 0),
 	}
 
 	// initialize the genenesis
