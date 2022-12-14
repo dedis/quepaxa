@@ -19,7 +19,7 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 	// add the batch id to the toBeProposed array
 	pr.toBeProposed = append(pr.toBeProposed, batch.Id)
 
-	if time.Now().Sub(pr.lastTimeProposed).Milliseconds() >= pr.batchTime {
+	if time.Now().Sub(pr.lastTimeProposed).Milliseconds() >= pr.batchTime || len(pr.toBeProposed) >= pr.batchSize {
 		if pr.lastProposedIndex-pr.committedIndex < pr.pipelineLength {
 			proposeIndex := pr.lastProposedIndex + 1
 			for proposeIndex+1 <= int64(len(pr.replicatedLog)) {
@@ -27,7 +27,7 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 			}
 			msWait := int(pr.getLeaderWait(pr.getLeaderSequence(proposeIndex)))
 			msWait = msWait * int(proposeIndex-pr.committedIndex) // adjust waiting for the pipelining
-			msWait = msWait + pr.additionalDelay                  // for experimental purpose
+			msWait = msWait + pr.additionalDelay                  // for experiments
 			if pr.instanceTimeouts[proposeIndex] != nil {
 				pr.instanceTimeouts[proposeIndex].Cancel()
 			}
