@@ -264,7 +264,7 @@ func (pr *Proxy) Run() {
 				break
 
 			case _ = <-pr.proxyInternalDecisionNotification:
-				pr.debug("proxy internal decision notification", 9)
+				pr.debug("proxy internal decision notification", 11)
 				pr.handleDecisionNotification()
 				break
 			}
@@ -276,6 +276,7 @@ func (pr *Proxy) Run() {
 		for true {
 			time.Sleep(time.Duration(pr.leaderTimeout/3) * time.Millisecond)
 			pr.proxyInternalDecisionNotification <- true
+			pr.debug("proxy notified about decisions", 11)
 		}
 	}()
 }

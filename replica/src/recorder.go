@@ -363,6 +363,7 @@ func (r *Recorder) HandleFetch(req *DecideRequest) *DecideResponse {
 // update the decisions
 
 func (re *Recorder) HandleDecisions(decisions *Decisions) {
+	re.debug("recorder handling decisions "+fmt.Sprintf("%v", decisions.DecidedSlots), 11)
 	// send the last decided index details to the proxy, if available
 	if len(decisions.DecidedSlots) > 0 {
 		d := Decision{
@@ -376,6 +377,6 @@ func (re *Recorder) HandleDecisions(decisions *Decisions) {
 		}
 
 		re.recorderToProxyChan <- d
-		re.debug("recorder sent the decisions to the proxy  "+fmt.Sprintf("%v", d), 9)
+		re.debug("recorder sent the decisions to the proxy  "+fmt.Sprintf("%v", d), 11)
 	}
 }

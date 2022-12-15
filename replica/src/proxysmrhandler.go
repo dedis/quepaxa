@@ -251,7 +251,7 @@ func (pr *Proxy) getHighestIndex(indexes []int) int {
 
 func (pr *Proxy) handleRecorderResponse(message Decision) {
 
-	pr.debug("proxy received decisions from the recorder  "+fmt.Sprintf("%v", message), -1)
+	pr.debug("proxy received decisions from the recorder  "+fmt.Sprintf("%v", message), 11)
 	if len(message.indexes) != len(message.decisions) {
 		panic("number of decided items and number of decisions do not match")
 	}
@@ -318,7 +318,7 @@ func (pr *Proxy) handleDecisionNotification() {
 	}
 
 	pr.proxyToProposerDecisionChan <- newDecision
-	pr.debug("proxy sent a decisions to proposer  "+fmt.Sprintf("%v", newDecision), 9)
+	pr.debug("proxy sent a decisions to proposer  "+fmt.Sprintf("%v", newDecision), 11)
 
 	// reset the variables
 	pr.lastDecidedIndexes = make([]int, 0)

@@ -529,7 +529,7 @@ func (prop *Proposer) runProposer() {
 // send the decisions to every recorder
 
 func (prop *Proposer) handleDecisionRequest(decision Decision) {
-	prop.debug("proposer starting to handle a decision request "+fmt.Sprintf("%v", decision), 9)
+	prop.debug("proposer starting to handle a decision request "+fmt.Sprintf("%v", decision), 11)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(100*time.Second))
 	decidedSlots := prop.extractDecisionSlots(decision.indexes, decision.decisions)
@@ -549,6 +549,7 @@ func (prop *Proposer) handleDecisionRequest(decision Decision) {
 	go func() {
 		wg.Wait()
 		cancel()
+		prop.debug("proposer sent decisions to everyone", 11)
 	}()
 }
 
