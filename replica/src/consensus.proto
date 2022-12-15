@@ -61,6 +61,7 @@ message RecorderResponse {
 service Consensus {
   rpc ESP (ProposerMessage) returns (RecorderResponse);
   rpc FetchBatches (DecideRequest) returns (DecideResponse);
+  rpc InformDecision(Decisions) returns (Empty);
 }
 
 message DecideRequest {
@@ -79,3 +80,14 @@ message DecideResponse{
   repeated ClientBatch client_batches = 1; // client batches
 
 }
+
+message Decisions {
+  message DecidedSlot{
+    int64 index = 1; // replicated slot
+    repeated string ids = 2; // in the fast path client request ids
+    int64 proposer = 3; // proposer who decided this index
+  }
+  repeated DecidedSlot decidedSlots = 5;
+}
+
+message Empty{}

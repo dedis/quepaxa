@@ -264,6 +264,91 @@ func (x *DecideResponse) GetClientBatches() []*DecideResponse_ClientBatch {
 	return nil
 }
 
+type Decisions struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	DecidedSlots []*Decisions_DecidedSlot `protobuf:"bytes,5,rep,name=decidedSlots,proto3" json:"decidedSlots,omitempty"`
+}
+
+func (x *Decisions) Reset() {
+	*x = Decisions{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_replica_src_consensus_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Decisions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Decisions) ProtoMessage() {}
+
+func (x *Decisions) ProtoReflect() protoreflect.Message {
+	mi := &file_replica_src_consensus_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Decisions.ProtoReflect.Descriptor instead.
+func (*Decisions) Descriptor() ([]byte, []int) {
+	return file_replica_src_consensus_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Decisions) GetDecidedSlots() []*Decisions_DecidedSlot {
+	if x != nil {
+		return x.DecidedSlots
+	}
+	return nil
+}
+
+type Empty struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *Empty) Reset() {
+	*x = Empty{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_replica_src_consensus_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Empty) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Empty) ProtoMessage() {}
+
+func (x *Empty) ProtoReflect() protoreflect.Message {
+	mi := &file_replica_src_consensus_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Empty.ProtoReflect.Descriptor instead.
+func (*Empty) Descriptor() ([]byte, []int) {
+	return file_replica_src_consensus_proto_rawDescGZIP(), []int{5}
+}
+
 type ProposerMessage_ClientBatch struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -277,7 +362,7 @@ type ProposerMessage_ClientBatch struct {
 func (x *ProposerMessage_ClientBatch) Reset() {
 	*x = ProposerMessage_ClientBatch{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_replica_src_consensus_proto_msgTypes[4]
+		mi := &file_replica_src_consensus_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -290,7 +375,7 @@ func (x *ProposerMessage_ClientBatch) String() string {
 func (*ProposerMessage_ClientBatch) ProtoMessage() {}
 
 func (x *ProposerMessage_ClientBatch) ProtoReflect() protoreflect.Message {
-	mi := &file_replica_src_consensus_proto_msgTypes[4]
+	mi := &file_replica_src_consensus_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -342,7 +427,7 @@ type ProposerMessage_Proposal struct {
 func (x *ProposerMessage_Proposal) Reset() {
 	*x = ProposerMessage_Proposal{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_replica_src_consensus_proto_msgTypes[5]
+		mi := &file_replica_src_consensus_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -355,7 +440,7 @@ func (x *ProposerMessage_Proposal) String() string {
 func (*ProposerMessage_Proposal) ProtoMessage() {}
 
 func (x *ProposerMessage_Proposal) ProtoReflect() protoreflect.Message {
-	mi := &file_replica_src_consensus_proto_msgTypes[5]
+	mi := &file_replica_src_consensus_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -419,7 +504,7 @@ type ProposerMessage_DecidedSlot struct {
 func (x *ProposerMessage_DecidedSlot) Reset() {
 	*x = ProposerMessage_DecidedSlot{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_replica_src_consensus_proto_msgTypes[6]
+		mi := &file_replica_src_consensus_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -432,7 +517,7 @@ func (x *ProposerMessage_DecidedSlot) String() string {
 func (*ProposerMessage_DecidedSlot) ProtoMessage() {}
 
 func (x *ProposerMessage_DecidedSlot) ProtoReflect() protoreflect.Message {
-	mi := &file_replica_src_consensus_proto_msgTypes[6]
+	mi := &file_replica_src_consensus_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -480,7 +565,7 @@ type ProposerMessage_ClientBatch_SingleMessage struct {
 func (x *ProposerMessage_ClientBatch_SingleMessage) Reset() {
 	*x = ProposerMessage_ClientBatch_SingleMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_replica_src_consensus_proto_msgTypes[7]
+		mi := &file_replica_src_consensus_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -493,7 +578,7 @@ func (x *ProposerMessage_ClientBatch_SingleMessage) String() string {
 func (*ProposerMessage_ClientBatch_SingleMessage) ProtoMessage() {}
 
 func (x *ProposerMessage_ClientBatch_SingleMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_replica_src_consensus_proto_msgTypes[7]
+	mi := &file_replica_src_consensus_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -530,7 +615,7 @@ type RecorderResponse_Proposal struct {
 func (x *RecorderResponse_Proposal) Reset() {
 	*x = RecorderResponse_Proposal{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_replica_src_consensus_proto_msgTypes[8]
+		mi := &file_replica_src_consensus_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -543,7 +628,7 @@ func (x *RecorderResponse_Proposal) String() string {
 func (*RecorderResponse_Proposal) ProtoMessage() {}
 
 func (x *RecorderResponse_Proposal) ProtoReflect() protoreflect.Message {
-	mi := &file_replica_src_consensus_proto_msgTypes[8]
+	mi := &file_replica_src_consensus_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -600,7 +685,7 @@ type DecideResponse_ClientBatch struct {
 func (x *DecideResponse_ClientBatch) Reset() {
 	*x = DecideResponse_ClientBatch{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_replica_src_consensus_proto_msgTypes[9]
+		mi := &file_replica_src_consensus_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -613,7 +698,7 @@ func (x *DecideResponse_ClientBatch) String() string {
 func (*DecideResponse_ClientBatch) ProtoMessage() {}
 
 func (x *DecideResponse_ClientBatch) ProtoReflect() protoreflect.Message {
-	mi := &file_replica_src_consensus_proto_msgTypes[9]
+	mi := &file_replica_src_consensus_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -661,7 +746,7 @@ type DecideResponse_ClientBatch_SingleMessage struct {
 func (x *DecideResponse_ClientBatch_SingleMessage) Reset() {
 	*x = DecideResponse_ClientBatch_SingleMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_replica_src_consensus_proto_msgTypes[10]
+		mi := &file_replica_src_consensus_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -674,7 +759,7 @@ func (x *DecideResponse_ClientBatch_SingleMessage) String() string {
 func (*DecideResponse_ClientBatch_SingleMessage) ProtoMessage() {}
 
 func (x *DecideResponse_ClientBatch_SingleMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_replica_src_consensus_proto_msgTypes[10]
+	mi := &file_replica_src_consensus_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -695,6 +780,69 @@ func (x *DecideResponse_ClientBatch_SingleMessage) GetMessage() string {
 		return x.Message
 	}
 	return ""
+}
+
+type Decisions_DecidedSlot struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Index    int64    `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`       // replicated slot
+	Ids      []string `protobuf:"bytes,2,rep,name=ids,proto3" json:"ids,omitempty"`            // in the fast path client request ids
+	Proposer int64    `protobuf:"varint,3,opt,name=proposer,proto3" json:"proposer,omitempty"` // proposer who decided this index
+}
+
+func (x *Decisions_DecidedSlot) Reset() {
+	*x = Decisions_DecidedSlot{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_replica_src_consensus_proto_msgTypes[13]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Decisions_DecidedSlot) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Decisions_DecidedSlot) ProtoMessage() {}
+
+func (x *Decisions_DecidedSlot) ProtoReflect() protoreflect.Message {
+	mi := &file_replica_src_consensus_proto_msgTypes[13]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Decisions_DecidedSlot.ProtoReflect.Descriptor instead.
+func (*Decisions_DecidedSlot) Descriptor() ([]byte, []int) {
+	return file_replica_src_consensus_proto_rawDescGZIP(), []int{4, 0}
+}
+
+func (x *Decisions_DecidedSlot) GetIndex() int64 {
+	if x != nil {
+		return x.Index
+	}
+	return 0
+}
+
+func (x *Decisions_DecidedSlot) GetIds() []string {
+	if x != nil {
+		return x.Ids
+	}
+	return nil
+}
+
+func (x *Decisions_DecidedSlot) GetProposer() int64 {
+	if x != nil {
+		return x.Proposer
+	}
+	return 0
 }
 
 var File_replica_src_consensus_proto protoreflect.FileDescriptor
@@ -777,15 +925,28 @@ var file_replica_src_consensus_proto_rawDesc = []byte{
 	0x65, 0x73, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02,
 	0x69, 0x64, 0x1a, 0x29, 0x0a, 0x0d, 0x53, 0x69, 0x6e, 0x67, 0x6c, 0x65, 0x4d, 0x65, 0x73, 0x73,
 	0x61, 0x67, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x32, 0x68, 0x0a,
-	0x09, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x12, 0x2a, 0x0a, 0x03, 0x45, 0x53,
-	0x50, 0x12, 0x10, 0x2e, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x4d, 0x65, 0x73, 0x73,
-	0x61, 0x67, 0x65, 0x1a, 0x11, 0x2e, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x2f, 0x0a, 0x0c, 0x46, 0x65, 0x74, 0x63, 0x68, 0x42,
-	0x61, 0x74, 0x63, 0x68, 0x65, 0x73, 0x12, 0x0e, 0x2e, 0x44, 0x65, 0x63, 0x69, 0x64, 0x65, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0f, 0x2e, 0x44, 0x65, 0x63, 0x69, 0x64, 0x65, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x08, 0x5a, 0x06, 0x2f, 0x72, 0x61, 0x78, 0x6f,
-	0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x9a, 0x01,
+	0x0a, 0x09, 0x44, 0x65, 0x63, 0x69, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x3a, 0x0a, 0x0c, 0x64,
+	0x65, 0x63, 0x69, 0x64, 0x65, 0x64, 0x53, 0x6c, 0x6f, 0x74, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x16, 0x2e, 0x44, 0x65, 0x63, 0x69, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x2e, 0x44, 0x65,
+	0x63, 0x69, 0x64, 0x65, 0x64, 0x53, 0x6c, 0x6f, 0x74, 0x52, 0x0c, 0x64, 0x65, 0x63, 0x69, 0x64,
+	0x65, 0x64, 0x53, 0x6c, 0x6f, 0x74, 0x73, 0x1a, 0x51, 0x0a, 0x0b, 0x44, 0x65, 0x63, 0x69, 0x64,
+	0x65, 0x64, 0x53, 0x6c, 0x6f, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x05, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x12, 0x10, 0x0a, 0x03,
+	0x69, 0x64, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x03, 0x69, 0x64, 0x73, 0x12, 0x1a,
+	0x0a, 0x08, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03,
+	0x52, 0x08, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x22, 0x07, 0x0a, 0x05, 0x45, 0x6d,
+	0x70, 0x74, 0x79, 0x32, 0x8e, 0x01, 0x0a, 0x09, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75,
+	0x73, 0x12, 0x2a, 0x0a, 0x03, 0x45, 0x53, 0x50, 0x12, 0x10, 0x2e, 0x50, 0x72, 0x6f, 0x70, 0x6f,
+	0x73, 0x65, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x1a, 0x11, 0x2e, 0x52, 0x65, 0x63,
+	0x6f, 0x72, 0x64, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x2f, 0x0a,
+	0x0c, 0x46, 0x65, 0x74, 0x63, 0x68, 0x42, 0x61, 0x74, 0x63, 0x68, 0x65, 0x73, 0x12, 0x0e, 0x2e,
+	0x44, 0x65, 0x63, 0x69, 0x64, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0f, 0x2e,
+	0x44, 0x65, 0x63, 0x69, 0x64, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x24,
+	0x0a, 0x0e, 0x49, 0x6e, 0x66, 0x6f, 0x72, 0x6d, 0x44, 0x65, 0x63, 0x69, 0x73, 0x69, 0x6f, 0x6e,
+	0x12, 0x0a, 0x2e, 0x44, 0x65, 0x63, 0x69, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x06, 0x2e, 0x45,
+	0x6d, 0x70, 0x74, 0x79, 0x42, 0x08, 0x5a, 0x06, 0x2f, 0x72, 0x61, 0x78, 0x6f, 0x73, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -800,38 +961,44 @@ func file_replica_src_consensus_proto_rawDescGZIP() []byte {
 	return file_replica_src_consensus_proto_rawDescData
 }
 
-var file_replica_src_consensus_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_replica_src_consensus_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_replica_src_consensus_proto_goTypes = []interface{}{
 	(*ProposerMessage)(nil),                           // 0: ProposerMessage
 	(*RecorderResponse)(nil),                          // 1: RecorderResponse
 	(*DecideRequest)(nil),                             // 2: DecideRequest
 	(*DecideResponse)(nil),                            // 3: DecideResponse
-	(*ProposerMessage_ClientBatch)(nil),               // 4: ProposerMessage.ClientBatch
-	(*ProposerMessage_Proposal)(nil),                  // 5: ProposerMessage.Proposal
-	(*ProposerMessage_DecidedSlot)(nil),               // 6: ProposerMessage.DecidedSlot
-	(*ProposerMessage_ClientBatch_SingleMessage)(nil), // 7: ProposerMessage.ClientBatch.SingleMessage
-	(*RecorderResponse_Proposal)(nil),                 // 8: RecorderResponse.Proposal
-	(*DecideResponse_ClientBatch)(nil),                // 9: DecideResponse.ClientBatch
-	(*DecideResponse_ClientBatch_SingleMessage)(nil),  // 10: DecideResponse.ClientBatch.SingleMessage
+	(*Decisions)(nil),                                 // 4: Decisions
+	(*Empty)(nil),                                     // 5: Empty
+	(*ProposerMessage_ClientBatch)(nil),               // 6: ProposerMessage.ClientBatch
+	(*ProposerMessage_Proposal)(nil),                  // 7: ProposerMessage.Proposal
+	(*ProposerMessage_DecidedSlot)(nil),               // 8: ProposerMessage.DecidedSlot
+	(*ProposerMessage_ClientBatch_SingleMessage)(nil), // 9: ProposerMessage.ClientBatch.SingleMessage
+	(*RecorderResponse_Proposal)(nil),                 // 10: RecorderResponse.Proposal
+	(*DecideResponse_ClientBatch)(nil),                // 11: DecideResponse.ClientBatch
+	(*DecideResponse_ClientBatch_SingleMessage)(nil),  // 12: DecideResponse.ClientBatch.SingleMessage
+	(*Decisions_DecidedSlot)(nil),                     // 13: Decisions.DecidedSlot
 }
 var file_replica_src_consensus_proto_depIdxs = []int32{
-	5,  // 0: ProposerMessage.P:type_name -> ProposerMessage.Proposal
-	6,  // 1: ProposerMessage.decidedSlots:type_name -> ProposerMessage.DecidedSlot
-	8,  // 2: RecorderResponse.F:type_name -> RecorderResponse.Proposal
-	8,  // 3: RecorderResponse.M:type_name -> RecorderResponse.Proposal
-	9,  // 4: DecideResponse.client_batches:type_name -> DecideResponse.ClientBatch
-	7,  // 5: ProposerMessage.ClientBatch.messages:type_name -> ProposerMessage.ClientBatch.SingleMessage
-	4,  // 6: ProposerMessage.Proposal.client_batches:type_name -> ProposerMessage.ClientBatch
-	10, // 7: DecideResponse.ClientBatch.messages:type_name -> DecideResponse.ClientBatch.SingleMessage
-	0,  // 8: Consensus.ESP:input_type -> ProposerMessage
-	2,  // 9: Consensus.FetchBatches:input_type -> DecideRequest
-	1,  // 10: Consensus.ESP:output_type -> RecorderResponse
-	3,  // 11: Consensus.FetchBatches:output_type -> DecideResponse
-	10, // [10:12] is the sub-list for method output_type
-	8,  // [8:10] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	7,  // 0: ProposerMessage.P:type_name -> ProposerMessage.Proposal
+	8,  // 1: ProposerMessage.decidedSlots:type_name -> ProposerMessage.DecidedSlot
+	10, // 2: RecorderResponse.F:type_name -> RecorderResponse.Proposal
+	10, // 3: RecorderResponse.M:type_name -> RecorderResponse.Proposal
+	11, // 4: DecideResponse.client_batches:type_name -> DecideResponse.ClientBatch
+	13, // 5: Decisions.decidedSlots:type_name -> Decisions.DecidedSlot
+	9,  // 6: ProposerMessage.ClientBatch.messages:type_name -> ProposerMessage.ClientBatch.SingleMessage
+	6,  // 7: ProposerMessage.Proposal.client_batches:type_name -> ProposerMessage.ClientBatch
+	12, // 8: DecideResponse.ClientBatch.messages:type_name -> DecideResponse.ClientBatch.SingleMessage
+	0,  // 9: Consensus.ESP:input_type -> ProposerMessage
+	2,  // 10: Consensus.FetchBatches:input_type -> DecideRequest
+	4,  // 11: Consensus.InformDecision:input_type -> Decisions
+	1,  // 12: Consensus.ESP:output_type -> RecorderResponse
+	3,  // 13: Consensus.FetchBatches:output_type -> DecideResponse
+	5,  // 14: Consensus.InformDecision:output_type -> Empty
+	12, // [12:15] is the sub-list for method output_type
+	9,  // [9:12] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_replica_src_consensus_proto_init() }
@@ -889,7 +1056,7 @@ func file_replica_src_consensus_proto_init() {
 			}
 		}
 		file_replica_src_consensus_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ProposerMessage_ClientBatch); i {
+			switch v := v.(*Decisions); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -901,7 +1068,7 @@ func file_replica_src_consensus_proto_init() {
 			}
 		}
 		file_replica_src_consensus_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ProposerMessage_Proposal); i {
+			switch v := v.(*Empty); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -913,7 +1080,7 @@ func file_replica_src_consensus_proto_init() {
 			}
 		}
 		file_replica_src_consensus_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ProposerMessage_DecidedSlot); i {
+			switch v := v.(*ProposerMessage_ClientBatch); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -925,7 +1092,7 @@ func file_replica_src_consensus_proto_init() {
 			}
 		}
 		file_replica_src_consensus_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ProposerMessage_ClientBatch_SingleMessage); i {
+			switch v := v.(*ProposerMessage_Proposal); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -937,7 +1104,7 @@ func file_replica_src_consensus_proto_init() {
 			}
 		}
 		file_replica_src_consensus_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RecorderResponse_Proposal); i {
+			switch v := v.(*ProposerMessage_DecidedSlot); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -949,7 +1116,7 @@ func file_replica_src_consensus_proto_init() {
 			}
 		}
 		file_replica_src_consensus_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DecideResponse_ClientBatch); i {
+			switch v := v.(*ProposerMessage_ClientBatch_SingleMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -961,7 +1128,43 @@ func file_replica_src_consensus_proto_init() {
 			}
 		}
 		file_replica_src_consensus_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RecorderResponse_Proposal); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_replica_src_consensus_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DecideResponse_ClientBatch); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_replica_src_consensus_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*DecideResponse_ClientBatch_SingleMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_replica_src_consensus_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Decisions_DecidedSlot); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -979,7 +1182,7 @@ func file_replica_src_consensus_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_replica_src_consensus_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

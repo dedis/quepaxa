@@ -29,11 +29,11 @@ type RecorderSlot struct {
 }
 
 type Recorder struct {
-	address               string       // address to listen for gRPC connections
-	listener              net.Listener // socket for gRPC connections
-	server                *grpc.Server // gRPC server
-	connection            *GRPCConnection
-	clientBatches         *ClientBatchStore
+	address       string       // address to listen for gRPC connections
+	listener      net.Listener // socket for gRPC connections
+	server        *grpc.Server // gRPC server
+	connection    *GRPCConnection
+	clientBatches *ClientBatchStore
 	//lastSeenTimeProposers [][]*time.Time // last seen times of each proposer
 	recorderToProxyChan   chan Decision
 	name                  int64
@@ -49,11 +49,11 @@ type Recorder struct {
 func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchStore, lastSeenTimeProposers [][]*time.Time, recorderToProxyChan chan Decision, name int64, debugOn bool, debugLevel int) *Recorder {
 
 	re := Recorder{
-		address:               "",
-		listener:              nil,
-		server:                nil,
-		connection:            nil,
-		clientBatches:         clientBatches,
+		address:       "",
+		listener:      nil,
+		server:        nil,
+		connection:    nil,
+		clientBatches: clientBatches,
 		//lastSeenTimeProposers: lastSeenTimeProposers,
 		recorderToProxyChan:   recorderToProxyChan,
 		name:                  name,
@@ -358,4 +358,24 @@ func (r *Recorder) HandleFetch(req *DecideRequest) *DecideResponse {
 
 	r.debug("recorder respond to the fetch request  "+fmt.Sprintf("%v", req)+"with response "+fmt.Sprintf("%v", response), 0)
 	return &response
+}
+
+// update the decisions
+
+func (re *Recorder) HandleDecisions(decisions *Decisions) {
+	// send the last decided index details to the proxy, if available
+	if len(decisions.DecidedSlots) > 0 {
+		d := Decision{
+			indexes:   make([]int, 0),
+			decisions: make([][]string, 0),
+		}
+
+		for i := 0; i < len(decisions.DecidedSlots); i++ {
+			d.indexes = append(d.indexes, int(decisions.DecidedSlots[i].Index))
+			d.decisions = append(d.decisions, decisions.DecidedSlots[i].Ids)
+		}
+
+		re.recorderToProxyChan <- d
+		re.debug("recorder sent the decisions to the proxy  "+fmt.Sprintf("%v", d), 9)
+	}
 }

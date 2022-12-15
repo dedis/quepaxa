@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 type ConsensusClient interface {
 	ESP(ctx context.Context, in *ProposerMessage, opts ...grpc.CallOption) (*RecorderResponse, error)
 	FetchBatches(ctx context.Context, in *DecideRequest, opts ...grpc.CallOption) (*DecideResponse, error)
+	InformDecision(ctx context.Context, in *Decisions, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type consensusClient struct {
@@ -48,12 +49,22 @@ func (c *consensusClient) FetchBatches(ctx context.Context, in *DecideRequest, o
 	return out, nil
 }
 
+func (c *consensusClient) InformDecision(ctx context.Context, in *Decisions, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/Consensus/InformDecision", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ConsensusServer is the server API for Consensus service.
 // All implementations must embed UnimplementedConsensusServer
 // for forward compatibility
 type ConsensusServer interface {
 	ESP(context.Context, *ProposerMessage) (*RecorderResponse, error)
 	FetchBatches(context.Context, *DecideRequest) (*DecideResponse, error)
+	InformDecision(context.Context, *Decisions) (*Empty, error)
 	mustEmbedUnimplementedConsensusServer()
 }
 
@@ -66,6 +77,9 @@ func (UnimplementedConsensusServer) ESP(context.Context, *ProposerMessage) (*Rec
 }
 func (UnimplementedConsensusServer) FetchBatches(context.Context, *DecideRequest) (*DecideResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FetchBatches not implemented")
+}
+func (UnimplementedConsensusServer) InformDecision(context.Context, *Decisions) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InformDecision not implemented")
 }
 func (UnimplementedConsensusServer) mustEmbedUnimplementedConsensusServer() {}
 
@@ -116,6 +130,24 @@ func _Consensus_FetchBatches_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Consensus_InformDecision_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Decisions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsensusServer).InformDecision(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Consensus/InformDecision",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsensusServer).InformDecision(ctx, req.(*Decisions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Consensus_ServiceDesc is the grpc.ServiceDesc for Consensus service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -130,6 +162,10 @@ var Consensus_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FetchBatches",
 			Handler:    _Consensus_FetchBatches_Handler,
+		},
+		{
+			MethodName: "InformDecision",
+			Handler:    _Consensus_InformDecision_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

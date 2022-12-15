@@ -9,6 +9,13 @@ type GRPCConnection struct {
 	Recorder *Recorder
 }
 
+func (gc *GRPCConnection) InformDecision(ctx context.Context, decisions *Decisions) (*Empty, error) {
+	gc.Recorder.debug("received decisions "+fmt.Sprintf("%v", decisions), 0)
+	var response *Empty
+	gc.Recorder.HandleDecisions(decisions)
+	return response, nil
+}
+
 // answer to proposer RPC
 
 func (gc *GRPCConnection) ESP(ctx context.Context, req *ProposerMessage) (*RecorderResponse, error) {

@@ -19,17 +19,18 @@ type Proposer struct {
 	proxyToProposerFetchChan chan FetchRequest
 	proposerToProxyFetchChan chan FetchResposne
 	//lastSeenTimes            [][]*time.Time // use proposer name - 1 as index
-	leaderTimeout int64
-	debugOn       bool // if turned on, the debug messages will be print on the console
-	debugLevel    int  // debug level
-	hi            int  // hi priority
-	serverMode    int  // if 1, use the fast path LAN optimizations
-	leaderMode    int
+	leaderTimeout               int64
+	debugOn                     bool // if turned on, the debug messages will be print on the console
+	debugLevel                  int  // debug level
+	hi                          int  // hi priority
+	serverMode                  int  // if 1, use the fast path LAN optimizations
+	leaderMode                  int
+	proxyToProposerDecisionChan chan Decision
 }
 
 // instantiate a new Proposer
 
-func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, lastSeenTimes [][]*time.Time, debugOn bool, debugLevel int, hi int, serverMode int, leaderTimeout int64, leaderMode int) *Proposer {
+func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, lastSeenTimes [][]*time.Time, debugOn bool, debugLevel int, hi int, serverMode int, leaderTimeout int64, leaderMode int, proxyToProposerDecisionChan chan Decision) *Proposer {
 
 	pr := Proposer{
 		numReplicas:              len(peers),
@@ -41,12 +42,13 @@ func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan c
 		proxyToProposerFetchChan: proxyToProposerFetchChan,
 		proposerToProxyFetchChan: proposerToProxyFetchChan,
 		//lastSeenTimes:            lastSeenTimes,
-		leaderTimeout: leaderTimeout,
-		debugOn:       debugOn,
-		debugLevel:    debugLevel,
-		hi:            hi,
-		serverMode:    serverMode,
-		leaderMode:    leaderMode,
+		leaderTimeout:               leaderTimeout,
+		debugOn:                     debugOn,
+		debugLevel:                  debugLevel,
+		hi:                          hi,
+		serverMode:                  serverMode,
+		leaderMode:                  leaderMode,
+		proxyToProposerDecisionChan: proxyToProposerDecisionChan,
 	}
 
 	pr.debug("created a new proposer "+fmt.Sprintf("%v", pr), -1)
@@ -515,8 +517,54 @@ func (prop *Proposer) runProposer() {
 					prop.proposerToProxyChan <- response
 					prop.debug("proposer sent back to response to proxy for the propose request to "+fmt.Sprintf("%v", response), 0)
 				}
+			case decision := <-prop.proxyToProposerDecisionChan:
+				prop.debug("proposer received decision request", 9)
+				prop.handleDecisionRequest(decision)
 				break
 			}
 		}
 	}()
+}
+
+// send the decisions to every recorder
+
+func (prop *Proposer) handleDecisionRequest(decision Decision) {
+	prop.debug("proposer starting to handle a decision request "+fmt.Sprintf("%v", decision), 9)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(100*time.Second))
+	decidedSlots := prop.extractDecisionSlots(decision.indexes, decision.decisions)
+	prop.debug("proposer sending rpc in parallel ", -1)
+	wg := sync.WaitGroup{}
+	for i := 0; i < prop.numReplicas; i++ {
+		wg.Add(1)
+		go func(p peer, slots []*Decisions_DecidedSlot) {
+			defer wg.Done()
+			_, _ = p.client.InformDecision(ctx, &Decisions{
+				DecidedSlots: slots,
+			})
+			return
+
+		}(prop.peers[i], decidedSlots)
+	}
+	go func() {
+		wg.Wait()
+		cancel()
+	}()
+}
+
+func (prop *Proposer) extractDecisionSlots(indexes []int, decisions [][]string) []*Decisions_DecidedSlot {
+	if len(indexes) != len(decisions) {
+		panic("should not happen")
+	}
+
+	arr := make([]*Decisions_DecidedSlot, 0)
+
+	for i := 0; i < len(indexes); i++ {
+		arr = append(arr, &Decisions_DecidedSlot{
+			Index:    int64(indexes[i]),
+			Ids:      decisions[i],
+			Proposer: prop.name,
+		})
+	}
+	return arr
 }

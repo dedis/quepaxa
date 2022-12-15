@@ -304,3 +304,23 @@ func (pr *Proxy) handleFetchResponse(response FetchResposne) {
 	}
 	pr.updateStateMachine(true)
 }
+
+// send decisions to the proposer
+
+func (pr *Proxy) handleDecisionNotification() {
+
+	if len(pr.lastDecidedIndexes) == 0 {
+		return
+	}
+	newDecision := Decision{
+		indexes:   pr.lastDecidedIndexes,
+		decisions: pr.lastDecidedDecisions,
+	}
+
+	pr.proxyToProposerDecisionChan <- newDecision
+	pr.debug("proxy sent a decisions to proposer  "+fmt.Sprintf("%v", newDecision), 9)
+
+	// reset the variables
+	pr.lastDecidedIndexes = make([]int, 0)
+	pr.lastDecidedDecisions = make([][]string, 0)
+}
