@@ -19,7 +19,7 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 	// add the batch id to the toBeProposed array
 	pr.toBeProposed = append(pr.toBeProposed, batch.Id)
 
-	if time.Now().Sub(pr.lastTimeProposed).Milliseconds() >= pr.batchTime || len(pr.toBeProposed) >= pr.batchSize {
+	if time.Now().Sub(pr.lastTimeProposed).Milliseconds() >= pr.batchTime {
 		if pr.lastProposedIndex-pr.committedIndex < pr.pipelineLength {
 			proposeIndex := pr.lastProposedIndex + 1
 			for proposeIndex+1 <= int64(len(pr.replicatedLog)) {

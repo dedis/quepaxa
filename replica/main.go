@@ -22,7 +22,7 @@ func main() {
 	debugLevel := flag.Int("debugLevel", 0, "debug level")
 	leaderMode := flag.Int("leaderMode", 0, "mode of leader change: 0 for fixed leader order")
 	serverMode := flag.Int("serverMode", 0, "0 for non-lan-optimized, 1 for lan optimized")
-	epochSize := flag.Int("epochSize", 2000, "epoch size for MAB")
+	epochSize := flag.Int("epochSize", 100, "epoch size for MAB")
 	flag.Parse()
 
 	cfg, err := configuration.NewInstanceConfig(*configFile, *name)

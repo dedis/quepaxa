@@ -33,15 +33,16 @@ func (pr *Proxy) updateEpochTime(index int) {
 	}
 
 	if pr.epochTimes[epoch].started == false {
-		pr.debug("starting epoch "+fmt.Sprintf("%v at time %v", epoch, time.Now()), 9)
+		pr.debug("starting epoch "+fmt.Sprintf("%v at time %v", epoch, time.Now()), 10)
 		pr.epochTimes[epoch].started = true
 		pr.epochTimes[epoch].startTime = time.Now()
 	}
 
 	if pr.epochTimes[epoch].ended == false && pr.hasAllDecided(epoch) {
-		pr.debug("finishing epoch "+fmt.Sprintf("%v at time %v", epoch, time.Now()), 9)
+		pr.debug("finishing epoch "+fmt.Sprintf("%v at time %v", epoch, time.Now()), 10)
 		pr.epochTimes[epoch].ended = true
 		pr.epochTimes[epoch].endTime = time.Now()
+		pr.debug("epoch "+fmt.Sprintf("%v took %v ms", epoch, pr.epochTimes[epoch].endTime.Sub(pr.epochTimes[epoch].startTime).Milliseconds()), 10)
 	}
 }
 
