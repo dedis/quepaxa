@@ -12,6 +12,7 @@ type GRPCConnection struct {
 func (gc *GRPCConnection) InformDecision(ctx context.Context, decisions *Decisions) (*Empty, error) {
 	gc.Recorder.debug("received decisions "+fmt.Sprintf("%v", decisions), 11)
 	var response *Empty
+	response = &Empty{}
 	gc.Recorder.HandleDecisions(decisions)
 	return response, nil
 }
