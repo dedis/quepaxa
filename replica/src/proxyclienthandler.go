@@ -121,6 +121,14 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 
 	pr.debug("proposing for index "+fmt.Sprintf("%v", proposeIndex), 9)
 
+	if pr.leaderMode == 2 || pr.leaderMode == 3 {
+		if pr.isBeginningOfEpoch(proposeIndex) {
+			pr.debug("proposing the last epoch summary for index "+fmt.Sprintf("%v", proposeIndex)+"", 13)
+			pr.proposePreviousEpochSummary(proposeIndex)
+			return
+		}
+	}
+
 	batchSize := pr.batchSize
 	if len(pr.toBeProposed) < batchSize {
 		batchSize = len(pr.toBeProposed)
