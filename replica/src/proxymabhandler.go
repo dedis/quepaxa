@@ -46,7 +46,7 @@ func (pr *Proxy) updateEpochTime(index int) {
 		pr.debug("finishing epoch "+fmt.Sprintf("%v at time %v", epoch, time.Now()), 11)
 		pr.epochTimes[epoch].ended = true
 		pr.epochTimes[epoch].endTime = time.Now()
-		pr.debug("epoch "+fmt.Sprintf("%v took %v ms", epoch, pr.epochTimes[epoch].endTime.Sub(pr.epochTimes[epoch].startTime).Milliseconds()), 12)
+		pr.debug("epoch "+fmt.Sprintf("%v took %v ms", epoch, pr.epochTimes[epoch].endTime.Sub(pr.epochTimes[epoch].startTime).Milliseconds()), 13)
 	}
 }
 
@@ -238,7 +238,7 @@ func (pr *Proxy) calculateSequence(epoch int) string {
 		times[ld-1] = append(times[ld-1], pr.epochTimes[i].endTime.Sub(pr.epochTimes[i].startTime).Milliseconds())
 	}
 
-	pr.debug("epoch time summary "+fmt.Sprintf("%v", times), 13)
+	pr.debug("epoch time summary "+fmt.Sprintf("for the epoch %v is %v ",epoch, times), 13)
 
 	epochTimes1 := make([]int, pr.numReplicas)
 	epochTimes2 := make([]int, pr.numReplicas)
@@ -253,7 +253,7 @@ func (pr *Proxy) calculateSequence(epoch int) string {
 		epochTimes1[i] = int(sum / count)
 		epochTimes2[i] = int(sum / count)
 	}
-	pr.debug("epoch time averages "+fmt.Sprintf("%v", epochTimes2), 13)
+	pr.debug("epoch time averages "+fmt.Sprintf("for epoch %v is %v", epoch, epochTimes2), 13)
 
 	sort.Ints(epochTimes1)
 	sequence := make([]int, 0)
@@ -274,7 +274,7 @@ func (pr *Proxy) calculateSequence(epoch int) string {
 		}
 	}
 
-	pr.debug("leader ordering proposed for the epoch "+fmt.Sprintf("%v, %v", sequence, epoch), 13)
+	pr.debug("leader ordering proposed for the epoch "+fmt.Sprintf("%v is %v", epoch, sequence ), 13)
 
 	s := ""
 
