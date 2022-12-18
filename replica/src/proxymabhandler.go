@@ -46,7 +46,7 @@ func (pr *Proxy) updateEpochTime(index int) {
 		pr.debug("finishing epoch "+fmt.Sprintf("%v at time %v", epoch, time.Now()), 11)
 		pr.epochTimes[epoch].ended = true
 		pr.epochTimes[epoch].endTime = time.Now()
-		pr.debug("epoch "+fmt.Sprintf("%v took %v ms", epoch, pr.epochTimes[epoch].endTime.Sub(pr.epochTimes[epoch].startTime).Milliseconds()), 10)
+		pr.debug("epoch "+fmt.Sprintf("%v took %v ms, epoch leader:%v", epoch, pr.epochTimes[epoch].endTime.Sub(pr.epochTimes[epoch].startTime).Milliseconds(), pr.getLeaderSequence(int64(epoch * pr.epochSize))[0]), 14)
 	}
 }
 
@@ -229,16 +229,17 @@ func (pr *Proxy) calculateSequence(epoch int) string {
 		times[i] = make([]int64, 0)
 	}
 
-	for i := 0; i < epoch-1; i++ {
+	for i := 0; i < epoch; i++ {
 
-		if pr.epochTimes[i].ended != true {
-			panic("should this happen")
+		if pr.epochTimes[i].ended == true {
+			ld := pr.getLeaderSequence(int64(i * pr.epochSize))[0]
+			times[ld-1] = append(times[ld-1], pr.epochTimes[i].endTime.Sub(pr.epochTimes[i].startTime).Milliseconds())
+		}else{
+			break
 		}
-		ld := pr.getLeaderSequence(int64(i * pr.epochSize))[0]
-		times[ld-1] = append(times[ld-1], pr.epochTimes[i].endTime.Sub(pr.epochTimes[i].startTime).Milliseconds())
 	}
 
-	pr.debug("epoch time summary "+fmt.Sprintf("for the epoch %v is %v ", epoch, times), 10)
+	pr.debug("epoch time summary "+fmt.Sprintf("for the epoch %v is %v ", epoch, times), 15)
 
 	epochTimes1 := make([]int, pr.numReplicas)
 	epochTimes2 := make([]int, pr.numReplicas)
@@ -253,7 +254,7 @@ func (pr *Proxy) calculateSequence(epoch int) string {
 		epochTimes1[i] = int(sum / count)
 		epochTimes2[i] = int(sum / count)
 	}
-	pr.debug("epoch time averages "+fmt.Sprintf("for epoch %v is %v", epoch, epochTimes2), 10)
+	pr.debug("epoch time averages "+fmt.Sprintf("for epoch %v is %v", epoch, epochTimes2), 15)
 
 	sort.Ints(epochTimes1)
 	sequence := make([]int, 0)

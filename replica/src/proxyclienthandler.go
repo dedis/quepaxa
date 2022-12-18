@@ -69,7 +69,7 @@ func (pr *Proxy) handleClientStatus(status client.ClientStatus) {
 			if int64(nodeName) == pr.name {
 				newDelay, _ := strconv.Atoi(splitItem[1])
 				pr.additionalDelay = newDelay
-				pr.debug("proxy slowing down the proposing speed by "+strconv.Itoa(pr.additionalDelay), 9)
+				pr.debug("proxy slowing down the proposing speed by "+strconv.Itoa(pr.additionalDelay), 15)
 				return
 			}
 		}
