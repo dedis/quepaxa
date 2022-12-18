@@ -46,7 +46,7 @@ func (pr *Proxy) updateEpochTime(index int) {
 		pr.debug("finishing epoch "+fmt.Sprintf("%v at time %v", epoch, time.Now()), 11)
 		pr.epochTimes[epoch].ended = true
 		pr.epochTimes[epoch].endTime = time.Now()
-		pr.debug("epoch "+fmt.Sprintf("%v took %v ms", epoch, pr.epochTimes[epoch].endTime.Sub(pr.epochTimes[epoch].startTime).Milliseconds()), 13)
+		pr.debug("epoch "+fmt.Sprintf("%v took %v ms", epoch, pr.epochTimes[epoch].endTime.Sub(pr.epochTimes[epoch].startTime).Milliseconds()), 10)
 	}
 }
 
@@ -97,11 +97,11 @@ func (pr *Proxy) getLeaderSequence(instance int64) []int64 {
 			for i := int64(0); i < sequence; i++ {
 				rA = append(rA, i+1)
 			}
-			pr.debug("proxy leader sequence for instance "+fmt.Sprintf("%v is %v", instance, rA), 13)
+			pr.debug("proxy leader sequence for instance "+fmt.Sprintf("%v is %v", instance, rA), 10)
 			return rA
 		} else {
 			rA := pr.getLeaderSequenceFromLastEpoch(epoch)
-			pr.debug("proxy leader sequence for instance "+fmt.Sprintf("%v is %v", instance, rA), 13)
+			pr.debug("proxy leader sequence for instance "+fmt.Sprintf("%v is %v", instance, rA), 10)
 			return rA
 		}
 
@@ -175,7 +175,7 @@ func (pr *Proxy) proposePreviousEpochSummary(index int64) {
 	strProposals = []string{"Epoch" + strSequence}
 	btchProposals = append(btchProposals, client.ClientBatch{
 		Sender:   -1,
-		Messages: nil,
+		Messages: []*client.ClientBatch_SingleMessage{{Message: "Epoch" + strSequence}},
 		Id:       "Epoch" + strSequence,
 	})
 	pr.debug("proposing new summary for index "+fmt.Sprintf("%v, epoch:%v, sequence:%v ", index, curEpoch, strSequence), 13)
@@ -191,7 +191,7 @@ func (pr *Proxy) proposePreviousEpochSummary(index int64) {
 	}
 
 	pr.proxyToProposerChan <- newProposalRequest
-	pr.debug("proxy sent a proposal request containing leader sequence  "+fmt.Sprintf("%v", newProposalRequest), 13)
+	pr.debug("proxy sent a proposal request containing leader sequence  "+fmt.Sprintf("%v", newProposalRequest), 10)
 	// create the slot index
 	for len(pr.replicatedLog) < int(index+1) {
 		// create the new entry
@@ -238,7 +238,7 @@ func (pr *Proxy) calculateSequence(epoch int) string {
 		times[ld-1] = append(times[ld-1], pr.epochTimes[i].endTime.Sub(pr.epochTimes[i].startTime).Milliseconds())
 	}
 
-	pr.debug("epoch time summary "+fmt.Sprintf("for the epoch %v is %v ",epoch, times), 13)
+	pr.debug("epoch time summary "+fmt.Sprintf("for the epoch %v is %v ", epoch, times), 10)
 
 	epochTimes1 := make([]int, pr.numReplicas)
 	epochTimes2 := make([]int, pr.numReplicas)
@@ -253,7 +253,7 @@ func (pr *Proxy) calculateSequence(epoch int) string {
 		epochTimes1[i] = int(sum / count)
 		epochTimes2[i] = int(sum / count)
 	}
-	pr.debug("epoch time averages "+fmt.Sprintf("for epoch %v is %v", epoch, epochTimes2), 13)
+	pr.debug("epoch time averages "+fmt.Sprintf("for epoch %v is %v", epoch, epochTimes2), 10)
 
 	sort.Ints(epochTimes1)
 	sequence := make([]int, 0)
@@ -274,7 +274,7 @@ func (pr *Proxy) calculateSequence(epoch int) string {
 		}
 	}
 
-	pr.debug("leader ordering proposed for the epoch "+fmt.Sprintf("%v is %v", epoch, sequence ), 13)
+	pr.debug("leader ordering proposed for the epoch "+fmt.Sprintf("%v is %v", epoch, sequence), 10)
 
 	s := ""
 
