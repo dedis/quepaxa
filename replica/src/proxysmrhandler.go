@@ -132,6 +132,13 @@ func (pr *Proxy) updateStateMachine(sendResponse bool) {
 			break
 		}
 	}
+
+	// look at the last time committed, and revoke if needed using no-ops
+	if time.Now().Sub(pr.lastTimeCommitted).Milliseconds() > int64(pr.leaderTimeout*2*int64(pr.numReplicas)) {
+		// revoke all the instances from last committed index
+		pr.debug("proxy revoking because it has not committed anything recently  ", 10)
+		pr.revokeInstances()
+	}
 }
 
 // revoke a single instance by proposing the same command proposed before
@@ -147,9 +154,10 @@ func (pr *Proxy) revokeInstance(instance int64) {
 	strProposals := pr.replicatedLog[instance].proposedBatch
 
 	if strProposals != nil || len(strProposals) > 0 {
-		// I have not proposed for this index before
+		// I have proposed for this index before
 		panic("should this happen?")
 	}
+	
 	strProposals = []string{"nil"}
 
 	btchProposals := make([]client.ClientBatch, 0)
@@ -220,13 +228,6 @@ func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 
 		// update SMR -- if all entries are available
 		pr.updateStateMachine(true)
-
-		// look at the last time committed, and revoke if needed using no-ops
-		if time.Now().Sub(pr.lastTimeCommitted).Milliseconds() > int64(pr.leaderTimeout*100000) { //todo change the revoke timeout
-			// revoke all the instances from last committed index
-			pr.debug("proxy revoking because it has not committed anything recently  ", 10)
-			pr.revokeInstances()
-		}
 
 		// add the decided value to proxy's lastDecidedIndexes, lastDecidedDecisions
 		pr.lastDecidedIndexes = append(pr.lastDecidedIndexes, message.index)
