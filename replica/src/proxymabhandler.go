@@ -26,6 +26,11 @@ func (pr *Proxy) hasAllDecided(epoch int) bool {
 // update the start time and the end time of the epoch
 
 func (pr *Proxy) updateEpochTime(index int) {
+	
+	if pr.leaderMode == 0 || pr.leaderMode == 1 {
+		return
+	}
+	
 	epoch := index / pr.epochSize
 	for len(pr.epochTimes) < epoch+1 {
 		pr.epochTimes = append(pr.epochTimes, EpochTime{
