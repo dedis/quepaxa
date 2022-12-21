@@ -261,7 +261,7 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 	var response RecorderResponse
 
 	// send the last decided index details to the proxy, if available
-	if len(req.DecidedSlots) > 0 {
+	if req.DecidedSlots !=nil && len(req.DecidedSlots) > 0 {
 		d := Decision{
 			indexes:   make([]int, 0),
 			decisions: make([][]string, 0),
@@ -276,13 +276,13 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 		re.debug("recorder sent the decisions to the proxy  "+fmt.Sprintf("%v", d)+" for index "+fmt.Sprintf("%v", req.Index), -1)
 	}
 
-	if len(req.P.ClientBatches) == 0 {
+	if req.S == 4 && len(req.P.ClientBatches) == 0 && len(req.P.Ids) >0   {
 		// if there are only hashes, then check if all the client batches are available in the shared pool
 		allBatchesFound := re.findAllBatches(req.P.Ids)
 		if !allBatchesFound {
-			re.debug("recorder does not have all the client batches, hence rejecting  "+fmt.Sprintf("%v", req)+" for index "+fmt.Sprintf("%v", req.Index), 0)
-			//response.ClientBatchesNotFound = true
-			//return &response
+			re.debug("recorder does not have all the client batches, hence rejecting  "+fmt.Sprintf("%v", req)+" for index "+fmt.Sprintf("%v", req.Index), 17)
+			response.ClientBatchesNotFound = true
+			return &response
 		}
 	}
 
@@ -314,6 +314,8 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 		ThreadId:   M.thread_id,
 		Ids:        M.ids,
 	}
+
+	response.ClientBatchesNotFound = false
 
 	re.debug("recorder responding to esp request  "+fmt.Sprintf("%v", req)+" with response "+fmt.Sprintf("%v", response)+" for index "+fmt.Sprintf("%v", req.Index), -1)
 

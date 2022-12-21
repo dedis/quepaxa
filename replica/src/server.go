@@ -153,7 +153,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		recorderToProxyChan:         make(chan Decision, 10000),
 		lastSeenTimeProposers:       make([][]*time.Time, 1), // hardcodes the number of instances to 1000000 todo increase if run for more number of instances
 		cfg:                         *cfg,
-		numProposers:                int(pipelineLength),
+		numProposers:                20,
 		store:                       &ClientBatchStore{},
 		serverMode:                  serverMode,
 		proxyToProposerFetchChan:    make(chan FetchRequest, 10000),

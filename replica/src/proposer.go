@@ -373,27 +373,71 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 			wg.Add(1)
 			go func(p peer, pi ProposerMessage_Proposal, s int, decidedSlots []*ProposerMessage_DecidedSlot) {
 				defer wg.Done()
-				resp, err := p.client.ESP(ctx, &ProposerMessage{
-					Sender:       prop.name,
-					Index:        message.instance,
-					P:            &pi,
-					S:            int64(s),
-					DecidedSlots: decidedSlots,
-				})
 
-				if err != nil {
-					panic(fmt.Sprintf("%v", err))
+				if s == 4 && prop.serverMode == 1 {
+					newP := &ProposerMessage_Proposal{
+						Priority:      P.Priority,
+						ProposerId:    P.ProposerId,
+						ThreadId:      P.ThreadId,
+						Ids:           P.Ids,
+						ClientBatches: make([]*ProposerMessage_ClientBatch, 0),
+					}
+					resp, err := p.client.ESP(ctx, &ProposerMessage{
+						Sender:       prop.name,
+						Index:        message.instance,
+						P:            newP,
+						S:            int64(s),
+						DecidedSlots: decidedSlots,
+					})
+
+					if err != nil {
+						panic(fmt.Sprintf("%v", err))
+						return
+					}
+
+					if resp.ClientBatchesNotFound {
+						prop.debug("re-proposing because the recorder did not have the batches for instance  "+fmt.Sprintf(" %v ", message.instance), 17)
+						resp, err = p.client.ESP(ctx, &ProposerMessage{
+							Sender: prop.name,
+							Index:  message.instance,
+							P:      &P,
+							S:      int64(s),
+						})
+					}
+
+					if resp != nil && resp.S > 0 {
+						responses <- resp
+					} else {
+						panic("response :" + fmt.Sprintf("%v %v", err, resp))
+					}
+
+					prop.debug("proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v, and M:%v", resp.S, resp.F, resp.M)+" for index "+fmt.Sprintf("%v", message.instance), -1)
+					return
+
+				} else {
+
+					resp, err := p.client.ESP(ctx, &ProposerMessage{
+						Sender:       prop.name,
+						Index:        message.instance,
+						P:            &pi,
+						S:            int64(s),
+						DecidedSlots: decidedSlots,
+					})
+
+					if err != nil {
+						panic(fmt.Sprintf("%v", err))
+						return
+					}
+
+					if resp != nil && resp.S > 0 {
+						responses <- resp
+					} else {
+						panic("response :" + fmt.Sprintf("%v %v", err, resp))
+					}
+
+					prop.debug("proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v, and M:%v", resp.S, resp.F, resp.M)+" for index "+fmt.Sprintf("%v", message.instance), -1)
 					return
 				}
-
-				if resp != nil && resp.S > 0 {
-					responses <- resp
-				} else {
-					panic("response :" + fmt.Sprintf("%v %v", err, resp))
-				}
-
-				prop.debug("proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v, and M:%v", resp.S, resp.F, resp.M)+" for index "+fmt.Sprintf("%v", message.instance), -1)
-				return
 
 			}(prop.peers[i], Pi[i], S, decidedSlots)
 		}
