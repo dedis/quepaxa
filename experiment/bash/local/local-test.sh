@@ -54,11 +54,11 @@ pkill client
 
 echo "Killed previously running instances"
 
-nohup ./${raxos_path} --name 1 --debugOn --debugLevel 16 --batchSize 50 --batchTime 2 --pipelineLength 1 --leaderMode 0 --epochSize 20 --serverMode  0 >${output_path}1.log &
-nohup ./${raxos_path} --name 2 --debugOn --debugLevel 16 --batchSize 50 --batchTime 2 --pipelineLength 1 --leaderMode 0 --epochSize 20 --serverMode  0 >${output_path}2.log &
-nohup ./${raxos_path} --name 3 --debugOn --debugLevel 16 --batchSize 50 --batchTime 2 --pipelineLength 1 --leaderMode 0 --epochSize 20 --serverMode  0 >${output_path}3.log &
-nohup ./${raxos_path} --name 4 --debugOn --debugLevel 16 --batchSize 50 --batchTime 2 --pipelineLength 1 --leaderMode 0 --epochSize 20 --serverMode  0 >${output_path}4.log &
-nohup ./${raxos_path} --name 5 --debugOn --debugLevel 16 --batchSize 50 --batchTime 2 --pipelineLength 1 --leaderMode 0 --epochSize 20 --serverMode  0 >${output_path}5.log &
+nohup ./${raxos_path} --name 1 --debugOn --debugLevel 16 --batchSize 50 --batchTime 1 --pipelineLength 1 --leaderMode 0 --epochSize 20 --serverMode  0 >${output_path}1.log &
+nohup ./${raxos_path} --name 2 --debugOn --debugLevel 16 --batchSize 50 --batchTime 1 --pipelineLength 1 --leaderMode 0 --epochSize 20 --serverMode  0 >${output_path}2.log &
+nohup ./${raxos_path} --name 3 --debugOn --debugLevel 16 --batchSize 50 --batchTime 1 --pipelineLength 1 --leaderMode 0 --epochSize 20 --serverMode  0 >${output_path}3.log &
+nohup ./${raxos_path} --name 4 --debugOn --debugLevel 16 --batchSize 50 --batchTime 1 --pipelineLength 1 --leaderMode 0 --epochSize 20 --serverMode  0 >${output_path}4.log &
+nohup ./${raxos_path} --name 5 --debugOn --debugLevel 16 --batchSize 50 --batchTime 1 --pipelineLength 1 --leaderMode 0 --epochSize 20 --serverMode  0 >${output_path}5.log &
 
 echo "Started 5 servers"
 

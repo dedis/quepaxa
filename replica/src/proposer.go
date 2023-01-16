@@ -425,7 +425,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 					})
 
 					if err != nil {
-						panic(fmt.Sprintf("%v", err))
+						//panic(fmt.Sprintf("%v", err))
 						return
 					}
 
