@@ -54,12 +54,16 @@ func NewTimerWithCancel(d time.Duration) *TimerWithCancel {
 func (t *TimerWithCancel) Start() {
 	t.t = time.NewTimer(t.d)
 	go func() {
-		select {
-		case <-t.t.C:
-			t.f()
-			break
-		case <-t.c:
-			break
+		for true {
+			select {
+			case <-t.t.C:
+				t.f()
+				return
+			case <-t.c:
+				return
+			default:
+				time.Sleep(time.Duration(1) * time.Millisecond)
+			}
 		}
 	}()
 }
