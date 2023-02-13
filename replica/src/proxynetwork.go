@@ -86,6 +86,7 @@ func (pr *Proxy) connectionListener(reader *bufio.Reader, id int32) {
 			}
 		} else {
 			pr.debug("Error: received unknown message type", 0)
+			return
 		}
 	}
 }
@@ -128,22 +129,24 @@ func (pr *Proxy) internalSendMessage(peer int64, rpcPair common.RPCPair) {
 	var w *bufio.Writer
 
 	w = pr.outgoingClientWriters[peer]
-
 	pr.buffioWriterMutexes[peer].Lock()
 
 	err := w.WriteByte(code)
 	if err != nil {
 		pr.debug("Error while writing byte", 0)
+		pr.buffioWriterMutexes[peer].Unlock()
 		return
 	}
 	err = msg.Marshal(w)
 	if err != nil {
 		pr.debug("Error while marshalling", 0)
+		pr.buffioWriterMutexes[peer].Unlock()
 		return
 	}
 	err = w.Flush()
 	if err != nil {
 		pr.debug("Error while flushing", 0)
+		pr.buffioWriterMutexes[peer].Unlock()
 		return
 	}
 	pr.buffioWriterMutexes[peer].Unlock()
