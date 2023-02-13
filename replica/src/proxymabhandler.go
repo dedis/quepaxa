@@ -238,7 +238,7 @@ func (pr *Proxy) calculateSequence(epoch int) string {
 
 		if pr.epochTimes[i].ended == true {
 			ld := pr.getLeaderSequence(int64(i * pr.epochSize))[0]
-			times[ld-1] = append(times[ld-1], pr.epochTimes[i].endTime.Sub(pr.epochTimes[i].startTime).Milliseconds())
+			times[ld-1] = append(times[ld-1], pr.epochTimes[i].endTime.Sub(pr.epochTimes[i].startTime).Microseconds())
 		}else{
 			break
 		}

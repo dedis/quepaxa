@@ -19,11 +19,11 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 	// add the batch id to the toBeProposed array
 	pr.toBeProposed = append(pr.toBeProposed, batch.Id)
 
-	if time.Now().Sub(pr.lastTimeProposed).Milliseconds() >= pr.batchTime {
+	if time.Now().Sub(pr.lastTimeProposed).Microseconds() >= pr.batchTime {
 		if pr.lastProposedIndex-pr.committedIndex < pr.pipelineLength {
 			proposeIndex := pr.lastProposedIndex + 1
 			for proposeIndex+1 <= int64(len(pr.replicatedLog)) {
-				proposeIndex++
+				proposeIndex++ // we always propose for a new index
 			}
 			msWait := int(pr.getLeaderWait(pr.getLeaderSequence(proposeIndex)))
 			msWait = msWait * int(proposeIndex-pr.committedIndex) // adjust waiting for the pipelining
@@ -31,7 +31,7 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 			if pr.instanceTimeouts[proposeIndex] != nil {
 				pr.instanceTimeouts[proposeIndex].Cancel()
 			}
-			pr.instanceTimeouts[proposeIndex] = common.NewTimerWithCancel(time.Duration(msWait) * time.Millisecond)
+			pr.instanceTimeouts[proposeIndex] = common.NewTimerWithCancel(time.Duration(msWait) * time.Microsecond)
 			pr.instanceTimeouts[proposeIndex].SetTimeoutFuntion(func() {
 				pr.proposeRequestIndex <- ProposeRequestIndex{index: proposeIndex}
 			})
@@ -110,7 +110,7 @@ func (pr *Proxy) printConsensusLog() {
 	}
 }
 
-// propose to index after a timeout
+// propose to index
 
 func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 	pr.instanceTimeouts[proposeIndex] = nil
@@ -121,7 +121,7 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 
 	pr.debug("proposing for index "+fmt.Sprintf("%v", proposeIndex), 9)
 
-	if pr.leaderMode == 2 || pr.leaderMode == 3 {
+	if pr.leaderMode == 2 {
 		if pr.isBeginningOfEpoch(proposeIndex) {
 			pr.debug("proposing the last epoch summary for index "+fmt.Sprintf("%v", proposeIndex)+"", 13)
 			pr.proposePreviousEpochSummary(proposeIndex)
@@ -159,14 +159,22 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 		}
 	}
 
+	waitTime := int(pr.getLeaderWait(pr.getLeaderSequence(proposeIndex)))
+	isLeader := true
+
+	if pr.leaderMode == 3 {
+		isLeader = false
+	} else if pr.leaderMode != 3 && waitTime != 0 {
+		isLeader = false
+	}
+
 	newProposalRequest := ProposeRequest{
 		instance:             proposeIndex,
 		proposalStr:          strProposals,
 		proposalBtch:         btchProposals,
-		msWait:               int(pr.getLeaderWait(pr.getLeaderSequence(proposeIndex))),
+		isLeader:             isLeader,
 		lastDecidedIndexes:   pr.lastDecidedIndexes,
 		lastDecidedDecisions: pr.lastDecidedDecisions,
-		leaderSequence:       pr.getLeaderSequence(proposeIndex),
 	}
 
 	pr.proxyToProposerChan <- newProposalRequest

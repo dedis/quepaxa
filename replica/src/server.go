@@ -30,11 +30,11 @@ type Server struct {
 	cfg                         configuration.InstanceConfig // configuration of clients and replicas
 	numProposers                int                          // number of proposers == pipeline length
 	store                       *ClientBatchStore            // shared client batch store
-	serverMode                  int                          // todo use this in the proposer code for the optimizations
+	serverMode                  int                          // 0 for non-lan-optimized, 1 for lan optimized
 	debugOn                     bool
 	debugLevel                  int
 	leaderTimeout               int64
-	leaderMode                  int
+	leaderMode                  int //0 for fixed leader order, 1 for fixed order, static partition,  2 for M.A.B based on commit times, 3 for asynchronous
 	batchTime                   int64
 	epochSize                   int
 	proxyToProposerDecisionChan chan Decision
@@ -58,10 +58,9 @@ type ProposeRequest struct {
 	instance             int64                // slot index
 	proposalStr          []string             // fast path client batch ids
 	proposalBtch         []client.ClientBatch // client batches for slow path
-	msWait               int                  // number of milliseconds to wait before proposing
+	isLeader             bool                 // true if waiting time is zero and not in the asyn mode
 	lastDecidedIndexes   []int                //slots that were previously decided
 	lastDecidedDecisions [][]string           // for each lastDecidedIndex, the string array of client batches decided
-	leaderSequence       []int64
 }
 
 // ProposeResponse is the message type sent from proposer to proxy
@@ -131,7 +130,7 @@ func (s *Server) createProposers() {
 	for i := 0; i < s.numProposers+1; i++ { //+1 is for decision sending
 		// create N gRPC connections
 		peers := s.setupgRPC()
-		hi := 10000
+		hi := 100000
 		newProposer := NewProposer(s.name, int64(i), peers, s.proxyToProposerChan, s.proposerToProxyChan, s.proxyToProposerFetchChan, s.proposerToProxyFetchChan, s.lastSeenTimeProposers, s.debugOn, s.debugLevel, hi, s.serverMode, s.leaderTimeout, s.leaderMode, s.proxyToProposerDecisionChan)
 		s.ProposerInstances = append(s.ProposerInstances, newProposer)
 		s.ProposerInstances[len(s.ProposerInstances)-1].runProposer()
@@ -145,22 +144,22 @@ func (s *Server) createProposers() {
 func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, leaderTimeout int64, pipelineLength int64, benchmark int64, debugOn bool, debugLevel int, leaderMode int, serverMode int, batchTime int64, epochSize int) *Server {
 
 	sr := Server{
+		name:                        name,
 		ProxyInstance:               nil,
 		ProposerInstances:           nil, // this is initialized in the createProposers method, so no need to create them
 		RecorderInstance:            nil,
 		proxyToProposerChan:         make(chan ProposeRequest, 10000),
 		proposerToProxyChan:         make(chan ProposeResponse, 10000),
 		recorderToProxyChan:         make(chan Decision, 10000),
-		lastSeenTimeProposers:       make([][]*time.Time, 1), // hardcodes the number of instances to 1000000 todo increase if run for more number of instances
+		proxyToProposerFetchChan:    make(chan FetchRequest, 10000),
+		proposerToProxyFetchChan:    make(chan FetchResposne, 10000),
+		lastSeenTimeProposers:       make([][]*time.Time, 1),
 		cfg:                         *cfg,
 		numProposers:                int(pipelineLength) + 1 + 3,
 		store:                       &ClientBatchStore{},
 		serverMode:                  serverMode,
-		proxyToProposerFetchChan:    make(chan FetchRequest, 10000),
-		proposerToProxyFetchChan:    make(chan FetchResposne, 10000),
 		debugOn:                     debugOn,
 		debugLevel:                  debugLevel,
-		name:                        name,
 		leaderTimeout:               leaderTimeout,
 		leaderMode:                  leaderMode,
 		batchTime:                   batchTime,

@@ -23,7 +23,9 @@ type Slot struct {
 	committed     bool     // true if committed
 }
 
-/*Proxy saves the state of the proxy and handles client batches, creates replica batches and sends to proposers. Also the proxy executes the SMR and send responses back to client*/
+/*
+	proxy saves the state of the proxy and handles client batches, creates replica batches and sends to proposers. Also the proxy executes the SMR and send responses back to client
+*/
 
 type Proxy struct {
 	name        int64 // unique node identifier as defined in the configuration.yml
@@ -59,13 +61,13 @@ type Proxy struct {
 
 	logFilePath string // the path to write the replicated log, used for sanity checks
 
-	batchSize      int // maximum replica side batch size
-	batchTime      int64
+	batchSize      int   // maximum replica side batch size
+	batchTime      int64 // micro seconds
 	pipelineLength int64 // maximum number of inflight consensus instances
 
 	clientBatchStore *ClientBatchStore // message store that stores the client batches
 
-	leaderTimeout int64 // in milliseconds
+	leaderTimeout int64 // in microseconds
 
 	debugOn    bool // if turned on, the debug messages will be print on the console
 	debugLevel int  // debug level
@@ -77,7 +79,7 @@ type Proxy struct {
 	toBeProposed []string // set of client batches that are yet be proposed
 
 	lastDecidedIndexes   []int      //slots that were previously decided
-	lastDecidedDecisions [][]string // for each lastDecidedIndex, the string array of client batches decided
+	lastDecidedDecisions [][]string // for each lastDecidedIndex, the string array of client batches id decided
 
 	leaderMode int // leader change mode
 	serverMode int
@@ -116,8 +118,8 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		serverAddress:                     "",
 		Listener:                          nil,
 		rpcTable:                          make(map[uint8]*common.RPCPair),
-		incomingChan:                      make(chan common.RPCPair),
-		outgoingMessageChan:               make(chan common.OutgoingRPC),
+		incomingChan:                      make(chan common.RPCPair, 1000000),
+		outgoingMessageChan:               make(chan common.OutgoingRPC, 1000000),
 		proxyToProposerChan:               proxyToProposerChan,
 		proposerToProxyChan:               proposerToProxyChan,
 		recorderToProxyChan:               recorderToProxyChan,
@@ -131,6 +133,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		lastTimeCommitted:                 time.Now(),
 		logFilePath:                       logFilePath,
 		batchSize:                         int(batchSize),
+		batchTime:                         batchTime,
 		pipelineLength:                    pipelineLength,
 		clientBatchStore:                  store,
 		leaderTimeout:                     leaderTimeout,
@@ -146,7 +149,6 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		instanceTimeouts:                  make([]*common.TimerWithCancel, 1000000), // assumes that number of instances do not exceed 1000000, todo increase if not sufficient
 		proposeRequestIndex:               make(chan ProposeRequestIndex, 10000),
 		additionalDelay:                   0,
-		batchTime:                         batchTime,
 		lastTimeProposed:                  time.Now(),
 		epochSize:                         epochSize,
 		epochTimes:                        make([]EpochTime, 0),
@@ -198,7 +200,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	pr.debug("initiazlied a new proxy "+fmt.Sprintf("%v", pr), -1)
+	pr.debug("initiazlied a new proxy "+fmt.Sprintf("%v", pr.name), -1)
 
 	return &pr
 }
@@ -268,7 +270,7 @@ func (pr *Proxy) Run() {
 
 	go func() {
 		for true {
-			time.Sleep(time.Duration(pr.leaderTimeout/3) * time.Millisecond)
+			time.Sleep(time.Duration(pr.leaderTimeout/2) * time.Microsecond)
 			pr.proxyInternalDecisionNotification <- true
 			pr.debug("proxy notified about decisions", 11)
 		}
