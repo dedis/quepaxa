@@ -59,7 +59,10 @@ func (cl *Client) WaitForConnections() {
 
 	var b [4]byte
 	bs := b[:4]
-	Listener, _ := net.Listen("tcp", cl.clientListenAddress)
+	Listener, err := net.Listen("tcp", cl.clientListenAddress)
+	if err != nil {
+		panic(err.Error())
+	}
 	cl.debug("Listening to incoming connections on "+cl.clientListenAddress, 0)
 
 	for true {
@@ -108,6 +111,7 @@ func (cl *Client) connectionListener(reader *bufio.Reader, id int32) {
 			}
 		} else {
 			cl.debug("Error: received unknown message type", 1)
+			return
 		}
 	}
 }
@@ -123,7 +127,7 @@ func (cl *Client) Run() {
 
 			cl.debug("Checking channel\n", -1)
 			replicaMessage := <-cl.incomingChan
-			cl.debug("Received replica message", 0)
+			cl.debug("Received message", 0)
 			code := replicaMessage.Code
 			switch code {
 
@@ -157,16 +161,19 @@ func (cl *Client) internalSendMessage(peer int64, rpcPair *common.RPCPair) {
 	err := w.WriteByte(code)
 	if err != nil {
 		cl.debug("Error writing message code byte:"+err.Error(), 1)
+		cl.socketMutexs[peer].Unlock()
 		return
 	}
 	err = msg.Marshal(w)
 	if err != nil {
 		cl.debug("Error while marshalling:"+err.Error(), 1)
+		cl.socketMutexs[peer].Unlock()
 		return
 	}
 	err = w.Flush()
 	if err != nil {
 		cl.debug("Error while flushing:"+err.Error(), 1)
+		cl.socketMutexs[peer].Unlock()
 		return
 	}
 	cl.socketMutexs[peer].Unlock()

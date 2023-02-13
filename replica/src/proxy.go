@@ -48,10 +48,8 @@ type Proxy struct {
 	proxyToProposerFetchChan chan FetchRequest
 	proposerToProxyFetchChan chan FetchResposne
 
-	clientBatchRpc  uint8 // 0
-	clientStatusRpc uint8 // 1
-	decideRequest   uint8 // 2
-	decideResponse  uint8 // 3
+	clientBatchRpc  uint8 // 1
+	clientStatusRpc uint8 // 2
 
 	replicatedLog []Slot // the replicated log of the proxy
 
@@ -125,10 +123,8 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		recorderToProxyChan:               recorderToProxyChan,
 		proxyToProposerFetchChan:          proxyToProposerFetchChan,
 		proposerToProxyFetchChan:          proposerToProxyFetchChan,
-		clientBatchRpc:                    0,
-		clientStatusRpc:                   1,
-		decideRequest:                     2, // not needed
-		decideResponse:                    3, //not needed
+		clientBatchRpc:                    1,
+		clientStatusRpc:                   2,
 		replicatedLog:                     make([]Slot, 0),
 		committedIndex:                    0,
 		lastProposedIndex:                 0,
@@ -199,8 +195,6 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 
 	pr.RegisterRPC(new(client.ClientBatch), pr.clientBatchRpc)
 	pr.RegisterRPC(new(client.ClientStatus), pr.clientStatusRpc)
-	pr.RegisterRPC(new(DecideRequest), pr.decideRequest)
-	pr.RegisterRPC(new(DecideResponse), pr.decideResponse)
 
 	rand.Seed(time.Now().UTC().UnixNano())
 

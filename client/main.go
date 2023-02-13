@@ -10,10 +10,11 @@ import (
 )
 
 func main() {
-	name := flag.Int64("name", 5, "name of the client as specified in the configuration.yml")
+	name := flag.Int64("name", 21, "name of the client as specified in the configuration.yml")
 	configFile := flag.String("config", "configuration/local/configuration.yml", "raxos configuration file")
 	logFilePath := flag.String("logFilePath", "logs/", "log file path")
 	batchSize := flag.Int64("batchSize", 50, "client batch size")
+	batchTime := flag.Int64("batchTime", 50, "client batch time micro seconds")
 	testDuration := flag.Int64("testDuration", 60, "test duration in seconds")
 	arrivalRate := flag.Int64("arrivalRate", 10000, "poisson arrival rate in requests per second")
 	requestType := flag.String("requestType", "status", "request type: [status , request]")
@@ -32,7 +33,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cl := cmd.New(*name, cfg, *logFilePath, *batchSize, *testDuration, *arrivalRate, *requestType, *operationType, int(*debugLevel), *debugOn, int(*keyLen), int(*valLen), *slowdown)
+	cl := cmd.New(*name, cfg, *logFilePath, *batchSize, *batchTime, *testDuration, *arrivalRate, *requestType, *operationType, int(*debugLevel), *debugOn, int(*keyLen), int(*valLen), *slowdown)
 
 	cl.StartOutgoingLinks()
 	go cl.WaitForConnections()

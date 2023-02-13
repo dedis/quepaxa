@@ -109,8 +109,6 @@ func (cl *Client) computeStats() {
 	duration := cl.testDuration
 	errorRate := (numTotalSentRequests - len(throughputList)) * 100.0 / numTotalSentRequests
 
-	fmt.Printf("\n Total Sent Requests:= %v \n", numTotalSentRequests)
-	fmt.Printf("Total Received Responses:= %v \n", numTotalReceivedResponses)
 	fmt.Printf("Total time := %v seconds\n", duration)
 	fmt.Printf("Throughput  := %v requests per second\n", len(throughputList)/int(duration))
 	fmt.Printf("Median Latency  := %v micro seconds per request\n", medianLatency)

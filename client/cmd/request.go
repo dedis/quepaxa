@@ -37,7 +37,7 @@ func (cl *Client) SendRequests() {
 
 	// end of test
 
-	time.Sleep(time.Duration(cl.testDuration) * time.Second) // additional sleep duration to make sure that all the in-flight responses are received
+	time.Sleep(time.Duration(cl.testDuration*2) * time.Second) // additional sleep duration to make sure that all the in-flight responses are received
 	fmt.Printf("Finish sending requests \n")
 	cl.computeStats()
 }
@@ -84,13 +84,12 @@ func (cl *Client) startRequestGenerators() {
 		go func(threadNumber int) {
 
 			localCounter := 0
-
+			lastSent := time.Now()
 			for true {
-
 				numRequests := int64(0)
 				var requests []*client.ClientBatch_SingleMessage
 				// this loop collects requests until the minimum batch size is met
-				for numRequests < cl.batchSize {
+				for !(numRequests >= cl.batchSize || (time.Now().Sub(lastSent).Microseconds() > cl.batchTime && numRequests > 0)) {
 					_ = <-cl.arrivalChan // keep collecting new requests arrivals
 					requests = append(requests, &client.ClientBatch_SingleMessage{
 						Message: fmt.Sprintf("%d%v%v", rand.Intn(2),
@@ -134,7 +133,7 @@ func (cl *Client) startRequestGenerators() {
 					batch: batch,
 					time:  time.Now(),
 				})
-
+				lastSent = time.Now()
 				localCounter++
 			}
 		}(i)
