@@ -26,11 +26,11 @@ func (pr *Proxy) hasAllDecided(epoch int) bool {
 // update the start time and the end time of the epoch
 
 func (pr *Proxy) updateEpochTime(index int) {
-	
-	if pr.leaderMode == 0 || pr.leaderMode == 1 {
+
+	if pr.leaderMode != 2 {
 		return
 	}
-	
+
 	epoch := index / pr.epochSize
 	for len(pr.epochTimes) < epoch+1 {
 		pr.epochTimes = append(pr.epochTimes, EpochTime{
@@ -69,7 +69,7 @@ func (pr *Proxy) getLeaderSequence(instance int64) []int64 {
 
 		return rA
 	}
-	if pr.leaderMode == 1 {
+	if pr.leaderMode == 1 || pr.leaderMode == 3 {
 		// fixed order, static partition
 		// assumes that node names start with 1
 		epoch := instance / int64(pr.epochSize)
@@ -115,18 +115,6 @@ func (pr *Proxy) getLeaderSequence(instance int64) []int64 {
 	panic("should not happen")
 }
 
-// return the pre-agreed, non changing waiting time for the instance by the proposer
-
-func (pr *Proxy) getLeaderWait(sequence []int64) int64 {
-
-	for j := 0; j < len(sequence); j++ {
-		if sequence[j] == pr.name {
-			return pr.leaderTimeout * int64(j)
-		}
-	}
-	panic("should not happen")
-}
-
 // return the epoch - 1 th epoch's first element
 
 func (pr *Proxy) getLeaderSequenceFromLastEpoch(epoch int64) []int64 {
@@ -141,7 +129,7 @@ func (pr *Proxy) getLeaderSequenceFromLastEpoch(epoch int64) []int64 {
 // the string is in the form of Epoch1,2,3,4,5 convert it to int64[]
 
 func (pr *Proxy) convertToIntArray(decisionId string) []int64 {
-	// decision id is int form Epoch1,2,3,4,5
+	// decision id is in the form Epoch1,2,3,4,5
 	s := strings.Split(decisionId[5:], ",")
 	intArr := make([]int64, pr.numReplicas)
 	if len(s) != pr.numReplicas {
@@ -154,7 +142,21 @@ func (pr *Proxy) convertToIntArray(decisionId string) []int64 {
 	return intArr
 }
 
-// checks if the corresponding epoch is greater than numReplicas and index is the first element of the epoch
+// return the pre-agreed, non changing waiting time for the instance by the proposer
+
+func (pr *Proxy) getLeaderWait(sequence []int64) int64 {
+	if pr.leaderMode == 3 {
+		return 0
+	}
+	for j := 0; j < len(sequence); j++ {
+		if sequence[j] == pr.name {
+			return pr.leaderTimeout * int64(j)
+		}
+	}
+	panic("should not happen")
+}
+
+// checks if the corresponding epoch is greater than 2xnumReplicas and index is the first element of the epoch
 func (pr *Proxy) isBeginningOfEpoch(index int64) bool {
 	epoch := index / int64(pr.epochSize)
 
@@ -185,14 +187,23 @@ func (pr *Proxy) proposePreviousEpochSummary(index int64) {
 	})
 	pr.debug("proposing new summary for index "+fmt.Sprintf("%v, epoch:%v, sequence:%v ", index, curEpoch, strSequence), 13)
 
+	waitTime := int(pr.getLeaderWait(pr.getLeaderSequence(index)))
+	isLeader := true
+
+	if pr.leaderMode == 3 {
+		isLeader = false
+		panic("should this happen?")
+	} else if pr.leaderMode != 3 && waitTime != 0 {
+		isLeader = false
+	}
+
 	newProposalRequest := ProposeRequest{
 		instance:             index,
 		proposalStr:          strProposals,
 		proposalBtch:         btchProposals,
-		msWait:               int(pr.getLeaderWait(pr.getLeaderSequence(index))),
+		isLeader:             isLeader,
 		lastDecidedIndexes:   pr.lastDecidedIndexes,
 		lastDecidedDecisions: pr.lastDecidedDecisions,
-		leaderSequence:       pr.getLeaderSequence(index),
 	}
 
 	pr.proxyToProposerChan <- newProposalRequest
@@ -221,7 +232,6 @@ func (pr *Proxy) proposePreviousEpochSummary(index int64) {
 }
 
 // statistically calculate the leader sequence in the form 1,2,3,4,5
-
 func (pr *Proxy) calculateSequence(epoch int) string {
 
 	if epoch < 2*pr.numReplicas {
@@ -239,7 +249,7 @@ func (pr *Proxy) calculateSequence(epoch int) string {
 		if pr.epochTimes[i].ended == true {
 			ld := pr.getLeaderSequence(int64(i * pr.epochSize))[0]
 			times[ld-1] = append(times[ld-1], pr.epochTimes[i].endTime.Sub(pr.epochTimes[i].startTime).Microseconds())
-		}else{
+		} else {
 			break
 		}
 	}
@@ -281,7 +291,9 @@ func (pr *Proxy) calculateSequence(epoch int) string {
 	}
 
 	pr.debug("leader ordering proposed for the epoch "+fmt.Sprintf("%v is %v", epoch, sequence), 10)
-
+	if len(sequence) != pr.numReplicas {
+		panic("should not happen")
+	}
 	s := ""
 
 	for i := 0; i < pr.numReplicas; i++ {
