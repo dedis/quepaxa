@@ -22,7 +22,7 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 	if time.Now().Sub(pr.lastTimeProposed).Microseconds() >= pr.batchTime {
 		if pr.lastProposedIndex-pr.committedIndex < pr.pipelineLength {
 			proposeIndex := pr.lastProposedIndex + 1
-			for proposeIndex+1 <= int64(len(pr.replicatedLog)) {
+			for proposeIndex+1 <= int64(len(pr.replicatedLog)) && pr.replicatedLog[proposeIndex].decided {
 				proposeIndex++ // we always propose for a new index
 			}
 			msWait := int(pr.getLeaderWait(pr.getLeaderSequence(proposeIndex)))

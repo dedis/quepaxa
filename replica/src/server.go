@@ -141,7 +141,7 @@ func (s *Server) createProposers() {
 	create a new server instance, inside which there are proxy instance, proposer instances and recorder instance. initialize all fields
 */
 
-func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, leaderTimeout int64, pipelineLength int64, benchmark int64, debugOn bool, debugLevel int, leaderMode int, serverMode int, batchTime int64, epochSize int) *Server {
+func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, leaderTimeout int64, pipelineLength int64, benchmark int64, debugOn bool, debugLevel int, leaderMode int, serverMode int, batchTime int64, epochSize int, benchmarkMode int, keyLen int, valueLen int) *Server {
 
 	sr := Server{
 		name:                        name,
@@ -176,7 +176,7 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		}
 	}
 
-	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store, serverMode, sr.proxyToProposerFetchChan, sr.proposerToProxyFetchChan, sr.batchTime, sr.epochSize, sr.proxyToProposerDecisionChan)
+	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store, serverMode, sr.proxyToProposerFetchChan, sr.proposerToProxyFetchChan, sr.batchTime, sr.epochSize, sr.proxyToProposerDecisionChan, benchmarkMode, keyLen, valueLen)
 	sr.RecorderInstance = NewRecorder(*cfg, sr.store, sr.lastSeenTimeProposers, sr.recorderToProxyChan, name, debugOn, debugLevel)
 	return &sr
 }
