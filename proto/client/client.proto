@@ -12,7 +12,7 @@ message ClientBatch {
   string id = 3; // unique identifier for a batch
 }
 
-// status requests/responses are sent by/to clients to invoke different control plane operations on replicas after bootstrap
+// status requests/responses are sent by/to clients to invoke different control plane operations on replicas
 
 message ClientStatus {
   int64 sender = 1;
