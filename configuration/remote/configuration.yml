@@ -29,13 +29,13 @@ clients:
     clientport: 10000
   - name: 22
     ip: 10.156.33.146
-    clientport: 10001
+    clientport: 10000
   - name: 23
     ip: 10.156.33.147
     clientport: 10000
   - name: 24
     ip: 10.156.33.148
-    clientport: 10001   
+    clientport: 10000   
   - name: 25
     ip: 10.156.33.149
     clientport: 10000
