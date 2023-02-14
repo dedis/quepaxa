@@ -10,44 +10,38 @@ import (
 )
 
 type Proposer struct {
-	numReplicas              int
-	name                     int64
-	threadId                 int64
-	peers                    []peer // gRPC connection list (not shared)
-	proxyToProposerChan      chan ProposeRequest
-	proposerToProxyChan      chan ProposeResponse
-	proxyToProposerFetchChan chan FetchRequest
-	proposerToProxyFetchChan chan FetchResposne
-	//lastSeenTimes            [][]*time.Time // use proposer name - 1 as index
-	leaderTimeout               int64
+	numReplicas                 int
+	name                        int64
+	threadId                    int64
+	peers                       []peer // gRPC connection list (not shared)
+	proxyToProposerChan         chan ProposeRequest
+	proposerToProxyChan         chan ProposeResponse
+	proxyToProposerFetchChan    chan FetchRequest
+	proposerToProxyFetchChan    chan FetchResposne
 	debugOn                     bool // if turned on, the debug messages will be print on the console
 	debugLevel                  int  // debug level
 	hi                          int  // hi priority
 	serverMode                  int  // if 1, use the fast path LAN optimizations
-	leaderMode                  int
 	proxyToProposerDecisionChan chan Decision
 }
 
 // instantiate a new Proposer
 
-func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, lastSeenTimes [][]*time.Time, debugOn bool, debugLevel int, hi int, serverMode int, leaderTimeout int64, leaderMode int, proxyToProposerDecisionChan chan Decision) *Proposer {
+func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, debugOn bool, debugLevel int, hi int, serverMode int, proxyToProposerDecisionChan chan Decision) *Proposer {
 
 	pr := Proposer{
-		numReplicas:              len(peers),
-		name:                     name,
-		threadId:                 threadId + 1,
-		peers:                    peers,
-		proxyToProposerChan:      proxyToProposerChan,
-		proposerToProxyChan:      proposerToProxyChan,
-		proxyToProposerFetchChan: proxyToProposerFetchChan,
-		proposerToProxyFetchChan: proposerToProxyFetchChan,
-		//lastSeenTimes:            lastSeenTimes,
-		leaderTimeout:               leaderTimeout,
+		numReplicas:                 len(peers),
+		name:                        name,
+		threadId:                    threadId + 1,
+		peers:                       peers,
+		proxyToProposerChan:         proxyToProposerChan,
+		proposerToProxyChan:         proposerToProxyChan,
+		proxyToProposerFetchChan:    proxyToProposerFetchChan,
+		proposerToProxyFetchChan:    proposerToProxyFetchChan,
 		debugOn:                     debugOn,
 		debugLevel:                  debugLevel,
 		hi:                          hi,
 		serverMode:                  serverMode,
-		leaderMode:                  leaderMode,
 		proxyToProposerDecisionChan: proxyToProposerDecisionChan,
 	}
 
@@ -124,14 +118,14 @@ func (prop *Proposer) handleFetchRequest(message FetchRequest) FetchResposne {
 
 	for !found {
 
-		client := prop.getRandomClient()
-		clientCon := client.client
+		client_r := prop.getRandomClient()
+		clientCon := client_r.client
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Second))
 		resp, err := clientCon.FetchBatches(ctx, &DecideRequest{
 			Ids: message.ids,
 		})
 
-		prop.debug("proposer sent a grpc fetch request to "+fmt.Sprintf("%v", client), 0)
+		prop.debug("proposer sent a grpc fetch request to "+fmt.Sprintf("%v", client_r), 0)
 
 		if err == nil && resp != nil {
 			prop.debug("proposer received a grpc fetch response "+fmt.Sprintf("%v", resp), 0)
@@ -150,7 +144,7 @@ func (prop *Proposer) handleFetchRequest(message FetchRequest) FetchResposne {
 
 			if len(cltBatches) == numBtches {
 				found = true
-				prop.debug("proposer received all the client batches for the fetch request "+fmt.Sprintf("%v", cltBatches), 1)
+				prop.debug("proposer received all the client_r batches for the fetch request "+fmt.Sprintf("%v", cltBatches), 1)
 			}
 
 		}
@@ -240,7 +234,7 @@ func (prop *Proposer) isGreaterThan(ele1 RecorderResponse, ele2 *RecorderRespons
 
 }
 
-// return the maximum of F’ from all replies in R
+// return the maximum of "set" from all replies in R
 
 func (prop *Proposer) getMaxFromResponses(array []RecorderResponse, set string) ProposerMessage_Proposal {
 	if len(array) == 0 {
@@ -320,7 +314,7 @@ func (prop *Proposer) isEqualProposal(p ProposerMessage_Proposal, m ProposerMess
 	return true
 }
 
-// run the proposer logic
+// main proposer logic
 
 func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeResponse {
 	prop.debug("proposer received propose request from the proxy "+fmt.Sprintf("%v", message), -1)
@@ -344,8 +338,6 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 		Pi := make([]ProposerMessage_Proposal, prop.numReplicas)
 
-		//todo add fast path where the first try does not contain the client batches
-
 		for i := 0; i < prop.numReplicas; i++ {
 			Pi[i] = ProposerMessage_Proposal{
 				Priority:      P.Priority,
@@ -355,9 +347,9 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 				ClientBatches: P.ClientBatches,
 			}
 		}
-		if S%4 == 0 && (S > 4 || message.msWait != 0) {
+		if S%4 == 0 && (S > 4 || !message.isLeader) {
 			for i := 0; i < prop.numReplicas; i++ {
-				Pi[i].Priority = int64(rand.Intn(prop.hi-2)) + 1
+				Pi[i].Priority = int64(rand.Intn(prop.hi-10)) + 1
 			}
 
 			for i := 0; i < prop.numReplicas; i++ {
@@ -366,7 +358,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 		}
 
 		responses := make(chan *RecorderResponse, prop.numReplicas)
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(100)*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20)*time.Second)
 		prop.debug("proposer sending rpc in parallel ", -1)
 		wg := sync.WaitGroup{}
 		for i := 0; i < prop.numReplicas; i++ {
@@ -376,10 +368,10 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 				if s == 4 && prop.serverMode == 1 {
 					newP := &ProposerMessage_Proposal{
-						Priority:      P.Priority,
-						ProposerId:    P.ProposerId,
-						ThreadId:      P.ThreadId,
-						Ids:           P.Ids,
+						Priority:      pi.Priority,
+						ProposerId:    pi.ProposerId,
+						ThreadId:      pi.ThreadId,
+						Ids:           pi.Ids,
 						ClientBatches: make([]*ProposerMessage_ClientBatch, 0),
 					}
 					resp, err := p.client.ESP(ctx, &ProposerMessage{
@@ -391,27 +383,33 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 					})
 
 					if err != nil {
-						panic(fmt.Sprintf("%v", err))
 						return
 					}
 
 					if resp.ClientBatchesNotFound {
 						prop.debug("re-proposing because the recorder did not have the batches for instance  "+fmt.Sprintf(" %v ", message.instance), 17)
+
+						newP = &ProposerMessage_Proposal{
+							Priority:      pi.Priority,
+							ProposerId:    pi.ProposerId,
+							ThreadId:      pi.ThreadId,
+							Ids:           pi.Ids,
+							ClientBatches: pi.ClientBatches,
+						}
 						resp, err = p.client.ESP(ctx, &ProposerMessage{
 							Sender: prop.name,
 							Index:  message.instance,
-							P:      &P,
+							P:      newP,
 							S:      int64(s),
 						})
 					}
 
 					if resp != nil && resp.S > 0 {
 						responses <- resp
+						prop.debug("proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v, and M:%v", resp.S, resp.F, resp.M)+" for index "+fmt.Sprintf("%v", message.instance), -1)
 					} else {
-						panic("response :" + fmt.Sprintf("%v %v", err, resp))
+						return
 					}
-
-					prop.debug("proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v, and M:%v", resp.S, resp.F, resp.M)+" for index "+fmt.Sprintf("%v", message.instance), -1)
 					return
 
 				} else {
@@ -431,11 +429,10 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 					if resp != nil && resp.S > 0 {
 						responses <- resp
+						prop.debug("proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v, and M:%v", resp.S, resp.F, resp.M)+" for index "+fmt.Sprintf("%v", message.instance), -1)
 					} else {
-						panic("response :" + fmt.Sprintf("%v %v", err, resp))
+						return
 					}
-
-					prop.debug("proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v, and M:%v", resp.S, resp.F, resp.M)+" for index "+fmt.Sprintf("%v", message.instance), -1)
 					return
 				}
 
@@ -448,8 +445,6 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 			cancel()
 			close(responses)
 		}()
-
-		// todo add fast path checks where HasClientBacthes is false when s = 0, in which case the proposer sends the s=0 again with actual batches
 
 		responsesArray := make([]RecorderResponse, 0)
 		for r := range responses {
@@ -480,8 +475,10 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 			}
 		}
 
-		prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer received recorder responses with all same S with my S "+" for index "+fmt.Sprintf("%v", message.instance), 2)
-
+		if allRepliesHaveS {
+			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer received recorder responses with all same S with my S "+" for index "+fmt.Sprintf("%v", message.instance), 2)
+		}
+		
 		if allRepliesHaveS && S%4 == 0 { //propose phase
 			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer is processing S%4==0 responses for index "+fmt.Sprintf("%v", message.instance), 2)
 			allRepliesHaveFHiFit := true
@@ -559,8 +556,9 @@ func (prop *Proposer) runProposer() {
 				response := prop.handleProposeRequest(proposeMessage)
 				if response.index != -1 {
 					prop.proposerToProxyChan <- response
-					prop.debug("proposer sent back to response to proxy for the propose request to "+fmt.Sprintf("%v", response), 0)
+					prop.debug("proposer sent back to response to proxy for the propose request : "+fmt.Sprintf("%v", response), 0)
 				}
+				break
 			case decision := <-prop.proxyToProposerDecisionChan:
 				prop.debug("proposer received decision request", 9)
 				prop.handleDecisionRequest(decision)
@@ -575,7 +573,7 @@ func (prop *Proposer) runProposer() {
 func (prop *Proposer) handleDecisionRequest(decision Decision) {
 	prop.debug("proposer starting to handle a decision request "+fmt.Sprintf("%v", decision), 11)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(100*time.Second))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20*time.Second))
 	decidedSlots := prop.extractDecisionSlots(decision.indexes, decision.decisions)
 	prop.debug("proposer sending rpc in parallel ", -1)
 	wg := sync.WaitGroup{}
@@ -597,6 +595,7 @@ func (prop *Proposer) handleDecisionRequest(decision Decision) {
 	}()
 }
 
+// convert between proto types
 func (prop *Proposer) extractDecisionSlots(indexes []int, decisions [][]string) []*Decisions_DecidedSlot {
 	if len(indexes) != len(decisions) {
 		panic("should not happen")
