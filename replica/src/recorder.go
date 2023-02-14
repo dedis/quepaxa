@@ -8,7 +8,6 @@ import (
 	"raxos/proto/client"
 	"strconv"
 	"sync"
-	"time"
 )
 
 type Value struct {
@@ -34,7 +33,6 @@ type Recorder struct {
 	server        *grpc.Server // gRPC server
 	connection    *GRPCConnection
 	clientBatches *ClientBatchStore
-	//lastSeenTimeProposers [][]*time.Time // last seen times of each proposer
 	recorderToProxyChan   chan Decision
 	name                  int64
 	slots                 []RecorderSlot // recorder side replicated log
@@ -46,7 +44,7 @@ type Recorder struct {
 
 // instantiate a new Recorder
 
-func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchStore, lastSeenTimeProposers [][]*time.Time, recorderToProxyChan chan Decision, name int64, debugOn bool, debugLevel int) *Recorder {
+func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchStore, recorderToProxyChan chan Decision, name int64, debugOn bool, debugLevel int) *Recorder {
 
 	re := Recorder{
 		address:       "",
@@ -60,8 +58,8 @@ func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchSto
 		slots:                 make([]RecorderSlot, 0),
 		cfg:                   cfg,
 		instanceCreationMutex: &sync.Mutex{},
-		debugLevel:            debugLevel,
 		debugOn:               debugOn,
+		debugLevel:            debugLevel,
 	}
 
 	// serverAddress
@@ -73,7 +71,7 @@ func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchSto
 		}
 	}
 
-	re.debug("recorder created a new recorder  "+fmt.Sprintf("%v", re), -1)
+	re.debug("created a new recorder  "+fmt.Sprintf("%v", re.name), -1)
 
 	return &re
 }
@@ -102,7 +100,7 @@ func (r *Recorder) NetworkInit() {
 	}
 	r.listener = listener
 	go func() {
-		err := r.server.Serve(listener)
+		err := r.server.Serve(r.listener)
 		if err != nil {
 			panic("should not happen")
 		}
@@ -169,7 +167,7 @@ func (r *Recorder) max(oldValue Value, p *ProposerMessage_Proposal) Value {
 	return maxm
 }
 
-// main recorder logic goes here
+// main recorder esp logic
 
 func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (int64, Value, Value) {
 	re.instanceCreationMutex.Lock()
@@ -319,10 +317,6 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 
 	re.debug("recorder responding to esp request  "+fmt.Sprintf("%v", req)+" with response "+fmt.Sprintf("%v", response)+" for index "+fmt.Sprintf("%v", req.Index), -1)
 
-	// Mark the time of the proposal message for the proposer
-	//proposer := req.Sender
-	//*re.lastSeenTimeProposers[req.Index][proposer-1] = time.Now()
-	//re.debug("recorder updated the last seen times  "+fmt.Sprintf("%v", re.lastSeenTimeProposers)+" for index "+fmt.Sprintf("%v", req.Index), -1)
 	return &response
 }
 

@@ -177,6 +177,6 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 	}
 
 	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store, serverMode, sr.proxyToProposerFetchChan, sr.proposerToProxyFetchChan, sr.batchTime, sr.epochSize, sr.proxyToProposerDecisionChan, benchmarkMode, keyLen, valueLen)
-	sr.RecorderInstance = NewRecorder(*cfg, sr.store, sr.lastSeenTimeProposers, sr.recorderToProxyChan, name, debugOn, debugLevel)
+	sr.RecorderInstance = NewRecorder(*cfg, sr.store, sr.recorderToProxyChan, name, debugOn, debugLevel)
 	return &sr
 }
