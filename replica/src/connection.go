@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+// GRPCConnection is a grpc wrapper for recorder
+
 type GRPCConnection struct {
 	Recorder *Recorder
 }
