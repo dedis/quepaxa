@@ -120,7 +120,7 @@ func (pr *Proxy) updateStateMachine(sendResponse bool) {
 				responseBatches = append(responseBatches, responseBatch)
 			}
 			pr.lastTimeCommitted = time.Now()
-			pr.debug("proxy committed  "+fmt.Sprintf("%v", pr.committedIndex+1), 8)
+			pr.debug("proxy committed  "+fmt.Sprintf("%v", pr.committedIndex+1), 20)
 			pr.replicatedLog[i].committed = true
 			// empty the proposed batch
 			pr.replicatedLog[i].proposedBatch = make([]string, 0)
