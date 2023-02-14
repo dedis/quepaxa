@@ -84,7 +84,6 @@ func (cl *Client) computeStats() {
 	defer f.Close()
 
 	numTotalSentRequests := cl.getNumberOfSentRequests(cl.sentRequests)
-	numTotalReceivedResponses := cl.getNumberOfReceivedResponses(cl.receivedResponses)
 	var throughputList []int64 // contains the time duration spent for successful requests
 	for i := 0; i < numRequestGenerationThreads; i++ {
 		fmt.Printf("Calculating stats for thread %d \n", i)
