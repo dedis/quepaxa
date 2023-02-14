@@ -32,7 +32,7 @@ echo "Started 5 servers"
 
 sleep 3
 
-./${ctl_path} --name 22--requestType status --operationType 1 >${output_path}status1.log
+./${ctl_path} --name 22 --requestType status --operationType 1 >${output_path}status1.log
 
 echo "Sent initial status to bootstrap"
 
