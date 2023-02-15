@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/go-redis/redis/v8 v8.11.5
-	github.com/magefile/mage v1.12.1
+	github.com/magefile/mage v1.14.0
 	github.com/montanaflynn/stats v0.6.6
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0
