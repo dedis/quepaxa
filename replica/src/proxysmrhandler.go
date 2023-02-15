@@ -37,19 +37,19 @@ func (pr *Proxy) decidedTheProposedValue(index int, decisions []string) bool {
 // for each item in the list, if it is found in the toBeProposed, then delete it
 
 func (pr *Proxy) removeDecidedItemsFromFutureProposals(items []string) {
-	for i := 0; i < len(items); i++ {
-		position := -1
-		for j := 0; j < len(pr.toBeProposed); j++ {
-			if items[i] == pr.toBeProposed[j] {
-				position = j
-				break
-			}
-		}
-		if position != -1 {
-			pr.toBeProposed[position] = pr.toBeProposed[len(pr.toBeProposed)-1]
-			pr.toBeProposed = pr.toBeProposed[:len(pr.toBeProposed)-1]
-		}
-	}
+	//for i := 0; i < len(items); i++ {
+	//	position := -1
+	//	for j := 0; j < len(pr.toBeProposed); j++ {
+	//		if items[i] == pr.toBeProposed[j] {
+	//			position = j
+	//			break
+	//		}
+	//	}
+	//	if position != -1 {
+	//		pr.toBeProposed[position] = pr.toBeProposed[len(pr.toBeProposed)-1]
+	//		pr.toBeProposed = pr.toBeProposed[:len(pr.toBeProposed)-1]
+	//	}
+	//}
 }
 
 // apply the SMR logic for each client request
@@ -120,7 +120,7 @@ func (pr *Proxy) updateStateMachine(sendResponse bool) {
 				responseBatches = append(responseBatches, responseBatch)
 			}
 			pr.lastTimeCommitted = time.Now()
-			pr.debug("proxy committed  "+fmt.Sprintf("%v", pr.committedIndex+1), 20)
+			pr.debug("proxy committed  "+fmt.Sprintf("%v, number of pending request batches %v ", pr.committedIndex+1, len(pr.toBeProposed)), 0)
 			pr.replicatedLog[i].committed = true
 			// empty the proposed batch
 			pr.replicatedLog[i].proposedBatch = make([]string, 0)
@@ -214,7 +214,7 @@ func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 		if pr.replicatedLog[message.index].decided == false {
 			pr.replicatedLog[message.index].decided = true
 			pr.replicatedLog[message.index].decidedBatch = message.decisions
-			pr.debug("proxy decided as a result of propose "+fmt.Sprintf(" for instance %v with initial value", message.index, message.decisions[0]), 1)
+			pr.debug("proxy decided as a result of propose "+fmt.Sprintf(" for instance %v with initial value", message.index, message.decisions[0]), 20)
 			pr.updateEpochTime(message.index)
 
 			if !pr.decidedTheProposedValue(message.index, message.decisions) {
@@ -277,8 +277,9 @@ func (pr *Proxy) handleRecorderResponse(message Decision) {
 		if pr.replicatedLog[index].decided == false {
 			pr.replicatedLog[index].decided = true
 			pr.replicatedLog[index].decidedBatch = batches
+
 			pr.updateEpochTime(index)
-			pr.debug("proxy decided from the recorder response "+fmt.Sprintf(" instance %v with batches %v", index, batches), 1)
+			pr.debug("proxy decided from the recorder response "+fmt.Sprintf(" instance %v with batches %v", index, batches), 20)
 			if !pr.decidedTheProposedValue(index, batches) {
 				pr.toBeProposed = append(pr.toBeProposed, pr.replicatedLog[index].proposedBatch...)
 				pr.replicatedLog[index].proposedBatch = nil

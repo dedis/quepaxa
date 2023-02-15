@@ -127,8 +127,8 @@ func (s *Server) setupgRPC() []peer {
 // create M number of proposers
 
 func (s *Server) createProposers() {
-	peers := s.setupgRPC()
 	for i := 0; i < s.numProposers+1; i++ { //+1 is for decision sending
+		peers := s.setupgRPC()
 		// create N gRPC connections
 		hi := 100000
 		newProposer := NewProposer(s.name, int64(i), peers, s.proxyToProposerChan, s.proposerToProxyChan, s.proxyToProposerFetchChan, s.proposerToProxyFetchChan, s.debugOn, s.debugLevel, hi, s.serverMode, s.proxyToProposerDecisionChan)

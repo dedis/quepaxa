@@ -31,6 +31,7 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 			if pr.instanceTimeouts[proposeIndex] != nil {
 				pr.instanceTimeouts[proposeIndex].Cancel()
 			}
+			pr.debug("timeout for instance "+fmt.Sprintf("%v is %v", proposeIndex, msWait), 0)
 			pr.instanceTimeouts[proposeIndex] = common.NewTimerWithCancel(time.Duration(msWait) * time.Microsecond)
 			pr.instanceTimeouts[proposeIndex].SetTimeoutFuntion(func() {
 				pr.proposeRequestIndex <- ProposeRequestIndex{index: proposeIndex}
@@ -38,7 +39,6 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 			pr.lastProposedIndex = proposeIndex
 			pr.instanceTimeouts[proposeIndex].Start()
 			pr.lastTimeProposed = time.Now()
-
 		}
 	}
 }
@@ -52,6 +52,7 @@ func (pr *Proxy) handleClientStatus(status client.ClientStatus) {
 			pr.debug("proxy starting proposers  ", -1)
 			pr.server.StartProposers()
 			pr.serverStarted = true
+			pr.startTime = time.Now()
 		}
 	}
 	if status.Operation == 2 {
@@ -113,21 +114,6 @@ func (pr *Proxy) printConsensusLog() {
 // propose to index
 
 func (pr *Proxy) proposeToIndex(proposeIndex int64) {
-	pr.instanceTimeouts[proposeIndex] = nil
-	if int64(len(pr.replicatedLog)) > proposeIndex && pr.replicatedLog[proposeIndex].decided == true {
-		pr.debug("did not propose for index "+fmt.Sprintf("%v", proposeIndex)+" because it was decided", 9)
-		return
-	}
-
-	pr.debug("proposing for index "+fmt.Sprintf("%v", proposeIndex), 9)
-
-	if pr.leaderMode == 2 {
-		if pr.isBeginningOfEpoch(proposeIndex) {
-			pr.debug("proposing the last epoch summary for index "+fmt.Sprintf("%v", proposeIndex)+"", 13)
-			pr.proposePreviousEpochSummary(proposeIndex)
-			return
-		}
-	}
 
 	batchSize := pr.batchSize
 	if len(pr.toBeProposed) < batchSize {
@@ -148,6 +134,7 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 	} else {
 		// send a new proposal Request to the ProposersChan
 		strProposals = pr.toBeProposed[0:batchSize]
+		pr.toBeProposed = pr.toBeProposed[batchSize:]
 		btchProposals = make([]client.ClientBatch, 0)
 
 		for i := 0; i < len(strProposals); i++ {
@@ -156,6 +143,22 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 				panic("batch not found for the id")
 			}
 			btchProposals = append(btchProposals, btch)
+		}
+	}
+
+	pr.instanceTimeouts[proposeIndex] = nil
+	if int64(len(pr.replicatedLog)) > proposeIndex && pr.replicatedLog[proposeIndex].decided == true {
+		pr.debug("did not propose for index "+fmt.Sprintf("%v", proposeIndex)+" because it was decided", 9)
+		return
+	}
+
+	pr.debug("proposing for index "+fmt.Sprintf("%v at time %v ms", proposeIndex, time.Now().Sub(pr.startTime).Milliseconds()), 20)
+
+	if pr.leaderMode == 2 {
+		if pr.isBeginningOfEpoch(proposeIndex) {
+			pr.debug("proposing the last epoch summary for index "+fmt.Sprintf("%v", proposeIndex)+"", 13)
+			pr.proposePreviousEpochSummary(proposeIndex)
+			return
 		}
 	}
 
@@ -198,7 +201,6 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 	}
 
 	// reset the variables
-	pr.toBeProposed = pr.toBeProposed[batchSize:]
 	pr.lastDecidedIndexes = make([]int, 0)
 	pr.lastDecidedDecisions = make([][]string, 0)
 }

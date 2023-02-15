@@ -9,7 +9,7 @@ leaderTimeout = 3000000
 serverMode = 0
 leaderMode = 0
 pipeline = 1
-batchTime = 1
+batchTime = 100
 batchSize = 1
 arrivalRate = 1000
 

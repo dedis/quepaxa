@@ -387,7 +387,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 					}
 
 					if resp.ClientBatchesNotFound {
-						prop.debug("re-proposing because the recorder did not have the batches for instance  "+fmt.Sprintf(" %v ", message.instance), 17)
+						prop.debug("re-proposing because the recorder did not have the batches for instance  "+fmt.Sprintf(" %v ", message.instance), 20)
 
 						newP = &ProposerMessage_Proposal{
 							Priority:      pi.Priority,
@@ -478,7 +478,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 		if allRepliesHaveS {
 			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer received recorder responses with all same S with my S "+" for index "+fmt.Sprintf("%v", message.instance), 2)
 		}
-		
+
 		if allRepliesHaveS && S%4 == 0 { //propose phase
 			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer is processing S%4==0 responses for index "+fmt.Sprintf("%v", message.instance), 2)
 			allRepliesHaveFHiFit := true

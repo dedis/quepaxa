@@ -97,6 +97,7 @@ type Proxy struct {
 	proxyInternalDecisionNotification chan bool
 
 	benchmark *benchmark.Benchmark
+	startTime time.Time
 }
 
 type EpochTime struct {
