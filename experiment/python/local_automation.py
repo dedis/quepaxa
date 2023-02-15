@@ -24,14 +24,13 @@ os.system("/bin/bash /home/pasindu/Documents/Raxos/experiment/local/local-test.s
 
 # case 2
 
-
 leaderTimeout = 3000000
 serverMode = 0
 leaderMode = 0
 pipeline = 1
-batchTime = 1000
+batchTime = 2000
 batchSize = 50
-arrivalRate = 50000
+arrivalRate = 20000
 
 os.system("/bin/bash /home/pasindu/Documents/Raxos/experiment/local/local-test.sh "+ str(epoch) + " "
           + str(leaderTimeout) + " "
@@ -48,10 +47,10 @@ os.system("/bin/bash /home/pasindu/Documents/Raxos/experiment/local/local-test.s
 leaderTimeout = 3000000
 serverMode = 0
 leaderMode = 0
-pipeline = 50
-batchTime = 1000
+pipeline = 10
+batchTime = 2000
 batchSize = 50
-arrivalRate = 50000
+arrivalRate = 20000
 
 os.system("/bin/bash /home/pasindu/Documents/Raxos/experiment/local/local-test.sh "+ str(epoch) + " "
           + str(leaderTimeout) + " "
@@ -68,9 +67,9 @@ leaderTimeout = 3000000
 serverMode = 0
 leaderMode = 1
 pipeline = 1
-batchTime = 1000
+batchTime = 2000
 batchSize = 50
-arrivalRate = 50000
+arrivalRate = 20000
 
 os.system("/bin/bash /home/pasindu/Documents/Raxos/experiment/local/local-test.sh "+ str(epoch) + " "
           + str(leaderTimeout) + " "
@@ -88,9 +87,9 @@ leaderTimeout = 3000000
 serverMode = 0
 leaderMode = 2
 pipeline = 1
-batchTime = 1000
+batchTime = 2000
 batchSize = 50
-arrivalRate = 50000
+arrivalRate = 20000
 
 os.system("/bin/bash /home/pasindu/Documents/Raxos/experiment/local/local-test.sh "+ str(epoch) + " "
           + str(leaderTimeout) + " "
@@ -108,9 +107,9 @@ leaderTimeout = 3000000
 serverMode = 0
 leaderMode = 3
 pipeline = 1
-batchTime = 1000
+batchTime = 2000
 batchSize = 50
-arrivalRate = 50000
+arrivalRate = 10000
 
 os.system("/bin/bash /home/pasindu/Documents/Raxos/experiment/local/local-test.sh "+ str(epoch) + " "
           + str(leaderTimeout) + " "
@@ -128,9 +127,9 @@ leaderTimeout = 3000000
 serverMode = 1
 leaderMode = 0
 pipeline = 1
-batchTime = 1000
+batchTime = 2000
 batchSize = 50
-arrivalRate = 50000
+arrivalRate = 20000
 
 os.system("/bin/bash /home/pasindu/Documents/Raxos/experiment/local/local-test.sh "+ str(epoch) + " "
           + str(leaderTimeout) + " "
@@ -148,9 +147,9 @@ leaderTimeout = 30000
 serverMode = 0
 leaderMode = 0
 pipeline = 1
-batchTime = 1000
+batchTime = 2000
 batchSize = 50
-arrivalRate = 50000
+arrivalRate = 20000
 
 os.system("/bin/bash /home/pasindu/Documents/Raxos/experiment/local/local-test.sh "+ str(epoch) + " "
           + str(leaderTimeout) + " "
@@ -168,9 +167,9 @@ leaderTimeout = 3000
 serverMode = 0
 leaderMode = 0
 pipeline = 1
-batchTime = 1000
+batchTime = 2000
 batchSize = 50
-arrivalRate = 50000
+arrivalRate = 20000
 
 os.system("/bin/bash /home/pasindu/Documents/Raxos/experiment/local/local-test.sh "+ str(epoch) + " "
           + str(leaderTimeout) + " "
@@ -187,9 +186,9 @@ leaderTimeout = 300
 serverMode = 0
 leaderMode = 0
 pipeline = 1
-batchTime = 1000
+batchTime = 2000
 batchSize = 50
-arrivalRate = 50000
+arrivalRate = 20000
 
 os.system("/bin/bash /home/pasindu/Documents/Raxos/experiment/local/local-test.sh "+ str(epoch) + " "
           + str(leaderTimeout) + " "
