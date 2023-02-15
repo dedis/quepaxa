@@ -141,7 +141,7 @@ func (s *Server) createProposers() {
 	create a new server instance, inside which there are proxy instance, proposer instances and recorder instance. initialize all fields
 */
 
-func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, leaderTimeout int64, pipelineLength int64, benchmark int64, debugOn bool, debugLevel int, leaderMode int, serverMode int, batchTime int64, epochSize int, benchmarkMode int, keyLen int, valueLen int) *Server {
+func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, leaderTimeout int64, pipelineLength int64, debugOn bool, debugLevel int, leaderMode int, serverMode int, batchTime int64, epochSize int, benchmarkMode int, keyLen int, valueLen int) *Server {
 
 	sr := Server{
 		name:                        name,

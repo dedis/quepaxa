@@ -23,7 +23,7 @@ func main() {
 	valLen := flag.Int64("valLen", 8, "length of value")
 	debugOn := flag.Bool("debugOn", false, "turn on/off debug")
 	debugLevel := flag.Int64("debugLevel", 0, "debug level")
-	slowdown := flag.String("slowdown", "1:500", "node1:wait1,node2:wait2,node3:wait3")
+	slowdown := flag.String("slowdown", "", "node1:wait1,node2:wait2,node3:wait3")
 	flag.Parse()
 
 	cfg, err := configuration.NewInstanceConfig(*configFile, *name)

@@ -33,7 +33,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	serverInstance := raxos.New(cfg, *name, *logFilePath, *batchSize, *leaderTimeout, *pipelineLength, *benchmark, *debugOn, *debugLevel, *leaderMode, *serverMode, *batchTime, *epochSize, int(*benchmark), int(*keyLen), int(*valLen)) // create a new server instance
+	serverInstance := raxos.New(cfg, *name, *logFilePath, *batchSize, *leaderTimeout, *pipelineLength, *debugOn, *debugLevel, *leaderMode, *serverMode, *batchTime, *epochSize, int(*benchmark), int(*keyLen), int(*valLen)) // create a new server instance
 
 	serverInstance.NetworkInit()
 	serverInstance.Run()
