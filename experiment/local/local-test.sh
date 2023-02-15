@@ -62,6 +62,9 @@ pkill client; pkill client; pkill client; pkill client; pkill client
 python3 experiment/python/overlay-test.py 60 ${output_path}1-consensus.txt ${output_path}2-consensus.txt ${output_path}3-consensus.txt ${output_path}4-consensus.txt ${output_path}5-consensus.txt >${output_path}local-test-consensus.log
 python3 experiment/python/overlay-test.py 60 ${output_path}1-mempool.txt   ${output_path}2-mempool.txt   ${output_path}3-mempool.txt   ${output_path}4-mempool.txt   ${output_path}5-mempool.txt   >${output_path}local-test-mempool.log
 
+python3 experiment/python/throughputvstime.py throughput
+python3 experiment/python/throughputvstime.py latency
+
 echo "Killed previously running instances"
 
 mkdir -p    /home/pasindu/Desktop/raxos/"${epoch}"/"${leaderTimeout}"/"${serverMode}"/"${leaderMode}"/"${pipeline}"/"${batchTime}"/"${batchSize}"/"${arrivalRate}"/logs/
