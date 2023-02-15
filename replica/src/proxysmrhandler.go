@@ -136,7 +136,7 @@ func (pr *Proxy) updateStateMachine(sendResponse bool) {
 	//look at the last time committed, and revoke if needed using no-ops
 	if time.Now().Sub(pr.lastTimeCommitted).Microseconds() > int64(pr.leaderTimeout*2*int64(pr.numReplicas)) {
 		//revoke all the instances from last committed index
-		pr.debug("proxy revoking because it has not committed anything recently  ", 10)
+		pr.debug("proxy revoking because it has not committed anything recently  ", 20)
 		pr.revokeInstances()
 	}
 }

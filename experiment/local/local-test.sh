@@ -22,11 +22,11 @@ pkill client; pkill client; pkill client; pkill client; pkill client;
 
 echo "Killed previously running instances"
 
-nohup ./${raxos_path} --name 1 --debugOn --debugLevel 20 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" >${output_path}1.log &
-nohup ./${raxos_path} --name 2 --debugOn --debugLevel 20 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" >${output_path}2.log &
-nohup ./${raxos_path} --name 3 --debugOn --debugLevel 20 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" >${output_path}3.log &
-nohup ./${raxos_path} --name 4 --debugOn --debugLevel 20 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" >${output_path}4.log &
-nohup ./${raxos_path} --name 5 --debugOn --debugLevel 20 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" >${output_path}5.log &
+nohup ./${raxos_path} --name 1 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" >${output_path}1.log &
+nohup ./${raxos_path} --name 2 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" >${output_path}2.log &
+nohup ./${raxos_path} --name 3 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" >${output_path}3.log &
+nohup ./${raxos_path} --name 4 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" >${output_path}4.log &
+nohup ./${raxos_path} --name 5 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" >${output_path}5.log &
 
 echo "Started 5 servers"
 
@@ -42,10 +42,7 @@ echo "Starting client[s]"
 
 nohup ./${ctl_path} --name 21 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" >${output_path}21.log &
 
-#sleep 10
-#
-#./${ctl_path} --name 22 --requestType status --operationType 3 --slowdown "1:2000,5:2000,4:2000,2:20000" >${output_path}status3.log
-#
+
 sleep 200
 
 echo "Completed Client[s]"

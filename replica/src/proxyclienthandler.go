@@ -31,7 +31,7 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 			if pr.instanceTimeouts[proposeIndex] != nil {
 				pr.instanceTimeouts[proposeIndex].Cancel()
 			}
-			pr.debug("timeout for instance "+fmt.Sprintf("%v is %v", proposeIndex, msWait), 0)
+			pr.debug("timeout for instance "+fmt.Sprintf("%v is %v", proposeIndex, msWait), 20)
 			pr.instanceTimeouts[proposeIndex] = common.NewTimerWithCancel(time.Duration(msWait) * time.Microsecond)
 			pr.instanceTimeouts[proposeIndex].SetTimeoutFuntion(func() {
 				pr.proposeRequestIndex <- ProposeRequestIndex{index: proposeIndex}
