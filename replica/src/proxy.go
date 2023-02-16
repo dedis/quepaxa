@@ -229,9 +229,23 @@ func (pr *Proxy) Run() {
 				pr.debug("proxy received internal propose request", 1)
 				pr.proposeToIndex(proposeRequest.index)
 				break
-
+			case proposerMessage := <-pr.proposerToProxyChan:
+				pr.debug("proxy received proposer message", -1)
+				pr.handleProposeResponse(proposerMessage)
+				break
+			case recorderMessage := <-pr.recorderToProxyChan:
+				pr.debug("proxy received recorder decide message"+fmt.Sprintf("%v", recorderMessage), -1)
+				pr.handleRecorderResponse(recorderMessage)
+				break
+			case fetchResponse := <-pr.proposerToProxyFetchChan:
+				pr.debug("proxy received fetch response", 1)
+				pr.handleFetchResponse(fetchResponse)
+				break
+			case _ = <-pr.proxyInternalDecisionNotification:
+				pr.debug("proxy internal decision notification", 11)
+				pr.handleDecisionNotification()
+				break
 			case inpputMessage := <-pr.incomingChan:
-
 				pr.debug("Received client  message", -1)
 				code := inpputMessage.Code
 				switch code {
@@ -240,33 +254,12 @@ func (pr *Proxy) Run() {
 					pr.debug("proxy received client batch  "+fmt.Sprintf("%#v", clientBatch), -1)
 					pr.handleClientBatch(*clientBatch)
 					break
-
 				case pr.clientStatusRpc:
 					clientStatus := inpputMessage.Obj.(*client.ClientStatus)
 					pr.debug("proxy received client status  ", 0)
 					pr.handleClientStatus(*clientStatus)
 					break
-
 				}
-				break
-			case proposerMessage := <-pr.proposerToProxyChan:
-				pr.debug("proxy received proposer message", -1)
-				pr.handleProposeResponse(proposerMessage)
-				break
-
-			case recorderMessage := <-pr.recorderToProxyChan:
-				pr.debug("proxy received recorder decide message"+fmt.Sprintf("%v", recorderMessage), -1)
-				pr.handleRecorderResponse(recorderMessage)
-				break
-
-			case fetchResponse := <-pr.proposerToProxyFetchChan:
-				pr.debug("proxy received fetch response", 1)
-				pr.handleFetchResponse(fetchResponse)
-				break
-
-			case _ = <-pr.proxyInternalDecisionNotification:
-				pr.debug("proxy internal decision notification", 11)
-				pr.handleDecisionNotification()
 				break
 			}
 
@@ -275,7 +268,7 @@ func (pr *Proxy) Run() {
 
 	go func() {
 		for true {
-			time.Sleep(time.Duration(pr.leaderTimeout/2) * time.Microsecond)
+			time.Sleep(time.Duration(pr.leaderTimeout/8) * time.Microsecond)
 			pr.proxyInternalDecisionNotification <- true
 			pr.debug("proxy notified about decisions", 11)
 		}
