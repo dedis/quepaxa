@@ -37,19 +37,19 @@ func (pr *Proxy) decidedTheProposedValue(index int, decisions []string) bool {
 // for each item in the list, if it is found in the toBeProposed, then delete it
 
 func (pr *Proxy) removeDecidedItemsFromFutureProposals(items []string) {
-	//for i := 0; i < len(items); i++ {
-	//	position := -1
-	//	for j := 0; j < len(pr.toBeProposed); j++ {
-	//		if items[i] == pr.toBeProposed[j] {
-	//			position = j
-	//			break
-	//		}
-	//	}
-	//	if position != -1 {
-	//		pr.toBeProposed[position] = pr.toBeProposed[len(pr.toBeProposed)-1]
-	//		pr.toBeProposed = pr.toBeProposed[:len(pr.toBeProposed)-1]
-	//	}
-	//}
+	for i := 0; i < len(items); i++ {
+		position := -1
+		for j := 0; j < len(pr.toBeProposed); j++ {
+			if items[i] == pr.toBeProposed[j] {
+				position = j
+				break
+			}
+		}
+		if position != -1 {
+			pr.toBeProposed[position] = pr.toBeProposed[len(pr.toBeProposed)-1]
+			pr.toBeProposed = pr.toBeProposed[:len(pr.toBeProposed)-1]
+		}
+	}
 }
 
 // apply the SMR logic for each client request

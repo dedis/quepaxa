@@ -115,6 +115,22 @@ func (pr *Proxy) printConsensusLog() {
 
 func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 
+	if int64(len(pr.replicatedLog)) > proposeIndex && pr.replicatedLog[proposeIndex].decided == true {
+		pr.debug("did not propose for index "+fmt.Sprintf("%v", proposeIndex)+" because it was decided", 9)
+		return
+	}
+	pr.instanceTimeouts[proposeIndex] = nil
+
+	pr.debug("proposing for index "+fmt.Sprintf("%v at time %v ms", proposeIndex, time.Now().Sub(pr.startTime).Milliseconds()), 20)
+
+	if pr.leaderMode == 2 {
+		if pr.isBeginningOfEpoch(proposeIndex) {
+			pr.debug("proposing the last epoch summary for index "+fmt.Sprintf("%v", proposeIndex)+"", 13)
+			pr.proposePreviousEpochSummary(proposeIndex)
+			return
+		}
+	}
+
 	batchSize := pr.batchSize
 	if len(pr.toBeProposed) < batchSize {
 		batchSize = len(pr.toBeProposed)
@@ -143,22 +159,6 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 				panic("batch not found for the id")
 			}
 			btchProposals = append(btchProposals, btch)
-		}
-	}
-
-	pr.instanceTimeouts[proposeIndex] = nil
-	if int64(len(pr.replicatedLog)) > proposeIndex && pr.replicatedLog[proposeIndex].decided == true {
-		pr.debug("did not propose for index "+fmt.Sprintf("%v", proposeIndex)+" because it was decided", 9)
-		return
-	}
-
-	pr.debug("proposing for index "+fmt.Sprintf("%v at time %v ms", proposeIndex, time.Now().Sub(pr.startTime).Milliseconds()), 20)
-
-	if pr.leaderMode == 2 {
-		if pr.isBeginningOfEpoch(proposeIndex) {
-			pr.debug("proposing the last epoch summary for index "+fmt.Sprintf("%v", proposeIndex)+"", 13)
-			pr.proposePreviousEpochSummary(proposeIndex)
-			return
 		}
 	}
 
