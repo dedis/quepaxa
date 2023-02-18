@@ -22,7 +22,7 @@ leaderTimeout = 3000000
 serverMode = 0
 leaderMode = 0
 pipeline = 1
-batchTime = 100
+batchTime = 600
 batchSize = 1
 arrivalRate = 1000
 run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
@@ -53,7 +53,7 @@ run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize
 
 # case 4
 
-leaderTimeout = 3000000
+leaderTimeout = 6000
 serverMode = 0
 leaderMode = 1
 pipeline = 1
@@ -65,7 +65,7 @@ run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize
 
 # case 5
 
-leaderTimeout = 3000000
+leaderTimeout = 6000
 serverMode = 0
 leaderMode = 2
 pipeline = 1

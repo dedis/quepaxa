@@ -51,7 +51,7 @@ echo "Completed Client[s]"
 
 echo "Sent status to print log"
 
-sleep 50
+sleep 10
 
 pkill replica; pkill replica; pkill replica; pkill replica; pkill replica
 pkill client; pkill client; pkill client; pkill client; pkill client
