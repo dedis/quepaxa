@@ -25,7 +25,7 @@ pipeline = 1
 batchTime = 600
 batchSize = 1
 arrivalRate = 1000
-run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 # case 2
 
@@ -36,7 +36,7 @@ pipeline = 1
 batchTime = 2000
 batchSize = 50
 arrivalRate = 20000
-run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 
 # case 3
@@ -48,12 +48,12 @@ pipeline = 10
 batchTime = 2000
 batchSize = 50
 arrivalRate = 20000
-run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 
 # case 4
 
-leaderTimeout = 6000
+leaderTimeout = 200000
 serverMode = 0
 leaderMode = 1
 pipeline = 1
@@ -65,7 +65,7 @@ run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize
 
 # case 5
 
-leaderTimeout = 6000
+leaderTimeout = 200000
 serverMode = 0
 leaderMode = 2
 pipeline = 1
@@ -76,7 +76,7 @@ run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize
 
 # case 6
 
-leaderTimeout = 3000000
+leaderTimeout = 200000
 serverMode = 0
 leaderMode = 3
 pipeline = 1
@@ -95,7 +95,7 @@ pipeline = 1
 batchTime = 2000
 batchSize = 50
 arrivalRate = 20000
-run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 
 # case 8
@@ -107,7 +107,7 @@ pipeline = 1
 batchTime = 2000
 batchSize = 50
 arrivalRate = 20000
-run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 # case 9
 
@@ -118,7 +118,7 @@ pipeline = 1
 batchTime = 2000
 batchSize = 50
 arrivalRate = 20000
-run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 
 # case 10
@@ -130,7 +130,7 @@ pipeline = 1
 batchTime = 2000
 batchSize = 50
 arrivalRate = 20000
-run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 
 print("Test completed")
