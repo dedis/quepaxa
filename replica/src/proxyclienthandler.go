@@ -38,6 +38,9 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 			})
 			pr.lastProposedIndex = proposeIndex
 			pr.instanceTimeouts[proposeIndex].Start()
+			if msWait != 0 && (pr.leaderMode == 1 || pr.leaderMode == 2) {
+				pr.handleDecisionNotification()
+			}
 			pr.lastTimeProposed = time.Now()
 		}
 	}

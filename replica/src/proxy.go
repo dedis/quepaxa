@@ -241,10 +241,6 @@ func (pr *Proxy) Run() {
 				pr.debug("proxy received fetch response", 1)
 				pr.handleFetchResponse(fetchResponse)
 				break
-			case _ = <-pr.proxyInternalDecisionNotification:
-				pr.debug("proxy internal decision notification", 11)
-				pr.handleDecisionNotification()
-				break
 			case inpputMessage := <-pr.incomingChan:
 				pr.debug("Received client  message", -1)
 				code := inpputMessage.Code
@@ -266,13 +262,13 @@ func (pr *Proxy) Run() {
 		}
 	}()
 
-	go func() {
-		for true {
-			time.Sleep(time.Duration(1000) * time.Microsecond)
-			pr.proxyInternalDecisionNotification <- true
-			pr.debug("proxy notified about decisions", 11)
-		}
-	}()
+	//go func() {
+	//	for true {
+	//		time.Sleep(time.Duration(1000) * time.Microsecond)
+	//		pr.proxyInternalDecisionNotification <- true
+	//		pr.debug("proxy notified about decisions", 11)
+	//	}
+	//}()
 }
 
 /*
