@@ -25,7 +25,7 @@ pipeline = 1
 batchTime = 600
 batchSize = 1
 arrivalRate = 1000
-# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 # case 2
 
@@ -36,7 +36,7 @@ pipeline = 1
 batchTime = 2000
 batchSize = 50
 arrivalRate = 20000
-# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 
 # case 3
@@ -48,7 +48,7 @@ pipeline = 10
 batchTime = 2000
 batchSize = 50
 arrivalRate = 20000
-# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 
 # case 4
@@ -95,7 +95,7 @@ pipeline = 1
 batchTime = 2000
 batchSize = 50
 arrivalRate = 20000
-# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 
 # case 8
@@ -107,7 +107,7 @@ pipeline = 1
 batchTime = 2000
 batchSize = 50
 arrivalRate = 20000
-# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 # case 9
 
@@ -118,7 +118,7 @@ pipeline = 1
 batchTime = 2000
 batchSize = 50
 arrivalRate = 20000
-# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 
 # case 10
@@ -130,7 +130,7 @@ pipeline = 1
 batchTime = 2000
 batchSize = 50
 arrivalRate = 20000
-# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 
 print("Test completed")
