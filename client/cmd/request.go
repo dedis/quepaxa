@@ -99,17 +99,10 @@ func (cl *Client) startRequestGenerators() {
 					numRequests++
 				}
 
-				for i, _ := range cl.replicaAddrList {
-
-					var requests_i []*client.ClientBatch_SingleMessage
-
-					for j := 0; j < len(requests); j++ {
-						requests_i = append(requests_i, requests[j])
-					}
-
+				if cl.useFixedLeader {
 					batch := client.ClientBatch{
 						Sender:   cl.name,
-						Messages: requests_i,
+						Messages: requests,
 						Id:       strconv.Itoa(int(cl.name)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id,
 					}
 
@@ -118,7 +111,30 @@ func (cl *Client) startRequestGenerators() {
 						Obj:  &batch,
 					}
 
-					cl.sendMessage(i, rpcPair)
+					cl.sendMessage(int64(cl.fixedLeader), rpcPair)
+				} else {
+
+					for i, _ := range cl.replicaAddrList {
+
+						var requests_i []*client.ClientBatch_SingleMessage
+
+						for j := 0; j < len(requests); j++ {
+							requests_i = append(requests_i, requests[j])
+						}
+
+						batch := client.ClientBatch{
+							Sender:   cl.name,
+							Messages: requests_i,
+							Id:       strconv.Itoa(int(cl.name)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id,
+						}
+
+						rpcPair := common.RPCPair{
+							Code: cl.clientBatchRpc,
+							Obj:  &batch,
+						}
+
+						cl.sendMessage(i, rpcPair)
+					}
 				}
 
 				cl.debug("Sent "+strconv.Itoa(int(cl.name))+"."+strconv.Itoa(threadNumber)+"."+strconv.Itoa(localCounter), 0)

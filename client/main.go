@@ -24,6 +24,8 @@ func main() {
 	debugOn := flag.Bool("debugOn", false, "turn on/off debug")
 	debugLevel := flag.Int64("debugLevel", 0, "debug level")
 	slowdown := flag.String("slowdown", "", "node1:wait1,node2:wait2,node3:wait3")
+	useFixedLeader := flag.Bool("useFixedLeader", false, "if true, send only to the fixed leader node")
+	fixedLeader := flag.Int64("fixedLeader", -1, "default replica")
 	flag.Parse()
 
 	cfg, err := configuration.NewInstanceConfig(*configFile, *name)
@@ -33,7 +35,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cl := cmd.New(*name, cfg, *logFilePath, *batchSize, *batchTime, *testDuration, *arrivalRate, *requestType, *operationType, int(*debugLevel), *debugOn, int(*keyLen), int(*valLen), *slowdown)
+	cl := cmd.New(*name, cfg, *logFilePath, *batchSize, *batchTime, *testDuration, *arrivalRate, *requestType, *operationType, int(*debugLevel), *debugOn, int(*keyLen), int(*valLen), *slowdown, *useFixedLeader, *fixedLeader)
 
 	cl.StartOutgoingLinks()
 	go cl.WaitForConnections()
