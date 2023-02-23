@@ -16,6 +16,11 @@ import (
 */
 
 func (cl *Client) handleClientResponseBatch(batch *client.ClientBatch) {
+	_, ok := cl.receivedResponses.Load(batch.Id)
+	if ok {
+		return
+	}
+
 	cl.receivedResponses.Store(batch.Id, receivedResponseBatch{
 		batch: *batch,
 		time:  time.Now(), // record the time when the response was received
