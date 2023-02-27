@@ -1,7 +1,6 @@
 package raxos
 
 import (
-	"fmt"
 	"raxos/proto/client"
 	"sort"
 	"strconv"
@@ -42,16 +41,16 @@ func (pr *Proxy) updateEpochTime(index int) {
 	}
 
 	if pr.epochTimes[epoch].started == false {
-		pr.debug("starting epoch "+fmt.Sprintf("%v at time %v", epoch, time.Now()), 11)
+		//pr.debug("starting epoch "+fmt.Sprintf("%v at time %v", epoch, time.Now()), 11)
 		pr.epochTimes[epoch].started = true
 		pr.epochTimes[epoch].startTime = time.Now()
 	}
 
 	if pr.epochTimes[epoch].ended == false && pr.hasAllDecided(epoch) {
-		pr.debug("finishing epoch "+fmt.Sprintf("%v at time %v", epoch, time.Now()), 11)
+		//pr.debug("finishing epoch "+fmt.Sprintf("%v at time %v", epoch, time.Now()), 11)
 		pr.epochTimes[epoch].ended = true
 		pr.epochTimes[epoch].endTime = time.Now()
-		pr.debug("epoch "+fmt.Sprintf("%v took %v ms, epoch leader:%v", epoch, pr.epochTimes[epoch].endTime.Sub(pr.epochTimes[epoch].startTime).Milliseconds(), pr.getLeaderSequence(int64(epoch * pr.epochSize))[0]), 14)
+		//pr.debug("epoch "+fmt.Sprintf("%v took %v ms, epoch leader:%v", epoch, pr.epochTimes[epoch].endTime.Sub(pr.epochTimes[epoch].startTime).Milliseconds(), pr.getLeaderSequence(int64(epoch * pr.epochSize))[0]), 14)
 	}
 }
 
@@ -82,7 +81,7 @@ func (pr *Proxy) getLeaderSequence(instance int64) []int64 {
 		for i := int64(0); i < sequence; i++ {
 			rA = append(rA, i+1)
 		}
-		pr.debug("proxy leader sequence for instance "+fmt.Sprintf("%v is %v", instance, rA), 0)
+		//pr.debug("proxy leader sequence for instance "+fmt.Sprintf("%v is %v", instance, rA), 0)
 		return rA
 
 	}
@@ -102,11 +101,11 @@ func (pr *Proxy) getLeaderSequence(instance int64) []int64 {
 			for i := int64(0); i < sequence; i++ {
 				rA = append(rA, i+1)
 			}
-			pr.debug("proxy leader sequence for instance "+fmt.Sprintf("%v is %v", instance, rA), 10)
+			//pr.debug("proxy leader sequence for instance "+fmt.Sprintf("%v is %v", instance, rA), 10)
 			return rA
 		} else {
 			rA := pr.getLeaderSequenceFromLastEpoch(epoch)
-			pr.debug("proxy leader sequence for instance "+fmt.Sprintf("%v is %v", instance, rA), 10)
+			//pr.debug("proxy leader sequence for instance "+fmt.Sprintf("%v is %v", instance, rA), 10)
 			return rA
 		}
 
@@ -185,7 +184,7 @@ func (pr *Proxy) proposePreviousEpochSummary(index int64) {
 		Messages: []*client.ClientBatch_SingleMessage{{Message: "Epoch" + strSequence}},
 		Id:       "Epoch" + strSequence,
 	})
-	pr.debug("proposing new summary for index "+fmt.Sprintf("%v, epoch:%v, sequence:%v ", index, curEpoch, strSequence), 13)
+	//pr.debug("proposing new summary for index "+fmt.Sprintf("%v, epoch:%v, sequence:%v ", index, curEpoch, strSequence), 13)
 
 	waitTime := int(pr.getLeaderWait(pr.getLeaderSequence(index)))
 	isLeader := true
@@ -207,7 +206,7 @@ func (pr *Proxy) proposePreviousEpochSummary(index int64) {
 	}
 
 	pr.proxyToProposerChan <- newProposalRequest
-	pr.debug("proxy sent a proposal request containing leader sequence  "+fmt.Sprintf("%v", newProposalRequest), 10)
+	//pr.debug("proxy sent a proposal request containing leader sequence  "+fmt.Sprintf("%v", newProposalRequest), 10)
 	// create the slot index
 	for len(pr.replicatedLog) < int(index+1) {
 		// create the new entry
@@ -254,7 +253,7 @@ func (pr *Proxy) calculateSequence(epoch int) string {
 		}
 	}
 
-	pr.debug("epoch time summary "+fmt.Sprintf("for the epoch %v is %v ", epoch, times), 15)
+	//pr.debug("epoch time summary "+fmt.Sprintf("for the epoch %v is %v ", epoch, times), 15)
 
 	epochTimes1 := make([]int, pr.numReplicas)
 	epochTimes2 := make([]int, pr.numReplicas)
@@ -269,7 +268,7 @@ func (pr *Proxy) calculateSequence(epoch int) string {
 		epochTimes1[i] = int(sum / count)
 		epochTimes2[i] = int(sum / count)
 	}
-	pr.debug("epoch time averages "+fmt.Sprintf("for epoch %v is %v", epoch, epochTimes2), 15)
+	//pr.debug("epoch time averages "+fmt.Sprintf("for epoch %v is %v", epoch, epochTimes2), 15)
 
 	sort.Ints(epochTimes1)
 	sequence := make([]int, 0)
@@ -290,7 +289,7 @@ func (pr *Proxy) calculateSequence(epoch int) string {
 		}
 	}
 
-	pr.debug("leader ordering proposed for the epoch "+fmt.Sprintf("%v is %v", epoch, sequence), 10)
+	//pr.debug("leader ordering proposed for the epoch "+fmt.Sprintf("%v is %v", epoch, sequence), 10)
 	if len(sequence) != pr.numReplicas {
 		panic("should not happen")
 	}

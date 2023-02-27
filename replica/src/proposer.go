@@ -45,7 +45,7 @@ func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan c
 		proxyToProposerDecisionChan: proxyToProposerDecisionChan,
 	}
 
-	pr.debug("created a new proposer "+fmt.Sprintf("%v", pr), -1)
+	//pr.debug("created a new proposer "+fmt.Sprintf("%v", pr), -1)
 
 	return &pr
 }
@@ -111,7 +111,7 @@ func (prop *Proposer) convertToClientBatches(batches []*DecideResponse_ClientBat
 // send a fetch request to a random peer
 
 func (prop *Proposer) handleFetchRequest(message FetchRequest) FetchResposne {
-	prop.debug("proposer starting to handle a fetch request "+fmt.Sprintf("%v", message), 1)
+	//prop.debug("proposer starting to handle a fetch request "+fmt.Sprintf("%v", message), 1)
 	found := false
 	cltBatches := make([]*DecideResponse_ClientBatch, 0)
 	numBtches := len(message.ids)
@@ -125,10 +125,10 @@ func (prop *Proposer) handleFetchRequest(message FetchRequest) FetchResposne {
 			Ids: message.ids,
 		})
 
-		prop.debug("proposer sent a grpc fetch request to "+fmt.Sprintf("%v", client_r), 0)
+		//prop.debug("proposer sent a grpc fetch request to "+fmt.Sprintf("%v", client_r), 0)
 
 		if err == nil && resp != nil {
-			prop.debug("proposer received a grpc fetch response "+fmt.Sprintf("%v", resp), 0)
+			//prop.debug("proposer received a grpc fetch response "+fmt.Sprintf("%v", resp), 0)
 			for i := 0; i < len(resp.ClientBatches); i++ {
 				foundBtch := false
 				for j := 0; j < len(cltBatches); j++ {
@@ -144,7 +144,7 @@ func (prop *Proposer) handleFetchRequest(message FetchRequest) FetchResposne {
 
 			if len(cltBatches) == numBtches {
 				found = true
-				prop.debug("proposer received all the client_r batches for the fetch request "+fmt.Sprintf("%v", cltBatches), 1)
+				//prop.debug("proposer received all the client_r batches for the fetch request "+fmt.Sprintf("%v", cltBatches), 1)
 			}
 
 		}
@@ -317,7 +317,7 @@ func (prop *Proposer) isEqualProposal(p ProposerMessage_Proposal, m ProposerMess
 // main proposer logic
 
 func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeResponse {
-	prop.debug("proposer received propose request from the proxy "+fmt.Sprintf("%v", message), -1)
+	//prop.debug("proposer received propose request from the proxy "+fmt.Sprintf("%v", message), -1)
 
 	S := 1*4 + 0
 	P := ProposerMessage_Proposal{
@@ -328,11 +328,11 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 		ClientBatches: prop.getProposeClientBatches(message.proposalBtch),
 	}
 
-	prop.debug("proposer created initial proposal "+fmt.Sprintf("%v", P)+" for index "+fmt.Sprintf("%v", message.instance), 0)
+	//prop.debug("proposer created initial proposal "+fmt.Sprintf("%v", P)+" for index "+fmt.Sprintf("%v", message.instance), 0)
 
 	decidedSlots := prop.extractDecidedSlots(message.lastDecidedIndexes, message.lastDecidedDecisions)
 
-	prop.debug("proposer proposes for instance "+fmt.Sprintf("%v ", message.instance), 9)
+	//prop.debug("proposer proposes for instance "+fmt.Sprintf("%v ", message.instance), 9)
 
 	for true {
 
@@ -353,7 +353,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 			}
 
 			for i := 0; i < prop.numReplicas; i++ {
-				prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"+ proposal  priority for  replica "+fmt.Sprintf("%v is %v ", i, Pi[i].Priority)+" for index "+fmt.Sprintf("%v", message.instance), 2)
+				//prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"+ proposal  priority for  replica "+fmt.Sprintf("%v is %v ", i, Pi[i].Priority)+" for index "+fmt.Sprintf("%v", message.instance), 2)
 			}
 		}
 
@@ -387,7 +387,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 					}
 
 					if resp.ClientBatchesNotFound {
-						prop.debug("re-proposing because the recorder did not have the batches for instance  "+fmt.Sprintf(" %v ", message.instance), 20)
+						//prop.debug("re-proposing because the recorder did not have the batches for instance  "+fmt.Sprintf(" %v ", message.instance), 20)
 
 						newP = &ProposerMessage_Proposal{
 							Priority:      pi.Priority,
@@ -406,7 +406,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 					if resp != nil && resp.S > 0 {
 						responses <- resp
-						prop.debug("proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v, and M:%v", resp.S, resp.F, resp.M)+" for index "+fmt.Sprintf("%v", message.instance), -1)
+						//prop.debug("proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v, and M:%v", resp.S, resp.F, resp.M)+" for index "+fmt.Sprintf("%v", message.instance), -1)
 					} else {
 						return
 					}
@@ -429,7 +429,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 					if resp != nil && resp.S > 0 {
 						responses <- resp
-						prop.debug("proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v, and M:%v", resp.S, resp.F, resp.M)+" for index "+fmt.Sprintf("%v", message.instance), -1)
+						//prop.debug("proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v, and M:%v", resp.S, resp.F, resp.M)+" for index "+fmt.Sprintf("%v", message.instance), -1)
 					} else {
 						return
 					}
@@ -452,7 +452,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 			// close the channel once a majority of the replies are collected
 			if len(responsesArray) == (prop.numReplicas/2)+1 {
 				for i := 0; i < (prop.numReplicas/2)+1; i++ {
-					prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v,%v,%v,%v, and M:%v,%v,%v", responsesArray[i].S, responsesArray[i].F.Priority, responsesArray[i].F.ProposerId, responsesArray[i].F.ThreadId, responsesArray[i].F.Ids[0], responsesArray[i].M.Priority, responsesArray[i].M.ProposerId, responsesArray[i].M.ThreadId)+" for index "+fmt.Sprintf("%v", message.instance), 2)
+					//prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer received a rpc response "+fmt.Sprintf("S: %v, F:%v,%v,%v,%v, and M:%v,%v,%v", responsesArray[i].S, responsesArray[i].F.Priority, responsesArray[i].F.ProposerId, responsesArray[i].F.ThreadId, responsesArray[i].F.Ids[0], responsesArray[i].M.Priority, responsesArray[i].M.ProposerId, responsesArray[i].M.ThreadId)+" for index "+fmt.Sprintf("%v", message.instance), 2)
 				}
 
 				if len(responsesArray) != (prop.numReplicas/2)+1 {
@@ -476,11 +476,11 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 		}
 
 		if allRepliesHaveS {
-			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer received recorder responses with all same S with my S "+" for index "+fmt.Sprintf("%v", message.instance), 2)
+			//prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer received recorder responses with all same S with my S "+" for index "+fmt.Sprintf("%v", message.instance), 2)
 		}
 
 		if allRepliesHaveS && S%4 == 0 { //propose phase
-			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer is processing S%4==0 responses for index "+fmt.Sprintf("%v", message.instance), 2)
+			//prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer is processing S%4==0 responses for index "+fmt.Sprintf("%v", message.instance), 2)
 			allRepliesHaveFHiFit := true
 			for i := 0; i < len(responsesArray); i++ {
 				if responsesArray[i].F.Priority != int64(prop.hi) {

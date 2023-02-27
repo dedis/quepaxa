@@ -133,13 +133,13 @@ func (cl *Client) Run() {
 
 			case cl.clientBatchRpc:
 				clientResponseBatch := replicaMessage.Obj.(*client.ClientBatch)
-				cl.debug("client response batch "+fmt.Sprintf("%#v", clientResponseBatch), 0)
+				//cl.debug("client response batch "+fmt.Sprintf("%#v", clientResponseBatch), 0)
 				cl.handleClientResponseBatch(clientResponseBatch)
 				break
 
 			case cl.clientStatusRpc:
 				clientStatusResponse := replicaMessage.Obj.(*client.ClientStatus)
-				cl.debug("Client Status Response from"+fmt.Sprintf("%#v", clientStatusResponse.Sender), 0)
+				//cl.debug("Client Status Response from"+fmt.Sprintf("%#v", clientStatusResponse.Sender), 0)
 				cl.handleClientStatusResponse(clientStatusResponse)
 				break
 			}

@@ -1,7 +1,6 @@
 package raxos
 
 import (
-	"fmt"
 	"raxos/common"
 	"raxos/proto/client"
 	"time"
@@ -83,7 +82,7 @@ func (pr *Proxy) sendClientResponse(batches []*client.ClientBatch) {
 			Obj:  batches[i],
 		})
 
-		pr.debug("proxy sent a client response  "+fmt.Sprintf("%v", batches[i]), -1)
+		//pr.debug("proxy sent a client response  "+fmt.Sprintf("%v", batches[i]), -1)
 	}
 }
 
@@ -96,19 +95,19 @@ func (pr *Proxy) updateStateMachine(sendResponse bool) {
 			if len(pr.replicatedLog[i].decidedBatch) == 0 {
 				panic("should not happen")
 			}
-			pr.debug("proxy calling update state machine and found a new decided slot  "+fmt.Sprintf("%v", i), 1)
+			//pr.debug("proxy calling update state machine and found a new decided slot  "+fmt.Sprintf("%v", i), 1)
 
 			for j := 0; j < len(pr.replicatedLog[i].decidedBatch); j++ {
 				// check if each batch exists
 				_, ok := pr.clientBatchStore.Get(pr.replicatedLog[i].decidedBatch[j])
 				if !ok {
 					pr.proxyToProposerFetchChan <- FetchRequest{ids: pr.replicatedLog[i].decidedBatch}
-					pr.debug("proxy cannot commit because the client batches are missing for decided slot  "+fmt.Sprintf("%v", i)+" hence requesting  "+fmt.Sprintf("%v", pr.replicatedLog[i].decidedBatch), 1)
+					//pr.debug("proxy cannot commit because the client batches are missing for decided slot  "+fmt.Sprintf("%v", i)+" hence requesting  "+fmt.Sprintf("%v", pr.replicatedLog[i].decidedBatch), 1)
 					return
 				}
 			}
 
-			pr.debug("proxy has all client batches to commit  "+fmt.Sprintf("%v", i), 0)
+			//pr.debug("proxy has all client batches to commit  "+fmt.Sprintf("%v", i), 0)
 
 			var responseBatches []*client.ClientBatch
 			for j := 0; j < len(pr.replicatedLog[i].decidedBatch); j++ {
@@ -120,7 +119,7 @@ func (pr *Proxy) updateStateMachine(sendResponse bool) {
 				responseBatches = append(responseBatches, responseBatch)
 			}
 			pr.lastTimeCommitted = time.Now()
-			pr.debug("proxy committed  "+fmt.Sprintf("%v, number of pending request batches %v ", pr.committedIndex+1, len(pr.toBeProposed)), 0)
+			//pr.debug("proxy committed  "+fmt.Sprintf("%v, number of pending request batches %v ", pr.committedIndex+1, len(pr.toBeProposed)), 0)
 			pr.replicatedLog[i].committed = true
 			// empty the proposed batch
 			pr.replicatedLog[i].proposedBatch = make([]string, 0)
@@ -145,7 +144,7 @@ func (pr *Proxy) updateStateMachine(sendResponse bool) {
 
 func (pr *Proxy) revokeInstance(instance int64) {
 
-	pr.debug("proxy revoking instance  "+fmt.Sprintf("%v", pr.replicatedLog[instance]), 9)
+	//pr.debug("proxy revoking instance  "+fmt.Sprintf("%v", pr.replicatedLog[instance]), 9)
 
 	if pr.replicatedLog[instance].decided == true {
 		panic("revoking an already decided entry")
@@ -183,7 +182,7 @@ func (pr *Proxy) revokeInstance(instance int64) {
 
 	pr.proxyToProposerChan <- newProposalRequest
 
-	pr.debug("proxy revoked instance with new Proposal Request  "+fmt.Sprintf("%v", newProposalRequest), 1)
+	//pr.debug("proxy revoked instance with new Proposal Request  "+fmt.Sprintf("%v", newProposalRequest), 1)
 
 	pr.replicatedLog[instance] = Slot{
 		proposedBatch: strProposals,
@@ -209,16 +208,16 @@ func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 
 	if message.index != -1 && message.decisions != nil {
 
-		pr.debug("proxy received a proposal response from the proxy  "+fmt.Sprintf("%v", message), -1)
+		//pr.debug("proxy received a proposal response from the proxy  "+fmt.Sprintf("%v", message), -1)
 
 		if pr.replicatedLog[message.index].decided == false {
 			pr.replicatedLog[message.index].decided = true
 			pr.replicatedLog[message.index].decidedBatch = message.decisions
-			pr.debug("proxy decided as a result of propose "+fmt.Sprintf(" for instance %v with initial value", message.index, message.decisions[0]), 20)
+			//pr.debug("proxy decided as a result of propose "+fmt.Sprintf(" for instance %v with initial value", message.index, message.decisions[0]), 20)
 			pr.updateEpochTime(message.index)
 
 			if !pr.decidedTheProposedValue(message.index, message.decisions) {
-				pr.debug("proxy decided  a different proposal, hence putting back stuff to propose later", 0)
+				//pr.debug("proxy decided  a different proposal, hence putting back stuff to propose later", 0)
 				pr.toBeProposed = append(pr.toBeProposed, pr.replicatedLog[message.index].proposedBatch...)
 				pr.replicatedLog[message.index].proposedBatch = nil
 			}
@@ -252,7 +251,7 @@ func (pr *Proxy) getHighestIndex(indexes []int) int {
 
 func (pr *Proxy) handleRecorderResponse(message Decision) {
 
-	pr.debug("proxy received decisions from the recorder  "+fmt.Sprintf("%v", message), 11)
+	//pr.debug("proxy received decisions from the recorder  "+fmt.Sprintf("%v", message), 11)
 	if len(message.indexes) != len(message.decisions) {
 		panic("number of decided items and number of decisions do not match")
 	}
@@ -279,7 +278,7 @@ func (pr *Proxy) handleRecorderResponse(message Decision) {
 			pr.replicatedLog[index].decidedBatch = batches
 
 			pr.updateEpochTime(index)
-			pr.debug("proxy decided from the recorder response "+fmt.Sprintf(" instance %v with batches %v", index, batches), 20)
+			//pr.debug("proxy decided from the recorder response "+fmt.Sprintf(" instance %v with batches %v", index, batches), 20)
 			if !pr.decidedTheProposedValue(index, batches) {
 				pr.toBeProposed = append(pr.toBeProposed, pr.replicatedLog[index].proposedBatch...)
 				pr.replicatedLog[index].proposedBatch = nil
@@ -296,11 +295,11 @@ func (pr *Proxy) handleRecorderResponse(message Decision) {
 // save the batch in the store
 
 func (pr *Proxy) handleFetchResponse(response FetchResposne) {
-	pr.debug("proxy received fetch response from the proposer "+fmt.Sprintf("%v", response), 1)
+	//pr.debug("proxy received fetch response from the proposer "+fmt.Sprintf("%v", response), 1)
 	for i := 0; i < len(response.batches); i++ {
 		pr.clientBatchStore.Add(response.batches[i])
 	}
-	pr.debug("proxy update smr after fetch response, note that last committed index is "+fmt.Sprintf("%v", pr.committedIndex), 1)
+	//pr.debug("proxy update smr after fetch response, note that last committed index is "+fmt.Sprintf("%v", pr.committedIndex), 1)
 	pr.updateStateMachine(true)
 }
 
@@ -317,7 +316,7 @@ func (pr *Proxy) handleDecisionNotification() {
 	}
 
 	pr.proxyToProposerDecisionChan <- newDecision
-	pr.debug("proxy sent a decisions to proposer  "+fmt.Sprintf("%v", newDecision), 11)
+	//pr.debug("proxy sent a decisions to proposer  "+fmt.Sprintf("%v", newDecision), 11)
 
 	// reset the variables
 	pr.lastDecidedIndexes = make([]int, 0)

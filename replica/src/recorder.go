@@ -28,11 +28,11 @@ type RecorderSlot struct {
 }
 
 type Recorder struct {
-	address       string       // address to listen for gRPC connections
-	listener      net.Listener // socket for gRPC connections
-	server        *grpc.Server // gRPC server
-	connection    *GRPCConnection
-	clientBatches *ClientBatchStore
+	address               string       // address to listen for gRPC connections
+	listener              net.Listener // socket for gRPC connections
+	server                *grpc.Server // gRPC server
+	connection            *GRPCConnection
+	clientBatches         *ClientBatchStore
 	recorderToProxyChan   chan Decision
 	name                  int64
 	slots                 []RecorderSlot // recorder side replicated log
@@ -71,7 +71,7 @@ func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchSto
 		}
 	}
 
-	re.debug("created a new recorder  "+fmt.Sprintf("%v", re.name), -1)
+	//re.debug("created a new recorder  "+fmt.Sprintf("%v", re.name), -1)
 
 	return &re
 }
@@ -198,13 +198,13 @@ func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (in
 	re.instanceCreationMutex.Unlock()
 
 	re.slots[index].Mutex.Lock()
-	re.debug("recorder processing esp for s  "+fmt.Sprintf("%v", s)+" for index "+fmt.Sprintf("%v", index)+" for proposal "+fmt.Sprintf("pID: %v, tID: %v, prio:%v, initRequest: %v", p.ProposerId, p.ThreadId, p.Priority, p.Ids[0]), 2)
+	//re.debug("recorder processing esp for s  "+fmt.Sprintf("%v", s)+" for index "+fmt.Sprintf("%v", index)+" for proposal "+fmt.Sprintf("pID: %v, tID: %v, prio:%v, initRequest: %v", p.ProposerId, p.ThreadId, p.Priority, p.Ids[0]), 2)
 	if re.slots[index].S == s {
-		re.debug("recorder received esp for the same s  "+" for index "+fmt.Sprintf("%v", index), -1)
+		//re.debug("recorder received esp for the same s  "+" for index "+fmt.Sprintf("%v", index), -1)
 		re.slots[index].A = re.max(re.slots[index].A, p)
 	} else if re.slots[index].S < s {
 		if re.slots[index].S+1 < s {
-			re.debug("recorder received esp for s greater than one step  "+" for index "+fmt.Sprintf("%v", index), -1)
+			//re.debug("recorder received esp for s greater than one step  "+" for index "+fmt.Sprintf("%v", index), -1)
 			re.slots[index].A = Value{
 				priority:    -1,
 				proposer_id: -1,
@@ -212,7 +212,7 @@ func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (in
 				ids:         nil,
 			}
 		} else {
-			re.debug("recorder received esp for s with one step ahead "+" for index "+fmt.Sprintf("%v", index), -1)
+			//re.debug("recorder received esp for s with one step ahead "+" for index "+fmt.Sprintf("%v", index), -1)
 		}
 		re.slots[index].S = s
 		re.slots[index].F = Value{
@@ -233,7 +233,7 @@ func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (in
 	returnS := re.slots[index].S
 	returnF := re.slots[index].F
 	returnM := re.slots[index].M
-	re.debug("recorder finished processing esp for s  "+fmt.Sprintf("%v", s)+" for index "+fmt.Sprintf("%v", index)+" for proposal "+fmt.Sprintf("%v", p), -1)
+	//re.debug("recorder finished processing esp for s  "+fmt.Sprintf("%v", s)+" for index "+fmt.Sprintf("%v", index)+" for proposal "+fmt.Sprintf("%v", p), -1)
 	re.slots[index].Mutex.Unlock()
 
 	return int64(returnS), returnF, returnM
@@ -255,11 +255,11 @@ func (r *Recorder) convertToClientBatchMessages(messages []*ProposerMessage_Clie
 // answer to proposer RPC
 
 func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
-	re.debug("recorder received esp  "+fmt.Sprintf("%v", req)+" for index "+fmt.Sprintf("%v", req.Index), -1)
+	//re.debug("recorder received esp  "+fmt.Sprintf("%v", req)+" for index "+fmt.Sprintf("%v", req.Index), -1)
 	var response RecorderResponse
 
 	// send the last decided index details to the proxy, if available
-	if req.DecidedSlots !=nil && len(req.DecidedSlots) > 0 {
+	if req.DecidedSlots != nil && len(req.DecidedSlots) > 0 {
 		d := Decision{
 			indexes:   make([]int, 0),
 			decisions: make([][]string, 0),
@@ -271,20 +271,20 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 		}
 
 		re.recorderToProxyChan <- d
-		re.debug("recorder sent the decisions to the proxy  "+fmt.Sprintf("%v", d)+" for index "+fmt.Sprintf("%v", req.Index), -1)
+		//re.debug("recorder sent the decisions to the proxy  "+fmt.Sprintf("%v", d)+" for index "+fmt.Sprintf("%v", req.Index), -1)
 	}
 
-	if req.S == 4 && len(req.P.ClientBatches) == 0 && len(req.P.Ids) >0   {
+	if req.S == 4 && len(req.P.ClientBatches) == 0 && len(req.P.Ids) > 0 {
 		// if there are only hashes, then check if all the client batches are available in the shared pool
 		allBatchesFound := re.findAllBatches(req.P.Ids)
 		if !allBatchesFound {
-			re.debug("recorder does not have all the client batches, hence rejecting  "+fmt.Sprintf("%v", req)+" for index "+fmt.Sprintf("%v", req.Index), 17)
+			//re.debug("recorder does not have all the client batches, hence rejecting  "+fmt.Sprintf("%v", req)+" for index "+fmt.Sprintf("%v", req.Index), 17)
 			response.ClientBatchesNotFound = true
 			return &response
 		}
 	}
 
-	re.debug("recorder has all the client batches to process  "+fmt.Sprintf("%v", req)+" for index "+fmt.Sprintf("%v", req.Index), -1)
+	//re.debug("recorder has all the client batches to process  "+fmt.Sprintf("%v", req)+" for index "+fmt.Sprintf("%v", req.Index), -1)
 
 	if len(req.P.ClientBatches) > 0 {
 		// add all the batches to the store
@@ -315,7 +315,7 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 
 	response.ClientBatchesNotFound = false
 
-	re.debug("recorder responding to esp request  "+fmt.Sprintf("%v", req)+" with response "+fmt.Sprintf("%v", response)+" for index "+fmt.Sprintf("%v", req.Index), -1)
+	//re.debug("recorder responding to esp request  "+fmt.Sprintf("%v", req)+" with response "+fmt.Sprintf("%v", response)+" for index "+fmt.Sprintf("%v", req.Index), -1)
 
 	return &response
 }
@@ -336,7 +336,7 @@ func (r *Recorder) convertToDecideResponseClientBatchMessages(messages []*client
 // answer to fetch request
 
 func (r *Recorder) HandleFetch(req *DecideRequest) *DecideResponse {
-	r.debug("recorder received a fetch request  "+fmt.Sprintf("%v", req), 0)
+	//r.debug("recorder received a fetch request  "+fmt.Sprintf("%v", req), 0)
 	response := DecideResponse{
 		ClientBatches: nil,
 	}
@@ -352,14 +352,14 @@ func (r *Recorder) HandleFetch(req *DecideRequest) *DecideResponse {
 		}
 	}
 
-	r.debug("recorder respond to the fetch request  "+fmt.Sprintf("%v", req)+"with response "+fmt.Sprintf("%v", response), 0)
+	//r.debug("recorder respond to the fetch request  "+fmt.Sprintf("%v", req)+"with response "+fmt.Sprintf("%v", response), 0)
 	return &response
 }
 
 // update the decisions
 
 func (re *Recorder) HandleDecisions(decisions *Decisions) {
-	re.debug("recorder handling decisions "+fmt.Sprintf("%v", decisions.DecidedSlots), 11)
+	//re.debug("recorder handling decisions "+fmt.Sprintf("%v", decisions.DecidedSlots), 11)
 	// send the last decided index details to the proxy, if available
 	if len(decisions.DecidedSlots) > 0 {
 		d := Decision{
@@ -373,6 +373,6 @@ func (re *Recorder) HandleDecisions(decisions *Decisions) {
 		}
 
 		re.recorderToProxyChan <- d
-		re.debug("recorder sent the decisions to the proxy  "+fmt.Sprintf("%v", d), 11)
+		//re.debug("recorder sent the decisions to the proxy  "+fmt.Sprintf("%v", d), 11)
 	}
 }

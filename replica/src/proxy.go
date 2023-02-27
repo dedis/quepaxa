@@ -205,7 +205,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	pr.debug("initiazlied a new proxy "+fmt.Sprintf("%v", pr.name), -1)
+	//pr.debug("initiazlied a new proxy "+fmt.Sprintf("%v", pr.name), -1)
 
 	return &pr
 }
@@ -234,7 +234,7 @@ func (pr *Proxy) Run() {
 				pr.handleProposeResponse(proposerMessage)
 				break
 			case recorderMessage := <-pr.recorderToProxyChan:
-				pr.debug("proxy received recorder decide message"+fmt.Sprintf("%v", recorderMessage), -1)
+				//pr.debug("proxy received recorder decide message"+fmt.Sprintf("%v", recorderMessage), -1)
 				pr.handleRecorderResponse(recorderMessage)
 				break
 			case fetchResponse := <-pr.proposerToProxyFetchChan:
@@ -247,7 +247,7 @@ func (pr *Proxy) Run() {
 				switch code {
 				case pr.clientBatchRpc:
 					clientBatch := inpputMessage.Obj.(*client.ClientBatch)
-					pr.debug("proxy received client batch  "+fmt.Sprintf("%#v", clientBatch), -1)
+					//pr.debug("proxy received client batch  "+fmt.Sprintf("%#v", clientBatch), -1)
 					pr.handleClientBatch(*clientBatch)
 					break
 				case pr.clientStatusRpc:
