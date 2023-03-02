@@ -489,7 +489,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 				}
 			}
 			if allRepliesHaveFHiFit {
-				prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer succeeded propose phase fast path for index "+fmt.Sprintf("%v", message.instance), 2)
+				//prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer succeeded propose phase fast path for index "+fmt.Sprintf("%v", message.instance), 2)
 				return ProposeResponse{
 					index:     int(message.instance),
 					decisions: responsesArray[0].F.Ids,
@@ -498,26 +498,26 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 			// P ← maximum of F’ from all replies in R
 			P = prop.getMaxFromResponses(responsesArray, "F")
-			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer did not succeed in the fast path propose phase, updated P to "+fmt.Sprintf("priority: %v, replica:%v, thread:%v, and ids:%v", P.Priority, P.ProposerId, P.ThreadId, P.Ids[0])+" for index "+fmt.Sprintf("%v", message.instance), 2)
+			//prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer did not succeed in the fast path propose phase, updated P to "+fmt.Sprintf("priority: %v, replica:%v, thread:%v, and ids:%v", P.Priority, P.ProposerId, P.ThreadId, P.Ids[0])+" for index "+fmt.Sprintf("%v", message.instance), 2)
 		} else if allRepliesHaveS && S%4 == 2 {
-			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer is processing S%4==2 responses for index "+fmt.Sprintf("%v", message.instance), 0)
+			//prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer is processing S%4==2 responses for index "+fmt.Sprintf("%v", message.instance), 0)
 			maxM := prop.getMaxFromResponses(responsesArray, "M")
 			if prop.isEqualProposal(P, maxM) {
-				prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer succeeded  in the s %4 == 2 slow path with Max m "+fmt.Sprintf("priority: %v, proposer:%v, thread:%v, and ids:%v ,", maxM.Priority, maxM.ProposerId, maxM.ThreadId, maxM.Ids[0])+" for index "+fmt.Sprintf("%v", message.instance), 2)
+				//prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer succeeded  in the s %4 == 2 slow path with Max m "+fmt.Sprintf("priority: %v, proposer:%v, thread:%v, and ids:%v ,", maxM.Priority, maxM.ProposerId, maxM.ThreadId, maxM.Ids[0])+" for index "+fmt.Sprintf("%v", message.instance), 2)
 				return ProposeResponse{
 					index:     int(message.instance),
 					decisions: P.Ids,
 				}
 			}
 		} else if allRepliesHaveS && S%4 == 3 {
-			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer is processing S%4==3 responses for index "+fmt.Sprintf("%v", message.instance), 0)
+			//prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer is processing S%4==3 responses for index "+fmt.Sprintf("%v", message.instance), 0)
 			P = prop.getMaxFromResponses(responsesArray, "M")
-			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer is in S%4 ==3 gather phase and updated P to "+fmt.Sprintf("priority: %v, replica:%v, thread:%v, and ids:%v", P.Priority, P.ProposerId, P.ThreadId, P.Ids[0])+" for index "+fmt.Sprintf("%v", message.instance), 2)
+			//prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer is in S%4 ==3 gather phase and updated P to "+fmt.Sprintf("priority: %v, replica:%v, thread:%v, and ids:%v", P.Priority, P.ProposerId, P.ThreadId, P.Ids[0])+" for index "+fmt.Sprintf("%v", message.instance), 2)
 		}
 
 		if allRepliesHaveS {
 			S = S + 1
-			prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer updated S to "+fmt.Sprintf("%v", S)+" for index "+fmt.Sprintf("%v", message.instance)+" and P to "+fmt.Sprintf("priority: %v, replica:%v, thread:%v, and ids:%v", P.Priority, P.ProposerId, P.ThreadId, P.Ids[0]), 2)
+			//prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer updated S to "+fmt.Sprintf("%v", S)+" for index "+fmt.Sprintf("%v", message.instance)+" and P to "+fmt.Sprintf("priority: %v, replica:%v, thread:%v, and ids:%v", P.Priority, P.ProposerId, P.ThreadId, P.Ids[0]), 2)
 		} else {
 			//  if any reply in R has S’ > S: S, P ← S’, F’ from any reply with maximum S’
 			for i := 0; i < len(responsesArray); i++ {
@@ -529,7 +529,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 						ThreadId:   responsesArray[i].F.ThreadId,
 						Ids:        responsesArray[i].F.Ids,
 					}
-					prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer received a higher S, hence updated S to "+fmt.Sprintf("%v", S)+" and P to "+fmt.Sprintf("priority: %v, replica:%v, thread:%v, and ids:%v", P.Priority, P.ProposerId, P.ThreadId, P.Ids[0])+" for index "+fmt.Sprintf("%v", message.instance), 2)
+					//prop.debug("thread id "+fmt.Sprintf(" %v ", prop.threadId)+"proposer received a higher S, hence updated S to "+fmt.Sprintf("%v", S)+" and P to "+fmt.Sprintf("priority: %v, replica:%v, thread:%v, and ids:%v", P.Priority, P.ProposerId, P.ThreadId, P.Ids[0])+" for index "+fmt.Sprintf("%v", message.instance), 2)
 				}
 			}
 		}
@@ -556,7 +556,7 @@ func (prop *Proposer) runProposer() {
 				response := prop.handleProposeRequest(proposeMessage)
 				if response.index != -1 {
 					prop.proposerToProxyChan <- response
-					prop.debug("proposer sent back to response to proxy for the propose request : "+fmt.Sprintf("%v", response), 0)
+					//prop.debug("proposer sent back to response to proxy for the propose request : "+fmt.Sprintf("%v", response), 0)
 				}
 				break
 			case decision := <-prop.proxyToProposerDecisionChan:
@@ -571,7 +571,7 @@ func (prop *Proposer) runProposer() {
 // send the decisions to every recorder
 
 func (prop *Proposer) handleDecisionRequest(decision Decision) {
-	prop.debug("proposer starting to handle a decision request "+fmt.Sprintf("%v", decision), 11)
+	//prop.debug("proposer starting to handle a decision request "+fmt.Sprintf("%v", decision), 11)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20*time.Second))
 	decidedSlots := prop.extractDecisionSlots(decision.indexes, decision.decisions)
