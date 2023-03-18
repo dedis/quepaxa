@@ -51,13 +51,13 @@ nohup ./${ctl_path} --name 22 --requestType status --operationType 2 >${output_p
 
 echo "Sent status to print log"
 
-sleep 10
-
-pkill replica; pkill replica; pkill replica; pkill replica; pkill replica
-pkill client; pkill client; pkill client; pkill client; pkill client
+sleep 15
 
 python3 experiment/python/overlay-test.py 60 ${output_path}1-consensus.txt ${output_path}2-consensus.txt ${output_path}3-consensus.txt ${output_path}4-consensus.txt ${output_path}5-consensus.txt >${output_path}local-test-consensus.log
 python3 experiment/python/overlay-test.py 60 ${output_path}1-mempool.txt   ${output_path}2-mempool.txt   ${output_path}3-mempool.txt   ${output_path}4-mempool.txt   ${output_path}5-mempool.txt   >${output_path}local-test-mempool.log
+
+pkill replica; pkill replica; pkill replica; pkill replica; pkill replica
+pkill client; pkill client; pkill client; pkill client; pkill client
 
 python3 experiment/python/throughputvstime.py throughput
 python3 experiment/python/throughputvstime.py latency
