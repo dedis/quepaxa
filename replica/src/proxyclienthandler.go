@@ -24,6 +24,10 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 			for proposeIndex+1 <= int64(len(pr.replicatedLog)) && pr.replicatedLog[proposeIndex].decided {
 				proposeIndex++ // we always propose for a new index
 			}
+			if proposeIndex-pr.committedIndex < pr.pipelineLength {
+				return
+			}
+
 			msWait := int(pr.getLeaderWait(pr.getLeaderSequence(proposeIndex)))
 			msWait = msWait * int(proposeIndex-pr.committedIndex) // adjust waiting for the pipelining
 			msWait = msWait + pr.additionalDelay                  // for experiments

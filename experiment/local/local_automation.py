@@ -18,84 +18,84 @@ def run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batch
 epoch = 200
 
 
-# leaderTimeout = 3000000
-# serverMode = 0
-# leaderMode = 0
-# pipeline = 1
-# batchTime = 600
-# batchSize = 1
-# arrivalRate = 1000
-# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
-#
-# # case 2
-#
-# leaderTimeout = 3000000
-# serverMode = 0
-# leaderMode = 0
-# pipeline = 1
-# batchTime = 2000
-# batchSize = 50
-# arrivalRate = 20000
-# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
-#
-#
-# # case 3
-#
-# leaderTimeout = 3000000
-# serverMode = 0
-# leaderMode = 0
-# pipeline = 10
-# batchTime = 2000
-# batchSize = 50
-# arrivalRate = 20000
-# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
-#
-#
-# # case 4
-#
-# leaderTimeout = 200000
-# serverMode = 0
-# leaderMode = 1
-# pipeline = 1
-# batchTime = 2000
-# batchSize = 50
-# arrivalRate = 20000
-# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
-#
-#
-# # case 5
-#
-# leaderTimeout = 200000
-# serverMode = 0
-# leaderMode = 2
-# pipeline = 1
-# batchTime = 2000
-# batchSize = 50
-# arrivalRate = 20000
-# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
-#
-# # case 6
-#
-# leaderTimeout = 200000
-# serverMode = 0
-# leaderMode = 3
-# pipeline = 1
-# batchTime = 2000
-# batchSize = 50
-# arrivalRate = 10000
-# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+leaderTimeout = 3000000
+serverMode = 0
+leaderMode = 0
+pipeline = 1
+batchTime = 600
+batchSize = 1
+arrivalRate = 1000
+run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+
+# case 2
+
+leaderTimeout = 3000000
+serverMode = 0
+leaderMode = 0
+pipeline = 1
+batchTime = 2000
+batchSize = 50
+arrivalRate = 20000
+run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 
-# # case 7
-#
-# leaderTimeout = 200000
-# serverMode = 0
-# leaderMode = 4
-# pipeline = 1
-# batchTime = 2000
-# batchSize = 50
-# arrivalRate = 10000
-# run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+# case 3
+
+leaderTimeout = 3000000
+serverMode = 0
+leaderMode = 0
+pipeline = 10
+batchTime = 2000
+batchSize = 50
+arrivalRate = 20000
+run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+
+
+# case 4
+
+leaderTimeout = 200000
+serverMode = 0
+leaderMode = 1
+pipeline = 1
+batchTime = 2000
+batchSize = 50
+arrivalRate = 20000
+run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+
+
+# case 5
+
+leaderTimeout = 200000
+serverMode = 0
+leaderMode = 2
+pipeline = 1
+batchTime = 2000
+batchSize = 50
+arrivalRate = 20000
+run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+
+# case 6
+
+leaderTimeout = 200000
+serverMode = 0
+leaderMode = 3
+pipeline = 1
+batchTime = 2000
+batchSize = 50
+arrivalRate = 10000
+run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+
+
+# case 7
+
+leaderTimeout = 200000
+serverMode = 0
+leaderMode = 4
+pipeline = 1
+batchTime = 2000
+batchSize = 50
+arrivalRate = 10000
+run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 
 # case 8
