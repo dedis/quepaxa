@@ -88,6 +88,18 @@ run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize
 
 # case 7
 
+leaderTimeout = 200000
+serverMode = 0
+leaderMode = 4
+pipeline = 1
+batchTime = 2000
+batchSize = 50
+arrivalRate = 10000
+run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+
+
+# case 8
+
 leaderTimeout = 3000000
 serverMode = 1
 leaderMode = 0
@@ -98,7 +110,7 @@ arrivalRate = 20000
 run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 
-# case 8
+# case 9
 
 leaderTimeout = 30000
 serverMode = 0
@@ -109,7 +121,7 @@ batchSize = 50
 arrivalRate = 20000
 run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
-# case 9
+# case 10
 
 leaderTimeout = 3000
 serverMode = 0
@@ -121,7 +133,7 @@ arrivalRate = 20000
 run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 
-# case 10
+# case 11
 
 leaderTimeout = 300
 serverMode = 0
@@ -130,6 +142,17 @@ pipeline = 1
 batchTime = 2000
 batchSize = 50
 arrivalRate = 20000
+run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
+
+# case 12
+
+leaderTimeout = 3000
+serverMode = 0
+leaderMode = 4
+pipeline = 1
+batchTime = 2000
+batchSize = 50
+arrivalRate = 10000
 run(epoch, leaderTimeout, serverMode, leaderMode, pipeline, batchTime, batchSize, arrivalRate)
 
 
