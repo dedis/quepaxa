@@ -263,11 +263,13 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 		d := Decision{
 			indexes:   make([]int, 0),
 			decisions: make([][]string, 0),
+			proposers: make([]int32, 0),
 		}
 
 		for i := 0; i < len(req.DecidedSlots); i++ {
 			d.indexes = append(d.indexes, int(req.DecidedSlots[i].Index))
 			d.decisions = append(d.decisions, req.DecidedSlots[i].Ids)
+			d.proposers = append(d.proposers, int32(req.DecidedSlots[i].Proposer))
 		}
 
 		re.recorderToProxyChan <- d
@@ -365,11 +367,13 @@ func (re *Recorder) HandleDecisions(decisions *Decisions) {
 		d := Decision{
 			indexes:   make([]int, 0),
 			decisions: make([][]string, 0),
+			proposers: make([]int32, 0),
 		}
 
 		for i := 0; i < len(decisions.DecidedSlots); i++ {
 			d.indexes = append(d.indexes, int(decisions.DecidedSlots[i].Index))
 			d.decisions = append(d.decisions, decisions.DecidedSlots[i].Ids)
+			d.proposers = append(d.proposers, int32(decisions.DecidedSlots[i].Proposer))
 		}
 
 		re.recorderToProxyChan <- d

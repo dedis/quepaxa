@@ -213,6 +213,7 @@ func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 		if pr.replicatedLog[message.index].decided == false {
 			pr.replicatedLog[message.index].decided = true
 			pr.replicatedLog[message.index].decidedBatch = message.decisions
+			pr.replicatedLog[message.index].proposer = message.proposer
 			//pr.debug("proxy decided as a result of propose "+fmt.Sprintf(" for instance %v with initial value", message.index, message.decisions[0]), 20)
 			pr.updateEpochTime(message.index)
 
@@ -230,6 +231,7 @@ func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 
 		// add the decided value to proxy's lastDecidedIndexes, lastDecidedDecisions
 		pr.lastDecidedIndexes = append(pr.lastDecidedIndexes, message.index)
+		pr.lastDecidedProposers = append(pr.lastDecidedProposers, message.proposer)
 		pr.lastDecidedDecisions = append(pr.lastDecidedDecisions, message.decisions)
 
 	}
@@ -270,12 +272,14 @@ func (pr *Proxy) handleRecorderResponse(message Decision) {
 	for i := 0; i < len(message.indexes); i++ {
 		index := message.indexes[i]
 		batches := message.decisions[i]
+		proposer := message.proposers[i]
 		if len(batches) == 0 {
 			panic("should not happen")
 		}
 		if pr.replicatedLog[index].decided == false {
 			pr.replicatedLog[index].decided = true
 			pr.replicatedLog[index].decidedBatch = batches
+			pr.replicatedLog[index].proposer = proposer
 
 			pr.updateEpochTime(index)
 			//pr.debug("proxy decided from the recorder response "+fmt.Sprintf(" instance %v with batches %v", index, batches), 20)
@@ -313,6 +317,7 @@ func (pr *Proxy) handleDecisionNotification() {
 	newDecision := Decision{
 		indexes:   pr.lastDecidedIndexes,
 		decisions: pr.lastDecidedDecisions,
+		proposers: pr.lastDecidedProposers,
 	}
 
 	pr.proxyToProposerDecisionChan <- newDecision
@@ -320,5 +325,6 @@ func (pr *Proxy) handleDecisionNotification() {
 
 	// reset the variables
 	pr.lastDecidedIndexes = make([]int, 0)
+	pr.lastDecidedProposers = make([]int32, 0)
 	pr.lastDecidedDecisions = make([][]string, 0)
 }

@@ -60,7 +60,8 @@ type ProposeRequest struct {
 	proposalBtch         []client.ClientBatch // client batches for slow path
 	isLeader             bool                 // true if waiting time is zero and not in the asyn mode
 	lastDecidedIndexes   []int                //slots that were previously decided
-	lastDecidedDecisions [][]string           // for each lastDecidedIndex, the string array of client batches decided
+	lastDecidedProposers []int32
+	lastDecidedDecisions [][]string // for each lastDecidedIndex, the string array of client batches decided
 }
 
 // ProposeResponse is the message type sent from proposer to proxy
@@ -68,11 +69,13 @@ type ProposeRequest struct {
 type ProposeResponse struct {
 	index     int      // log instance
 	decisions []string // ids of the client batches
+	proposer  int32
 }
 
 type Decision struct {
 	indexes   []int      // decided indexes
 	decisions [][]string // for each index the set of decided client batches
+	proposers []int32
 }
 
 // gRPC clients

@@ -37,7 +37,7 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 			})
 			pr.lastProposedIndex = proposeIndex
 			pr.instanceTimeouts[proposeIndex].Start()
-			if msWait != 0 && (pr.leaderMode == 1 || pr.leaderMode == 2) {
+			if msWait != 0 && (pr.leaderMode == 1 || pr.leaderMode == 2 || pr.leaderMode == 4) {
 				pr.handleDecisionNotification()
 			}
 			pr.lastTimeProposed = time.Now()
@@ -179,6 +179,7 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 		proposalBtch:         btchProposals,
 		isLeader:             isLeader,
 		lastDecidedIndexes:   pr.lastDecidedIndexes,
+		lastDecidedProposers: pr.lastDecidedProposers,
 		lastDecidedDecisions: pr.lastDecidedDecisions,
 	}
 
@@ -204,5 +205,6 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 
 	// reset the variables
 	pr.lastDecidedIndexes = make([]int, 0)
+	pr.lastDecidedProposers = make([]int32, 0)
 	pr.lastDecidedDecisions = make([][]string, 0)
 }

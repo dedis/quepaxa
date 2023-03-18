@@ -185,7 +185,7 @@ func (prop *Proposer) getProposeClientBatches(btch []client.ClientBatch) []*Prop
 
 // convert between proto types
 
-func (prop *Proposer) extractDecidedSlots(indexes []int, decisions [][]string) []*ProposerMessage_DecidedSlot {
+func (prop *Proposer) extractDecidedSlots(indexes []int, decisions [][]string, proposers []int32) []*ProposerMessage_DecidedSlot {
 	if len(indexes) != len(decisions) {
 		panic("should not happen")
 	}
@@ -194,7 +194,7 @@ func (prop *Proposer) extractDecidedSlots(indexes []int, decisions [][]string) [
 		rA = append(rA, &ProposerMessage_DecidedSlot{
 			Index:    int64(indexes[i]),
 			Ids:      decisions[i],
-			Proposer: prop.name,
+			Proposer: int64(proposers[i]),
 		})
 	}
 
@@ -330,7 +330,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 
 	//prop.debug("proposer created initial proposal "+fmt.Sprintf("%v", P)+" for index "+fmt.Sprintf("%v", message.instance), 0)
 
-	decidedSlots := prop.extractDecidedSlots(message.lastDecidedIndexes, message.lastDecidedDecisions)
+	decidedSlots := prop.extractDecidedSlots(message.lastDecidedIndexes, message.lastDecidedDecisions, message.lastDecidedProposers)
 
 	//prop.debug("proposer proposes for instance "+fmt.Sprintf("%v ", message.instance), 9)
 
@@ -493,6 +493,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 				return ProposeResponse{
 					index:     int(message.instance),
 					decisions: responsesArray[0].F.Ids,
+					proposer:  int32(responsesArray[0].F.ProposerId),
 				}
 			}
 
@@ -507,6 +508,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 				return ProposeResponse{
 					index:     int(message.instance),
 					decisions: P.Ids,
+					proposer:  int32(P.ProposerId),
 				}
 			}
 		} else if allRepliesHaveS && S%4 == 3 {
@@ -574,7 +576,7 @@ func (prop *Proposer) handleDecisionRequest(decision Decision) {
 	//prop.debug("proposer starting to handle a decision request "+fmt.Sprintf("%v", decision), 11)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20*time.Second))
-	decidedSlots := prop.extractDecisionSlots(decision.indexes, decision.decisions)
+	decidedSlots := prop.extractDecisionSlots(decision.indexes, decision.decisions, decision.proposers)
 	prop.debug("proposer sending rpc in parallel ", -1)
 	wg := sync.WaitGroup{}
 	for i := 0; i < prop.numReplicas; i++ {
@@ -596,7 +598,7 @@ func (prop *Proposer) handleDecisionRequest(decision Decision) {
 }
 
 // convert between proto types
-func (prop *Proposer) extractDecisionSlots(indexes []int, decisions [][]string) []*Decisions_DecidedSlot {
+func (prop *Proposer) extractDecisionSlots(indexes []int, decisions [][]string, proposers []int32) []*Decisions_DecidedSlot {
 	if len(indexes) != len(decisions) {
 		panic("should not happen")
 	}
@@ -607,7 +609,7 @@ func (prop *Proposer) extractDecisionSlots(indexes []int, decisions [][]string) 
 		arr = append(arr, &Decisions_DecidedSlot{
 			Index:    int64(indexes[i]),
 			Ids:      decisions[i],
-			Proposer: prop.name,
+			Proposer: int64(proposers[i]),
 		})
 	}
 	return arr

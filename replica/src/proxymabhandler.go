@@ -110,6 +110,38 @@ func (pr *Proxy) getLeaderSequence(instance int64) []int64 {
 		}
 
 	}
+	if pr.leaderMode == 4 {
+		// last won proposer
+		if instance == 0 {
+			// assumes that node names start with 1
+			rA := make([]int64, 0)
+
+			for i := 0; i < pr.numReplicas; i++ {
+				rA = append(rA, int64(i+1))
+			}
+
+			return rA
+		} else {
+			if !pr.replicatedLog[instance-1].decided {
+				panic("should not happen")
+			}
+			lastProposer := pr.replicatedLog[instance-1].proposer
+			rA := make([]int64, 0)
+			for i := int64(lastProposer); i < int64(pr.numReplicas)+1; i++ {
+				rA = append(rA, i)
+			}
+			for i := int64(1); i < int64(lastProposer); i++ {
+				rA = append(rA, i)
+			}
+
+			if len(rA) != pr.numReplicas {
+				panic("should not happen")
+			}
+			//pr.debug("proxy leader sequence for instance "+fmt.Sprintf("%v is %v", instance, rA), 0)
+			return rA
+
+		}
+	}
 
 	panic("should not happen")
 }
@@ -202,6 +234,7 @@ func (pr *Proxy) proposePreviousEpochSummary(index int64) {
 		proposalBtch:         btchProposals,
 		isLeader:             isLeader,
 		lastDecidedIndexes:   pr.lastDecidedIndexes,
+		lastDecidedProposers: pr.lastDecidedProposers,
 		lastDecidedDecisions: pr.lastDecidedDecisions,
 	}
 
@@ -227,6 +260,7 @@ func (pr *Proxy) proposePreviousEpochSummary(index int64) {
 
 	// reset the variables
 	pr.lastDecidedIndexes = make([]int, 0)
+	pr.lastDecidedProposers = make([]int32, 0)
 	pr.lastDecidedDecisions = make([][]string, 0)
 }
 

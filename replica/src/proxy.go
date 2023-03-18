@@ -22,6 +22,7 @@ type Slot struct {
 	decidedBatch  []string // decided client batch ids
 	decided       bool     // true if decided
 	committed     bool     // true if committed
+	proposer      int32    // whose proposal won
 }
 
 /*
@@ -79,7 +80,8 @@ type Proxy struct {
 
 	toBeProposed []string // set of client batches that are yet be proposed
 
-	lastDecidedIndexes   []int      //slots that were previously decided
+	lastDecidedIndexes   []int //slots that were previously decided
+	lastDecidedProposers []int32
 	lastDecidedDecisions [][]string // for each lastDecidedIndex, the string array of client batches id decided
 
 	leaderMode int // leader change mode
@@ -147,6 +149,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		server:                            server,
 		toBeProposed:                      make([]string, 0),
 		lastDecidedIndexes:                make([]int, 0),
+		lastDecidedProposers:              make([]int32, 0),
 		lastDecidedDecisions:              make([][]string, 0),
 		leaderMode:                        leaderMode,
 		serverMode:                        serverMode,                               // for the proposer
