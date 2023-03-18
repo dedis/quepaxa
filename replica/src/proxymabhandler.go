@@ -122,7 +122,7 @@ func (pr *Proxy) getLeaderSequence(instance int64) []int64 {
 
 			return rA
 		} else {
-			if !pr.replicatedLog[instance-1].decided {
+			if !pr.replicatedLog[instance-1].committed {
 				panic("should not happen")
 			}
 			lastProposer := pr.replicatedLog[instance-1].proposer

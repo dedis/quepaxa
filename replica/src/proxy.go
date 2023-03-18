@@ -171,6 +171,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		decidedBatch:  []string{"nil"},
 		decided:       true,
 		committed:     true,
+		proposer:      1,
 	})
 
 	// initialize the clientAddrList
