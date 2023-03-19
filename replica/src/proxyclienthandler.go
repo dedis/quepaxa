@@ -24,7 +24,8 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 			for proposeIndex+1 <= int64(len(pr.replicatedLog)) && pr.replicatedLog[proposeIndex].decided {
 				proposeIndex++ // we always propose for a new index
 			}
-			if proposeIndex-pr.committedIndex < pr.pipelineLength {
+
+			if pr.leaderMode == 4 && !pr.replicatedLog[proposeIndex-1].committed {
 				return
 			}
 
