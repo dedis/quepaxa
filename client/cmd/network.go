@@ -44,6 +44,8 @@ func (cl *Client) ConnectToReplicas() {
 				}
 				cl.debug("established outgoing connection to "+strconv.Itoa(int(i)), -1)
 				break
+			} else {
+				panic(err.Error())
 			}
 		}
 	}
