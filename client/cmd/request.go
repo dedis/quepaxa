@@ -42,7 +42,7 @@ func (cl *Client) SendRequests() {
 
 	// end of test
 
-	time.Sleep(time.Duration(cl.testDuration*2) * time.Second) // additional sleep duration to make sure that all the in-flight responses are received
+	time.Sleep(time.Duration(10) * time.Second) // additional sleep duration to make sure that all the in-flight responses are received
 	fmt.Printf("Finish sending requests \n")
 	cl.computeStats()
 }
