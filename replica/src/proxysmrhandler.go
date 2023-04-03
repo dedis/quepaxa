@@ -223,8 +223,11 @@ func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 				pr.toBeProposed = append(pr.toBeProposed, pr.replicatedLog[message.index].proposedBatch...)
 				pr.replicatedLog[message.index].proposedBatch = nil
 			}
-			// remove the decided batches from toBeProposed
-			pr.removeDecidedItemsFromFutureProposals(pr.replicatedLog[message.index].decidedBatch)
+
+			if pr.checkProposerDuplicates {
+				// remove the decided batches from toBeProposed
+				pr.removeDecidedItemsFromFutureProposals(pr.replicatedLog[message.index].decidedBatch)
+			}
 		}
 
 		// update SMR -- if all entries are available

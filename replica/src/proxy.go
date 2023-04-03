@@ -98,8 +98,9 @@ type Proxy struct {
 	proxyToProposerDecisionChan       chan Decision
 	proxyInternalDecisionNotification chan bool
 
-	benchmark *benchmark.Benchmark
-	startTime time.Time
+	benchmark               *benchmark.Benchmark
+	startTime               time.Time
+	checkProposerDuplicates bool
 }
 
 type EpochTime struct {
@@ -111,7 +112,7 @@ type EpochTime struct {
 
 // instantiate a new proxy
 
-func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, logFilePath string, batchSize int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server, leaderMode int, store *ClientBatchStore, serverMode int, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, batchTime int64, epochSize int, proxyToProposerDecisionChan chan Decision, benchmarkMode int, keyLen int, valueLen int) *Proxy {
+func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, logFilePath string, batchSize int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server, leaderMode int, store *ClientBatchStore, serverMode int, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, batchTime int64, epochSize int, proxyToProposerDecisionChan chan Decision, benchmarkMode int, keyLen int, valueLen int, checkProposerDuplicates bool) *Proxy {
 
 	pr := Proxy{
 		name:                              name,
@@ -162,6 +163,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		proxyToProposerDecisionChan:       proxyToProposerDecisionChan,
 		proxyInternalDecisionNotification: make(chan bool, 10000),
 		benchmark:                         benchmark.Init(benchmarkMode, int32(name), keyLen, valueLen),
+		checkProposerDuplicates:           checkProposerDuplicates,
 	}
 
 	// initialize the genenesis
