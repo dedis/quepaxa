@@ -36,11 +36,15 @@ nohup ./${ctl_path} --name 22 --requestType status --operationType 1 >${output_p
 
 echo "Sent initial status to bootstrap"
 
-sleep 3
+sleep 8
 
 echo "Starting client[s]"
 
 nohup ./${ctl_path} --name 21 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" >${output_path}21.log &
+nohup ./${ctl_path} --name 22 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" >${output_path}22.log &
+nohup ./${ctl_path} --name 23 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" >${output_path}23.log &
+nohup ./${ctl_path} --name 24 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" >${output_path}24.log &
+nohup ./${ctl_path} --name 25 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" >${output_path}25.log &
 
 sleep 100
 
@@ -58,12 +62,6 @@ python3 experiment/python/overlay-test.py 60 ${output_path}1-mempool.txt   ${out
 pkill replica; pkill replica; pkill replica; pkill replica; pkill replica
 pkill client; pkill client; pkill client; pkill client; pkill client
 
-python3 experiment/python/throughputvstime.py throughput
-python3 experiment/python/throughputvstime.py latency
-
 echo "Killed previously running instances"
-
-mkdir -p    /home/pasindu/Desktop/raxos/"${epoch}"/"${leaderTimeout}"/"${serverMode}"/"${leaderMode}"/"${pipeline}"/"${batchTime}"/"${batchSize}"/"${arrivalRate}"/logs/
-cp -r logs/ /home/pasindu/Desktop/raxos/"${epoch}"/"${leaderTimeout}"/"${serverMode}"/"${leaderMode}"/"${pipeline}"/"${batchTime}"/"${batchSize}"/"${arrivalRate}"/logs/
 
 echo "Finish test"
