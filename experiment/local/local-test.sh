@@ -36,7 +36,7 @@ nohup ./${ctl_path} --name 22 --requestType status --operationType 1 >${output_p
 
 echo "Sent initial status to bootstrap"
 
-sleep 8
+sleep 15
 
 echo "Starting client[s]"
 
