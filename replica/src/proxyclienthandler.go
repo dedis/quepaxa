@@ -128,7 +128,7 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 	}
 	pr.instanceTimeouts[proposeIndex] = nil
 
-	//pr.debug("proposing for index "+fmt.Sprintf("%v at time %v ms", proposeIndex, time.Now().Sub(pr.startTime).Milliseconds()), 20)
+	pr.debug("proposing for index "+strconv.Itoa(int(proposeIndex)), 20)
 
 	if pr.leaderMode == 2 {
 		if pr.isBeginningOfEpoch(proposeIndex) {
@@ -153,7 +153,7 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 			Messages: nil,
 			Id:       "nil",
 		})
-		//pr.debug("proposing empty values for index "+fmt.Sprintf("%v", proposeIndex), 9)
+		pr.debug("proposing empty values for index "+strconv.Itoa(int(proposeIndex)), 9)
 	} else {
 		// send a new proposal Request to the ProposersChan
 		strProposals = pr.toBeProposed[0:batchSize]

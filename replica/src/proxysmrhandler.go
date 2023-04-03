@@ -3,6 +3,7 @@ package raxos
 import (
 	"raxos/common"
 	"raxos/proto/client"
+	"strconv"
 	"time"
 )
 
@@ -282,7 +283,7 @@ func (pr *Proxy) handleRecorderResponse(message Decision) {
 			pr.replicatedLog[index].proposer = proposer
 
 			pr.updateEpochTime(index)
-			//pr.debug("proxy decided from the recorder response "+fmt.Sprintf(" instance %v with batches %v", index, batches), 20)
+			pr.debug("proxy decided from the recorder response "+strconv.Itoa(index), 20)
 			if !pr.decidedTheProposedValue(index, batches) {
 				pr.toBeProposed = append(pr.toBeProposed, pr.replicatedLog[index].proposedBatch...)
 				pr.replicatedLog[index].proposedBatch = nil
