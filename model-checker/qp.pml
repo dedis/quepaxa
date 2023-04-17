@@ -1,4 +1,4 @@
-// Simple model of Que Paxa consensus.
+// Simple model of QuePaxa consensus.
 // Recorder logic runs atomically in-line within the proposer code.
 
 #define N		3	// total number of recorder (state) nodes
@@ -12,7 +12,7 @@
 #define HI		(RAND+1) // top priority for proposals by leader
 #define VALS		2	// space of preferred values is 1..VALS
 
-// A proposal is an integer divided into three bit-fields: FIT, CLI, VAL.
+// A proposal is an integer divided into two bit-fields: fitness and value.
 #define	VALBITS		4
 #define FITBITS		4
 #define VALSHIFT	(0)
@@ -23,14 +23,14 @@
 
 #define MAX(a, b)	((a) > (b) -> (a) : (b))
 
-// Recorder state: implements an epoch summary primitive (ESP),
-// which returns the first value submitted in this epoch
-// and the maximum of all values submitted in the prior epoch.
+// Recorder state: implements an interval summary register (ISR),
+// which returns the first value submitted in this time step
+// and the maximum of all values submitted in the prior time step
 typedef Rec {
-	byte s;			// step/epoch number
-	byte f;			// first value submitted in this epoch
-	byte a;			// maximum value seen so far in this epoch
-	byte m;			// maximum value seen in prior epoch (s-1)
+	byte s;			// step number
+	byte f;			// first value submitted in this step
+	byte a;			// maximum value seen so far in this step
+	byte m;			// maximum value seen in prior step (s-1)
 }
 
 Rec rec[1+N];			// state of recorder nodes 1..N
@@ -80,8 +80,8 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 				fi
 				assert(FIT(p) > 0 && VAL(p) > 0);
 
-				// enter the recorder/ESP role (via "RPC").
-				printf("%d step %d ESP <%d,%d> to %d\n",
+				// enter the recorder/ISR role (via "RPC").
+				printf("%d step %d ISR <%d,%d> to %d\n",
 					j, s, FIT(p), VAL(p), i);
 
 				// first catch up the recorder if appropriate

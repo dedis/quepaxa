@@ -1,4 +1,4 @@
-// Simple model of Que Paxa consensus.
+// Simple model of QuePaxa consensus.
 // Uses explicit message-based communication with recorders.
 
 #define N		3	// total number of recorder (state) nodes
@@ -12,7 +12,7 @@
 #define HI		(RAND+1) // top priority for proposals by leader
 #define VALS		2	// space of preferred values is 1..VALS
 
-// A proposal is an integer divided into three bit-fields: FIT, CLI, VAL.
+// A proposal is an integer divided into two bit-fields: fitness and value.
 #define	VALBITS		4
 #define FITBITS		4
 #define VALSHIFT	(0)
@@ -107,10 +107,10 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 			done = done && (FIT(rfn) == HI);
 			recs++;	 	// this recorder has now replied
 
-		:: rs == s && rsn == s && (s & 3) == 1 -> // spreadE phase
+		:: rs == s && rsn == s && (s & 3) == 1 -> // spread E phase
 			recs++;	 	// this recorder has now replied
 
-		:: rs == s && rsn == s && (s & 3) >= 2 -> // gatherEspreadC
+		:: rs == s && rsn == s && (s & 3) >= 2 -> // gather E spread C
 			g = MAX(g, rmn); // gather best of E or C sets
 			recs++;	 	// this recorder has now replied
 		fi
@@ -137,9 +137,9 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 			:: else -> skip
 			fi
 
-		:: (s & 3) == 1 -> skip		// spreadE phase: nothing to do
+		:: (s & 3) == 1 -> skip		// spread E phase: nothing to do
 
-		:: (s & 3) == 2 ->		// gatherEspreadC phase
+		:: (s & 3) == 2 ->		// gather E spread C phase
 			// p is now the best of some universal (U) set;
 			// g is the best of all the E sets we gathered.
 			assert(FIT(g) > 0 && VAL(g) > 0);
@@ -149,7 +149,7 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 			:: else -> skip
 			fi
 
-		:: (s & 3) == 3 ->		// gatherC phase
+		:: (s & 3) == 3 ->		// gather C phase
 			// g is the best of all common (C) sets we gathered;
 			// this becomes our proposal for the next round.
 			assert(FIT(g) > 0 && VAL(g) > 0);
@@ -176,7 +176,7 @@ proctype Proposer(byte j) {			// We're proposer j in 1..M
 	}
 }
 
-// Each recorder is also a process.
+// Each recorder is a process implementing an interval summary register (ISR).
 proctype Recorder(byte i) {			// We're proposer j in 1..M
 	byte s, f, a, m;
 	byte rj, rs, rv;
@@ -187,7 +187,7 @@ proctype Recorder(byte i) {			// We're proposer j in 1..M
 		:: rs == s ->
 			a = MAX(a, rv);		// accumulate max of all values
 
-		:: rs > s ->			// step forward to new epoch
+		:: rs > s ->			// forward to a later step
 			m = (rs == s+1 -> a : 0);
 			s = rs;
 			f = rv;
