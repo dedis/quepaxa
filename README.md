@@ -1,13 +1,13 @@
-Raxos is an asynchronous consensus protocol.
+QuePaxa is an asynchronous consensus protocol.  The corresponding paper is in the [quepaxa-doc](https://github.com/dedis/quepaxa-doc) repository.
 
-Raxos uses the [Mage](https://magefile.org/) build tool. Therefore it needs the ```mage``` command to be installed.
+QuePaxa uses the [Mage](https://magefile.org/) build tool. Therefore it needs the ```mage``` command to be installed.
 
 
-Raxos uses [Protocol Buffers](https://developers.google.com/protocol-buffers/).
+QuePaxa uses [Protocol Buffers](https://developers.google.com/protocol-buffers/).
 It requires the ```protoc``` compiler with the ```go``` output plugin installed.
 
 
-Raxos uses [Redis](https://redis.io/topics/quickstart) and it should be installed with default options.
+QuePaxa uses [Redis](https://redis.io/topics/quickstart) and it should be installed with default options.
 
 All implementations are tested in ```Ubuntu 20.04.3 LTS```
 
