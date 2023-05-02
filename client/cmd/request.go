@@ -92,10 +92,6 @@ func (cl *Client) startRequestGenerators() {
 			lastSent := time.Now()
 			for true {
 
-				if (cl.totalSentBatches - cl.totalReceivedBatches) > cl.window {
-					continue
-				}
-
 				numRequests := int64(0)
 				var requests []*client.ClientBatch_SingleMessage
 				// this loop collects requests until the minimum batch size is met
@@ -107,6 +103,10 @@ func (cl *Client) startRequestGenerators() {
 							cl.RandString(cl.valLen)),
 					})
 					numRequests++
+				}
+
+				if (cl.totalSentBatches - cl.totalReceivedBatches) > cl.window {
+					continue
 				}
 
 				for i, _ := range cl.replicaAddrList {

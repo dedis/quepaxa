@@ -181,5 +181,6 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 
 	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store, serverMode, sr.proxyToProposerFetchChan, sr.proposerToProxyFetchChan, sr.batchTime, sr.epochSize, sr.proxyToProposerDecisionChan, benchmarkMode, keyLen, valueLen, checkProposerDuplicates)
 	sr.RecorderInstance = NewRecorder(*cfg, sr.store, sr.recorderToProxyChan, name, debugOn, debugLevel)
+	fmt.Printf("started QuePaxa Server")
 	return &sr
 }
