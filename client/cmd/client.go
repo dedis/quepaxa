@@ -56,11 +56,12 @@ type Client struct {
 
 	clientListenAddress string // ip:port of the listening port
 
-	keyLen         int // length of keys
-	valLen         int // length of values
-	slowdown       string
-	useFixedLeader bool  // if true send only to a fixed leader
-	fixedLeader    int32 //
+	keyLen               int // length of keys
+	valLen               int // length of values
+	slowdown             string
+	window               int64 // number of outstanding requests
+	totalSentBatches     int64
+	totalReceivedBatches int64
 }
 
 /*
@@ -92,7 +93,7 @@ const arrivalBufferSize = 1000000     // size of the buffer that collects new re
 	Instantiate a new Client instance, allocate the buffers
 */
 
-func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batchSize int64, batchTime int64, testDuration int64, arrivalRate int64, requestType string, operationType int64, debugLevel int, debugOn bool, keyLen int, valLen int, slowdown string, useFixedLeader bool, fixedLeader int64) *Client {
+func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batchSize int64, batchTime int64, testDuration int64, arrivalRate int64, requestType string, operationType int64, debugLevel int, debugOn bool, keyLen int, valLen int, slowdown string, window int64) *Client {
 	cl := Client{
 		name:                   name,
 		numReplicas:            int64(len(cfg.Peers)),
@@ -124,8 +125,9 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		keyLen:                 keyLen,
 		valLen:                 valLen,
 		slowdown:               slowdown,
-		useFixedLeader:         useFixedLeader,
-		fixedLeader:            int32(fixedLeader),
+		window:                 window,
+		totalSentBatches:       0,
+		totalReceivedBatches:   0,
 	}
 
 	// client listen address
