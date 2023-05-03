@@ -51,9 +51,10 @@ sleep 80
 
 echo "Completed Client[s]"
 
+nohup ./${ctl_path} --name 23 --requestType status --operationType 4 >${output_path}status4.log &
 nohup ./${ctl_path} --name 22 --requestType status --operationType 2 >${output_path}status2.log &
 
-echo "Sent status to print log"
+echo "Sent status to print log and print steps per slot"
 
 sleep 40
 
