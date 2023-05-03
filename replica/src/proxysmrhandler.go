@@ -215,6 +215,8 @@ func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 			pr.replicatedLog[message.index].decided = true
 			pr.replicatedLog[message.index].decidedBatch = message.decisions
 			pr.replicatedLog[message.index].proposer = message.proposer
+			pr.replicatedLog[message.index].s = message.s
+
 			//pr.debug("proxy decided as a result of propose "+fmt.Sprintf(" for instance %v with initial value", message.index, message.decisions[0]), 20)
 			pr.updateEpochTime(message.index)
 
@@ -270,6 +272,7 @@ func (pr *Proxy) handleRecorderResponse(message Decision) {
 			decidedBatch:  nil,
 			decided:       false,
 			committed:     false,
+			s:             0,
 		})
 	}
 

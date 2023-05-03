@@ -248,6 +248,7 @@ func (pr *Proxy) proposePreviousEpochSummary(index int64) {
 			decidedBatch:  nil,
 			decided:       false,
 			committed:     false,
+			s:             0,
 		})
 	}
 

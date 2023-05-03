@@ -23,6 +23,7 @@ type Slot struct {
 	decided       bool     // true if decided
 	committed     bool     // true if committed
 	proposer      int32    // whose proposal won
+	s             int      // the slot in which proposer decided the entry
 }
 
 /*
@@ -174,6 +175,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		decided:       true,
 		committed:     true,
 		proposer:      1,
+		s:             0,
 	})
 
 	// initialize the clientAddrList

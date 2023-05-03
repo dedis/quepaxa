@@ -494,6 +494,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 					index:     int(message.instance),
 					decisions: responsesArray[0].F.Ids,
 					proposer:  int32(responsesArray[0].F.ProposerId),
+					s:         S,
 				}
 			}
 
@@ -509,6 +510,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 					index:     int(message.instance),
 					decisions: P.Ids,
 					proposer:  int32(P.ProposerId),
+					s:         S,
 				}
 			}
 		} else if allRepliesHaveS && S%4 == 3 {

@@ -1,6 +1,7 @@
 package raxos
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"raxos/common"
@@ -82,6 +83,35 @@ func (pr *Proxy) handleClientStatus(status client.ClientStatus) {
 			}
 		}
 	}
+
+	if status.Operation == 4 {
+		pr.debug("printing the steps per slot", 0)
+		fmt.Printf("Average number of steps per slot: %f", pr.calculateStepsPerSlot())
+	}
+}
+
+/*
+	calculate the average number of steps per slot
+*/
+
+func (pr *Proxy) calculateStepsPerSlot() float64 {
+	proposedSlots := 0
+	stepsAccum := 0
+	for i := 0; i < len(pr.replicatedLog); i++ {
+		if pr.replicatedLog[i].committed {
+			if pr.replicatedLog[i].s == 0 {
+				continue
+			}
+			proposedSlots++
+			stepsAccum += pr.replicatedLog[i].s
+		}
+	}
+	if proposedSlots == 0 {
+		return 0
+	} else {
+		return float64(stepsAccum) / float64(proposedSlots)
+	}
+
 }
 
 // print the mempool and the consensus log to files
@@ -198,6 +228,7 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 			decidedBatch:  nil,
 			decided:       false,
 			committed:     false,
+			s:             0,
 		})
 	}
 

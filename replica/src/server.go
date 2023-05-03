@@ -70,6 +70,7 @@ type ProposeResponse struct {
 	index     int      // log instance
 	decisions []string // ids of the client batches
 	proposer  int32
+	s         int
 }
 
 type Decision struct {
