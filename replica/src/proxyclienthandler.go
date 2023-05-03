@@ -86,7 +86,7 @@ func (pr *Proxy) handleClientStatus(status client.ClientStatus) {
 
 	if status.Operation == 4 {
 		pr.debug("printing the steps per slot", 0)
-		fmt.Printf("Average number of steps per slot: %f", pr.calculateStepsPerSlot())
+		fmt.Printf("\nAverage number of steps per slot: %f", pr.calculateStepsPerSlot())
 	}
 }
 
@@ -103,7 +103,7 @@ func (pr *Proxy) calculateStepsPerSlot() float64 {
 				continue
 			}
 			proposedSlots++
-			stepsAccum += pr.replicatedLog[i].s
+			stepsAccum += (pr.replicatedLog[i].s - 3)
 		}
 	}
 	if proposedSlots == 0 {
