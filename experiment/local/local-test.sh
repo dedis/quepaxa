@@ -7,6 +7,7 @@ batchTime=$6
 batchSize=$7
 arrivalRate=$8
 window=$9
+requestPropagationTime=${10}
 
 mage generate && mage build
 
@@ -23,11 +24,11 @@ pkill client; pkill client; pkill client; pkill client; pkill client;
 
 echo "Killed previously running instances"
 
-nohup ./${raxos_path} --name 1 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" >${output_path}1.log &
-nohup ./${raxos_path} --name 2 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" >${output_path}2.log &
-nohup ./${raxos_path} --name 3 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" >${output_path}3.log &
-nohup ./${raxos_path} --name 4 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" >${output_path}4.log &
-nohup ./${raxos_path} --name 5 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" >${output_path}5.log &
+nohup ./${raxos_path} --name 1 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" >${output_path}1.log &
+nohup ./${raxos_path} --name 2 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" >${output_path}2.log &
+nohup ./${raxos_path} --name 3 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" >${output_path}3.log &
+nohup ./${raxos_path} --name 4 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" >${output_path}4.log &
+nohup ./${raxos_path} --name 5 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" >${output_path}5.log &
 
 echo "Started 5 servers"
 

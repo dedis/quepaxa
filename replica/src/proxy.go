@@ -95,13 +95,14 @@ type Proxy struct {
 	lastTimeProposed time.Time
 	epochSize        int
 
-	epochTimes                        []EpochTime
-	proxyToProposerDecisionChan       chan Decision
-	proxyInternalDecisionNotification chan bool
+	epochTimes                  []EpochTime
+	proxyToProposerDecisionChan chan Decision
+	clientBatchTimer            chan ClientBatchTime
 
 	benchmark               *benchmark.Benchmark
 	startTime               time.Time
 	checkProposerDuplicates bool
+	requestPropogationTime  int64
 }
 
 type EpochTime struct {
@@ -113,58 +114,59 @@ type EpochTime struct {
 
 // instantiate a new proxy
 
-func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, logFilePath string, batchSize int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server, leaderMode int, store *ClientBatchStore, serverMode int, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, batchTime int64, epochSize int, proxyToProposerDecisionChan chan Decision, benchmarkMode int, keyLen int, valueLen int, checkProposerDuplicates bool) *Proxy {
+func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, logFilePath string, batchSize int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server, leaderMode int, store *ClientBatchStore, serverMode int, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, batchTime int64, epochSize int, proxyToProposerDecisionChan chan Decision, benchmarkMode int, keyLen int, valueLen int, checkProposerDuplicates bool, requestPropogationTime int64) *Proxy {
 
 	pr := Proxy{
-		name:                              name,
-		numReplicas:                       len(cfg.Peers),
-		numClients:                        len(cfg.Clients),
-		clientAddrList:                    make(map[int64]string),
-		incomingClientReaders:             make(map[int64]*bufio.Reader),
-		outgoingClientWriters:             make(map[int64]*bufio.Writer),
-		buffioWriterMutexes:               make(map[int64]*sync.Mutex),
-		serverAddress:                     "",
-		Listener:                          nil,
-		rpcTable:                          make(map[uint8]*common.RPCPair),
-		incomingChan:                      make(chan common.RPCPair, 1000000),
-		outgoingMessageChan:               make(chan common.OutgoingRPC, 1000000),
-		proxyToProposerChan:               proxyToProposerChan,
-		proposerToProxyChan:               proposerToProxyChan,
-		recorderToProxyChan:               recorderToProxyChan,
-		proxyToProposerFetchChan:          proxyToProposerFetchChan,
-		proposerToProxyFetchChan:          proposerToProxyFetchChan,
-		clientBatchRpc:                    1,
-		clientStatusRpc:                   2,
-		replicatedLog:                     make([]Slot, 0),
-		committedIndex:                    0,
-		lastProposedIndex:                 0,
-		lastTimeCommitted:                 time.Now(),
-		logFilePath:                       logFilePath,
-		batchSize:                         int(batchSize),
-		batchTime:                         batchTime,
-		pipelineLength:                    pipelineLength,
-		clientBatchStore:                  store,
-		leaderTimeout:                     leaderTimeout,
-		debugOn:                           debugOn,
-		debugLevel:                        debugLevel,
-		serverStarted:                     false,
-		server:                            server,
-		toBeProposed:                      make([]string, 0),
-		lastDecidedIndexes:                make([]int, 0),
-		lastDecidedProposers:              make([]int32, 0),
-		lastDecidedDecisions:              make([][]string, 0),
-		leaderMode:                        leaderMode,
-		serverMode:                        serverMode,                               // for the proposer
-		instanceTimeouts:                  make([]*common.TimerWithCancel, 1000000), // assumes that number of instances do not exceed 1000000, todo increase if not sufficient
-		proposeRequestIndex:               make(chan ProposeRequestIndex, 10000),
-		additionalDelay:                   0,
-		lastTimeProposed:                  time.Now(),
-		epochSize:                         epochSize,
-		epochTimes:                        make([]EpochTime, 0),
-		proxyToProposerDecisionChan:       proxyToProposerDecisionChan,
-		proxyInternalDecisionNotification: make(chan bool, 10000),
-		benchmark:                         benchmark.Init(benchmarkMode, int32(name), keyLen, valueLen),
-		checkProposerDuplicates:           checkProposerDuplicates,
+		name:                        name,
+		numReplicas:                 len(cfg.Peers),
+		numClients:                  len(cfg.Clients),
+		clientAddrList:              make(map[int64]string),
+		incomingClientReaders:       make(map[int64]*bufio.Reader),
+		outgoingClientWriters:       make(map[int64]*bufio.Writer),
+		buffioWriterMutexes:         make(map[int64]*sync.Mutex),
+		serverAddress:               "",
+		Listener:                    nil,
+		rpcTable:                    make(map[uint8]*common.RPCPair),
+		incomingChan:                make(chan common.RPCPair, 1000000),
+		outgoingMessageChan:         make(chan common.OutgoingRPC, 1000000),
+		proxyToProposerChan:         proxyToProposerChan,
+		proposerToProxyChan:         proposerToProxyChan,
+		recorderToProxyChan:         recorderToProxyChan,
+		proxyToProposerFetchChan:    proxyToProposerFetchChan,
+		proposerToProxyFetchChan:    proposerToProxyFetchChan,
+		clientBatchRpc:              1,
+		clientStatusRpc:             2,
+		replicatedLog:               make([]Slot, 0),
+		committedIndex:              0,
+		lastProposedIndex:           0,
+		lastTimeCommitted:           time.Now(),
+		logFilePath:                 logFilePath,
+		batchSize:                   int(batchSize),
+		batchTime:                   batchTime,
+		pipelineLength:              pipelineLength,
+		clientBatchStore:            store,
+		leaderTimeout:               leaderTimeout,
+		debugOn:                     debugOn,
+		debugLevel:                  debugLevel,
+		serverStarted:               false,
+		server:                      server,
+		toBeProposed:                make([]string, 0),
+		lastDecidedIndexes:          make([]int, 0),
+		lastDecidedProposers:        make([]int32, 0),
+		lastDecidedDecisions:        make([][]string, 0),
+		leaderMode:                  leaderMode,
+		serverMode:                  serverMode,                               // for the proposer
+		instanceTimeouts:            make([]*common.TimerWithCancel, 1000000), // assumes that number of instances do not exceed 1000000, todo increase if not sufficient
+		proposeRequestIndex:         make(chan ProposeRequestIndex, 10000),
+		additionalDelay:             0,
+		lastTimeProposed:            time.Now(),
+		epochSize:                   epochSize,
+		epochTimes:                  make([]EpochTime, 0),
+		proxyToProposerDecisionChan: proxyToProposerDecisionChan,
+		clientBatchTimer:            make(chan ClientBatchTime, 100000),
+		benchmark:                   benchmark.Init(benchmarkMode, int32(name), keyLen, valueLen),
+		checkProposerDuplicates:     checkProposerDuplicates,
+		requestPropogationTime:      requestPropogationTime,
 	}
 
 	// initialize the genenesis
@@ -224,6 +226,13 @@ type ProposeRequestIndex struct {
 	index int64
 }
 
+// client batch time assigns each incoming client batch with incoming time
+
+type ClientBatchTime struct {
+	batch        client.ClientBatch
+	incomingTime time.Time
+}
+
 /*
 	the main loop of the proxy
 */
@@ -256,7 +265,10 @@ func (pr *Proxy) Run() {
 				case pr.clientBatchRpc:
 					clientBatch := inpputMessage.Obj.(*client.ClientBatch)
 					//pr.debug("proxy received client batch  "+fmt.Sprintf("%#v", clientBatch), -1)
-					pr.handleClientBatch(*clientBatch)
+					pr.clientBatchTimer <- ClientBatchTime{
+						batch:        *clientBatch,
+						incomingTime: time.Now(),
+					}
 					break
 				case pr.clientStatusRpc:
 					clientStatus := inpputMessage.Obj.(*client.ClientStatus)
@@ -269,14 +281,18 @@ func (pr *Proxy) Run() {
 
 		}
 	}()
+	go func() {
+		for true {
+			batch := <-pr.clientBatchTimer
+			batchTime := batch.incomingTime
+			if time.Now().Sub(batchTime).Milliseconds() >= pr.requestPropogationTime {
+				pr.handleClientBatch(batch.batch)
+			} else {
+				pr.clientBatchTimer <- batch
+			}
+		}
+	}()
 
-	//go func() {
-	//	for true {
-	//		time.Sleep(time.Duration(1000) * time.Microsecond)
-	//		pr.proxyInternalDecisionNotification <- true
-	//		pr.debug("proxy notified about decisions", 11)
-	//	}
-	//}()
 }
 
 /*

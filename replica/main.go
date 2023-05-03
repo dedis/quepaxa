@@ -25,7 +25,8 @@ func main() {
 	epochSize := flag.Int("epochSize", 100, "epoch size for MAB")
 	keyLen := flag.Int64("keyLen", 8, "length of key")
 	valLen := flag.Int64("valLen", 8, "length of value")
-	checkProposerDuplicates := flag.Bool("checkProposerDuplicates", false, "false if no checking is required")
+	requestPropagationTime := flag.Int64("requestPropagationTime", 0, "additional wait time in 'milli seconds' for client batches, such that there is enough time for client driven request propagation, for LAN this is 0, for WAN it is usually set to 5ms")
+	checkProposerDuplicates := flag.Bool("checkProposerDuplicates", false, "false if no checking is required, turn on for asynchronous experiments")
 	flag.Parse()
 
 	cfg, err := configuration.NewInstanceConfig(*configFile, *name)
@@ -34,7 +35,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	serverInstance := raxos.New(cfg, *name, *logFilePath, *batchSize, *leaderTimeout, *pipelineLength, *debugOn, *debugLevel, *leaderMode, *serverMode, *batchTime, *epochSize, int(*benchmark), int(*keyLen), int(*valLen), *checkProposerDuplicates) // create a new server instance
+	serverInstance := raxos.New(cfg, *name, *logFilePath, *batchSize, *leaderTimeout, *pipelineLength, *debugOn, *debugLevel, *leaderMode, *serverMode, *batchTime, *epochSize, int(*benchmark), int(*keyLen), int(*valLen), *checkProposerDuplicates, *requestPropagationTime) // create a new server instance
 
 	serverInstance.NetworkInit()
 	serverInstance.Run()
