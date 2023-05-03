@@ -24,7 +24,7 @@ func main() {
 	debugOn := flag.Bool("debugOn", false, "turn on/off debug")
 	debugLevel := flag.Int64("debugLevel", 0, "debug level")
 	slowdown := flag.String("slowdown", "", "node1:wait1,node2:wait2,node3:wait3")
-	window := flag.Int64("window", 1000, "number of outstanding requests")
+	window := flag.Int64("window", 1000, "number of outstanding client batches")
 
 	flag.Parse()
 
