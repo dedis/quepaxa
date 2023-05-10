@@ -6,7 +6,7 @@ pipeline=$5
 batchTime=$6
 batchSize=$7
 arrivalRate=$8
-window=$9
+closeLoopWindow=$9
 requestPropagationTime=${10}
 
 mage generate && mage build
@@ -42,11 +42,11 @@ sleep 15
 
 echo "Starting client[s]"
 
-nohup ./${ctl_path} --name 21 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${window}" >${output_path}21.log &
-nohup ./${ctl_path} --name 22 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${window}" >${output_path}22.log &
-nohup ./${ctl_path} --name 23 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${window}" >${output_path}23.log &
-nohup ./${ctl_path} --name 24 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${window}" >${output_path}24.log &
-nohup ./${ctl_path} --name 25 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${window}" >${output_path}25.log &
+nohup ./${ctl_path} --name 21 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${closeLoopWindow}" >${output_path}21.log &
+nohup ./${ctl_path} --name 22 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${closeLoopWindow}" >${output_path}22.log &
+nohup ./${ctl_path} --name 23 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${closeLoopWindow}" >${output_path}23.log &
+nohup ./${ctl_path} --name 24 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${closeLoopWindow}" >${output_path}24.log &
+nohup ./${ctl_path} --name 25 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${closeLoopWindow}" >${output_path}25.log &
 
 sleep 80
 
