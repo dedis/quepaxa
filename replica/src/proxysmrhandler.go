@@ -96,19 +96,19 @@ func (pr *Proxy) updateStateMachine(sendResponse bool) {
 			if len(pr.replicatedLog[i].decidedBatch) == 0 {
 				panic("should not happen")
 			}
-			//pr.debug("proxy calling update state machine and found a new decided slot  "+fmt.Sprintf("%v", i), 1)
+			pr.debug("proxy calling update state machine and found a new decided slot  "+strconv.Itoa(int(i)), 0)
 
 			for j := 0; j < len(pr.replicatedLog[i].decidedBatch); j++ {
 				// check if each batch exists
 				_, ok := pr.clientBatchStore.Get(pr.replicatedLog[i].decidedBatch[j])
 				if !ok {
 					pr.proxyToProposerFetchChan <- FetchRequest{ids: pr.replicatedLog[i].decidedBatch}
-					//pr.debug("proxy cannot commit because the client batches are missing for decided slot  "+fmt.Sprintf("%v", i)+" hence requesting  "+fmt.Sprintf("%v", pr.replicatedLog[i].decidedBatch), 1)
+					pr.debug("proxy cannot commit because the client batches are missing for decided slot  "+strconv.Itoa(int(i))+" hence requesting  "+pr.replicatedLog[i].decidedBatch[j], 0)
 					return
 				}
 			}
 
-			//pr.debug("proxy has all client batches to commit  "+fmt.Sprintf("%v", i), 0)
+			pr.debug("proxy has all client batches to commit slot "+strconv.Itoa(int(i)), 0)
 
 			var responseBatches []*client.ClientBatch
 			for j := 0; j < len(pr.replicatedLog[i].decidedBatch); j++ {
