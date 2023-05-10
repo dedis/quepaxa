@@ -52,27 +52,32 @@ func (pr *Proxy) removeDecidedItemsFromFutureProposals(items []string) {
 	}
 }
 
-// apply the SMR logic for each client request
+// apply the SMR logic for client requests
 
-func (pr *Proxy) applySMRLogic(batch client.ClientBatch) client.ClientBatch {
-	responses := pr.benchmark.Execute([]*client.ClientBatch{&batch})
-	return *responses[0]
+func (pr *Proxy) applySMRLogic(batches []client.ClientBatch) []client.ClientBatch {
+	responses := pr.benchmark.Execute(batches)
+	return responses
 }
 
-// execute a single client batch
+// execute a client batches
 
-func (pr *Proxy) executeClientBatch(s string) (*client.ClientBatch, bool) {
-	batch, ok := pr.clientBatchStore.Get(s)
-	if !ok {
-		return nil, false
+func (pr *Proxy) executeClientBatches(s []string) []client.ClientBatch {
+	batches := make([]client.ClientBatch, 0)
+	for i := 0; i < len(s); i++ {
+		batch, ok := pr.clientBatchStore.Get(s[i])
+		if !ok {
+			panic("should not happen")
+		}
+		batches = append(batches, batch)
 	}
-	outputBatch := pr.applySMRLogic(batch)
-	return &outputBatch, true
+
+	outputBatch := pr.applySMRLogic(batches)
+	return outputBatch
 }
 
 // send the client response to client
 
-func (pr *Proxy) sendClientResponse(batches []*client.ClientBatch) {
+func (pr *Proxy) sendClientResponse(batches []client.ClientBatch) {
 
 	for i := 0; i < len(batches); i++ {
 		if batches[i].Sender == -1 {
@@ -80,10 +85,10 @@ func (pr *Proxy) sendClientResponse(batches []*client.ClientBatch) {
 		}
 		pr.sendMessage(batches[i].Sender, common.RPCPair{
 			Code: pr.clientBatchRpc,
-			Obj:  batches[i],
+			Obj:  &batches[i],
 		})
 
-		//pr.debug("proxy sent a client response  "+fmt.Sprintf("%v", batches[i]), -1)
+		pr.debug("proxy sent a client response for batch id "+batches[i].Id, 0)
 	}
 }
 
@@ -110,17 +115,10 @@ func (pr *Proxy) updateStateMachine(sendResponse bool) {
 
 			pr.debug("proxy has all client batches to commit slot "+strconv.Itoa(int(i)), 0)
 
-			var responseBatches []*client.ClientBatch
-			for j := 0; j < len(pr.replicatedLog[i].decidedBatch); j++ {
-				var responseBatch *client.ClientBatch
-				responseBatch, ok := pr.executeClientBatch(pr.replicatedLog[i].decidedBatch[j])
-				if !ok {
-					panic("did not find the client batch")
-				}
-				responseBatches = append(responseBatches, responseBatch)
-			}
+			responseBatches := pr.executeClientBatches(pr.replicatedLog[i].decidedBatch)
+
 			pr.lastTimeCommitted = time.Now()
-			//pr.debug("proxy committed  "+fmt.Sprintf("%v, number of pending request batches %v ", pr.committedIndex+1, len(pr.toBeProposed)), 0)
+			pr.debug("proxy committed  index "+strconv.Itoa(int(pr.committedIndex+1)), 0)
 			pr.replicatedLog[i].committed = true
 			// empty the proposed batch
 			pr.replicatedLog[i].proposedBatch = make([]string, 0)

@@ -48,7 +48,7 @@ func Init(mode int, name int32, keyLen int, valueLen int) *Benchmark {
 
 		return &b
 	} else if mode == 0 {
-		
+
 		b := Benchmark{
 			mode:        mode,
 			RedisClient: nil,
@@ -70,8 +70,8 @@ func Init(mode int, name int32, keyLen int, valueLen int) *Benchmark {
 	external API to call
 */
 
-func (b *Benchmark) Execute(requests []*client.ClientBatch) []*client.ClientBatch {
-	var commands []*client.ClientBatch
+func (b *Benchmark) Execute(requests []client.ClientBatch) []client.ClientBatch {
+	var commands []client.ClientBatch
 	if b.mode == 0 {
 		commands = b.residentExecute(requests)
 	} else {
@@ -84,13 +84,13 @@ func (b *Benchmark) Execute(requests []*client.ClientBatch) []*client.ClientBatc
 	resident key value store operation: for each client request invoke the resident k/v store
 */
 
-func (b *Benchmark) residentExecute(commands []*client.ClientBatch) []*client.ClientBatch {
-	returnCommands := make([]*client.ClientBatch, len(commands))
+func (b *Benchmark) residentExecute(commands []client.ClientBatch) []client.ClientBatch {
+	returnCommands := make([]client.ClientBatch, len(commands))
 
 	for clientBatchIndex := 0; clientBatchIndex < len(commands); clientBatchIndex++ {
 
-		returnCommands[clientBatchIndex] = &client.ClientBatch{
-			Id: commands[clientBatchIndex].Id,
+		returnCommands[clientBatchIndex] = client.ClientBatch{
+			Id:       commands[clientBatchIndex].Id,
 			Messages: make([]*client.ClientBatch_SingleMessage, len(commands[clientBatchIndex].Messages)),
 			Sender:   commands[clientBatchIndex].Sender,
 		}
@@ -124,16 +124,16 @@ func (b *Benchmark) residentExecute(commands []*client.ClientBatch) []*client.Cl
 	redis commands execution: batch the requests and execute
 */
 
-func (b *Benchmark) redisExecute(commands []*client.ClientBatch) []*client.ClientBatch {
-	returnCommands := make([]*client.ClientBatch, len(commands))
+func (b *Benchmark) redisExecute(commands []client.ClientBatch) []client.ClientBatch {
+	returnCommands := make([]client.ClientBatch, len(commands))
 
 	mset := make([]string, 0) // pending MSET requests
 	mget := make([]string, 0) // pending MGET requests
 
 	for clientBatchIndex := 0; clientBatchIndex < len(commands); clientBatchIndex++ {
 
-		returnCommands[clientBatchIndex] = &client.ClientBatch{
-			Id: commands[clientBatchIndex].Id,
+		returnCommands[clientBatchIndex] = client.ClientBatch{
+			Id:       commands[clientBatchIndex].Id,
 			Messages: make([]*client.ClientBatch_SingleMessage, len(commands[clientBatchIndex].Messages)),
 			Sender:   commands[clientBatchIndex].Sender,
 		}
