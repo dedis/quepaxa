@@ -103,6 +103,8 @@ type Proxy struct {
 	startTime               time.Time
 	checkProposerDuplicates bool
 	requestPropogationTime  int64
+
+	clientRequestsChan chan client.ClientBatch
 }
 
 type EpochTime struct {
@@ -167,6 +169,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		benchmark:                   benchmark.Init(benchmarkMode, int32(name), keyLen, valueLen),
 		checkProposerDuplicates:     checkProposerDuplicates,
 		requestPropogationTime:      requestPropogationTime,
+		clientRequestsChan:          make(chan client.ClientBatch, 100000),
 	}
 
 	// initialize the genenesis
@@ -258,6 +261,10 @@ func (pr *Proxy) Run() {
 				pr.debug("proxy received fetch response", 1)
 				pr.handleFetchResponse(fetchResponse)
 				break
+			case clientRequest := <-pr.clientRequestsChan:
+				pr.debug("proxy received a client request that is ready to be replicated", 0)
+				pr.handleClientBatch(clientRequest)
+				break
 			case inpputMessage := <-pr.incomingChan:
 				pr.debug("Received client  message", -1)
 				code := inpputMessage.Code
@@ -281,12 +288,15 @@ func (pr *Proxy) Run() {
 
 		}
 	}()
+
+	// this thread waits for the waiting time to complete for each client request
+
 	go func() {
 		for true {
 			batch := <-pr.clientBatchTimer
 			batchTime := batch.incomingTime
 			if time.Now().Sub(batchTime).Milliseconds() >= pr.requestPropogationTime {
-				pr.handleClientBatch(batch.batch)
+				pr.clientRequestsChan <- batch.batch
 			} else {
 				pr.clientBatchTimer <- batch
 			}

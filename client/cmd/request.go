@@ -16,6 +16,9 @@ import (
 */
 
 func (cl *Client) handleClientResponseBatch(batch *client.ClientBatch) {
+	if cl.finished {
+		return
+	}
 	_, ok := cl.receivedResponses.Load(batch.Id)
 	if ok {
 		return
@@ -25,7 +28,9 @@ func (cl *Client) handleClientResponseBatch(batch *client.ClientBatch) {
 		batch: *batch,
 		time:  time.Now(), // record the time when the response was received
 	})
+	cl.receiveCountMutex.Lock()
 	cl.totalReceivedBatches++
+	cl.receiveCountMutex.Unlock()
 	cl.debug("Added response Batch from "+strconv.Itoa(int(batch.Sender))+" to received map", 0)
 }
 
@@ -43,8 +48,9 @@ func (cl *Client) SendRequests() {
 
 	// end of test
 
-	time.Sleep(time.Duration(10) * time.Second) // additional sleep duration to make sure that all the in-flight responses are received
+	time.Sleep(time.Duration(20) * time.Second) // additional sleep duration to make sure that all the in-flight responses are received
 	fmt.Printf("Finish sending requests \n")
+	cl.finished = true
 	cl.computeStats()
 }
 
@@ -91,7 +97,9 @@ func (cl *Client) startRequestGenerators() {
 			localCounter := 0
 			lastSent := time.Now()
 			for true {
-
+				if cl.finished {
+					return
+				}
 				numRequests := int64(0)
 				var requests []*client.ClientBatch_SingleMessage
 				// this loop collects requests until the minimum batch size is met
@@ -104,10 +112,12 @@ func (cl *Client) startRequestGenerators() {
 					})
 					numRequests++
 				}
-
+				cl.receiveCountMutex.Lock()
 				if (cl.totalSentBatches - cl.totalReceivedBatches) > cl.window {
+					cl.receiveCountMutex.Unlock()
 					continue
 				}
+				cl.receiveCountMutex.Unlock()
 
 				for i, _ := range cl.replicaAddrList {
 

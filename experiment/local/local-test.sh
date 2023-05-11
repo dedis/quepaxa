@@ -48,7 +48,7 @@ nohup ./${ctl_path} --name 23 --debugOn --debugLevel 20 --requestType request --
 nohup ./${ctl_path} --name 24 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${closeLoopWindow}" >${output_path}24.log &
 nohup ./${ctl_path} --name 25 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${closeLoopWindow}" >${output_path}25.log &
 
-sleep 80
+sleep 100
 
 echo "Completed Client[s]"
 

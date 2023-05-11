@@ -20,26 +20,25 @@ type Value struct {
 // Recorder side slot
 
 type RecorderSlot struct {
-	Mutex *sync.Mutex
-	S     int
-	F     Value
-	A     Value
-	M     Value
+	S int
+	F Value
+	A Value
+	M Value
 }
 
 type Recorder struct {
-	address               string       // address to listen for gRPC connections
-	listener              net.Listener // socket for gRPC connections
-	server                *grpc.Server // gRPC server
-	connection            *GRPCConnection
-	clientBatches         *ClientBatchStore
-	recorderToProxyChan   chan Decision
-	name                  int64
-	slots                 []RecorderSlot // recorder side replicated log
-	cfg                   configuration.InstanceConfig
-	instanceCreationMutex *sync.Mutex
-	debugOn               bool // if turned on, the debug messages will be print on the console
-	debugLevel            int  // debug level
+	address             string       // address to listen for gRPC connections
+	listener            net.Listener // socket for gRPC connections
+	server              *grpc.Server // gRPC server
+	connection          *GRPCConnection
+	clientBatches       *ClientBatchStore
+	recorderToProxyChan chan Decision
+	name                int64
+	slots               []RecorderSlot // recorder side replicated log
+	cfg                 configuration.InstanceConfig
+	instanceMutex       *sync.Mutex
+	debugOn             bool // if turned on, the debug messages will be print on the console
+	debugLevel          int  // debug level
 }
 
 // instantiate a new Recorder
@@ -53,13 +52,13 @@ func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchSto
 		connection:    nil,
 		clientBatches: clientBatches,
 		//lastSeenTimeProposers: lastSeenTimeProposers,
-		recorderToProxyChan:   recorderToProxyChan,
-		name:                  name,
-		slots:                 make([]RecorderSlot, 0),
-		cfg:                   cfg,
-		instanceCreationMutex: &sync.Mutex{},
-		debugOn:               debugOn,
-		debugLevel:            debugLevel,
+		recorderToProxyChan: recorderToProxyChan,
+		name:                name,
+		slots:               make([]RecorderSlot, 0),
+		cfg:                 cfg,
+		instanceMutex:       &sync.Mutex{},
+		debugOn:             debugOn,
+		debugLevel:          debugLevel,
 	}
 
 	// serverAddress
@@ -170,11 +169,12 @@ func (r *Recorder) max(oldValue Value, p *ProposerMessage_Proposal) Value {
 // main recorder esp logic
 
 func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (int64, Value, Value) {
-	re.instanceCreationMutex.Lock()
+	re.instanceMutex.Lock()
+	defer re.instanceMutex.Unlock()
+
 	for int64(len(re.slots)) < index+1 {
 		re.slots = append(re.slots, RecorderSlot{
-			Mutex: &sync.Mutex{},
-			S:     0,
+			S: 0,
 			F: Value{
 				priority:    -1,
 				proposer_id: -1,
@@ -195,9 +195,7 @@ func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (in
 			},
 		})
 	}
-	re.instanceCreationMutex.Unlock()
 
-	re.slots[index].Mutex.Lock()
 	//re.debug("recorder processing esp for s  "+fmt.Sprintf("%v", s)+" for index "+fmt.Sprintf("%v", index)+" for proposal "+fmt.Sprintf("pID: %v, tID: %v, prio:%v, initRequest: %v", p.ProposerId, p.ThreadId, p.Priority, p.Ids[0]), 2)
 	if re.slots[index].S == s {
 		//re.debug("recorder received esp for the same s  "+" for index "+fmt.Sprintf("%v", index), -1)
@@ -234,7 +232,6 @@ func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (in
 	returnF := re.slots[index].F
 	returnM := re.slots[index].M
 	//re.debug("recorder finished processing esp for s  "+fmt.Sprintf("%v", s)+" for index "+fmt.Sprintf("%v", index)+" for proposal "+fmt.Sprintf("%v", p), -1)
-	re.slots[index].Mutex.Unlock()
 
 	return int64(returnS), returnF, returnM
 

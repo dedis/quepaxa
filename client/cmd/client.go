@@ -62,6 +62,8 @@ type Client struct {
 	window               int64 // number of outstanding requests
 	totalSentBatches     int64
 	totalReceivedBatches int64
+	receiveCountMutex    *sync.Mutex
+	finished             bool
 }
 
 /*
@@ -128,6 +130,8 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		window:                 window,
 		totalSentBatches:       0,
 		totalReceivedBatches:   0,
+		receiveCountMutex:      &sync.Mutex{},
+		finished:               false,
 	}
 
 	// client listen address
