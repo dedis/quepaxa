@@ -9,6 +9,10 @@ arrivalRate=$8
 closeLoopWindow=$9
 requestPropagationTime=${10}
 
+rm -r configuration/local
+mkdir -p configuration/local
+python3 configuration/config-generate.py 5 5 localhost localhost localhost localhost localhost localhost localhost localhost localhost localhost > configuration/local/configuration.yml
+
 mage generate && mage build
 
 raxos_path="replica/bin/replica"
@@ -64,6 +68,7 @@ python3 experiment/python/overlay-test.py 60 ${output_path}1-mempool.txt   ${out
 
 pkill replica; pkill replica; pkill replica; pkill replica; pkill replica
 pkill client; pkill client; pkill client; pkill client; pkill client
+rm -r configuration/local
 
 echo "Killed previously running instances"
 
