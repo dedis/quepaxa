@@ -118,8 +118,7 @@ func (pr *Proxy) calculateStepsPerSlot() (float64, int, int) {
 // print the mempool and the consensus log to files
 
 func (pr *Proxy) printLog() {
-	pr.clientBatchStore.printStore(pr.logFilePath, pr.name) // print mem pool
-	pr.printConsensusLog()                                  // print the replicated log
+	pr.printConsensusLog() // print the replicated log
 }
 
 // print the replicated log to a file

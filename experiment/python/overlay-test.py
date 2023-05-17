@@ -17,8 +17,6 @@ for i in range(2, len(sys.argv)):
 
     files.append(dict)
     print("Length of " + sys.argv[i] + " is " + str(numberOfRequests))
-    print("Approximate throughput " + str(
-        numberOfRequests / time) + "requests per second")
 
 
 def checkMaps(files):

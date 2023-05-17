@@ -99,10 +99,9 @@ type Proxy struct {
 	proxyToProposerDecisionChan chan Decision
 	clientBatchTimer            chan ClientBatchTime
 
-	benchmark               *benchmark.Benchmark
-	startTime               time.Time
-	checkProposerDuplicates bool
-	requestPropogationTime  int64
+	benchmark              *benchmark.Benchmark
+	startTime              time.Time
+	requestPropogationTime int64
 
 	clientRequestsChan chan client.ClientBatch
 }
@@ -116,7 +115,7 @@ type EpochTime struct {
 
 // instantiate a new proxy
 
-func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, logFilePath string, batchSize int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server, leaderMode int, store *ClientBatchStore, serverMode int, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, batchTime int64, epochSize int, proxyToProposerDecisionChan chan Decision, benchmarkMode int, keyLen int, valueLen int, checkProposerDuplicates bool, requestPropogationTime int64) *Proxy {
+func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, recorderToProxyChan chan Decision, logFilePath string, batchSize int64, pipelineLength int64, leaderTimeout int64, debugOn bool, debugLevel int, server *Server, leaderMode int, store *ClientBatchStore, serverMode int, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, batchTime int64, epochSize int, proxyToProposerDecisionChan chan Decision, benchmarkMode int, keyLen int, valueLen int, requestPropogationTime int64) *Proxy {
 
 	pr := Proxy{
 		name:                        name,
@@ -167,7 +166,6 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		proxyToProposerDecisionChan: proxyToProposerDecisionChan,
 		clientBatchTimer:            make(chan ClientBatchTime, 100000),
 		benchmark:                   benchmark.Init(benchmarkMode, int32(name), keyLen, valueLen),
-		checkProposerDuplicates:     checkProposerDuplicates,
 		requestPropogationTime:      requestPropogationTime,
 		clientRequestsChan:          make(chan client.ClientBatch, 100000),
 	}

@@ -34,22 +34,27 @@ func (pr *Proxy) decidedTheProposedValue(index int, decisions []string) bool {
 	return false
 }
 
-// for each item in the list, if it is found in the toBeProposed, then delete it
+// remove the items in array from pr.toBeProposed
 
-func (pr *Proxy) removeDecidedItemsFromFutureProposals(items []string) {
-	for i := 0; i < len(items); i++ {
-		position := -1
-		for j := 0; j < len(pr.toBeProposed); j++ {
-			if items[i] == pr.toBeProposed[j] {
-				position = j
-				break
-			}
-		}
-		if position != -1 {
-			pr.toBeProposed[position] = pr.toBeProposed[len(pr.toBeProposed)-1]
-			pr.toBeProposed = pr.toBeProposed[:len(pr.toBeProposed)-1]
+func (pr *Proxy) removeDecidedItemsFromFutureProposals(array []string) {
+
+	// Create a set to store the elements of array
+	set := make(map[string]bool)
+	for _, elem := range array {
+		set[elem] = true
+	}
+
+	// Remove elements from pr.toBeProposed if they exist in the set
+	j := 0
+	for i := 0; i < len(pr.toBeProposed); i++ {
+		if !set[pr.toBeProposed[i]] {
+			pr.toBeProposed[j] = pr.toBeProposed[i]
+			j++
 		}
 	}
+
+	// Truncate pr.toBeProposed to remove the remaining elements
+	pr.toBeProposed = pr.toBeProposed[:j]
 }
 
 // apply the SMR logic for client requests
@@ -224,10 +229,8 @@ func (pr *Proxy) handleProposeResponse(message ProposeResponse) {
 				pr.replicatedLog[message.index].proposedBatch = nil
 			}
 
-			if pr.checkProposerDuplicates {
-				// remove the decided batches from toBeProposed
-				pr.removeDecidedItemsFromFutureProposals(pr.replicatedLog[message.index].decidedBatch)
-			}
+			pr.removeDecidedItemsFromFutureProposals(pr.replicatedLog[message.index].decidedBatch)
+
 		}
 
 		// update SMR -- if all entries are available
