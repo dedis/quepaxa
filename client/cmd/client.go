@@ -20,7 +20,6 @@ import (
 type Client struct {
 	name        int64 // unique client identifier as defined in the configuration.yml
 	numReplicas int64 // number of replicas
-	numClients  int64 // number of clients (for the moment this is not required, just leaving for future use or to remove)
 
 	replicaAddrList        map[int64]string        // a map with the IP:port of every proxy
 	incomingReplicaReaders map[int64]*bufio.Reader // socket readers for each replica
@@ -36,7 +35,7 @@ type Client struct {
 	logFilePath string // the path to write the requests and responses, used for sanity checks
 
 	batchSize int64 // maximum client side batch size
-	batchTime int64
+	batchTime int64 // maximum client side batch time
 
 	outgoingMessageChan chan *common.OutgoingRPC // buffer for messages that are written to the wire
 
@@ -49,21 +48,20 @@ type Client struct {
 	arrivalTimeChan   chan int64           // channel to which the poisson process adds new request arrival times in nanoseconds w.r.t test start time
 	arrivalChan       chan bool            // channel to which the main scheduler adds new request arrivals, to be consumed by the request generation threads
 	RequestType       string               // [request] for sending a stream of client requests, [status] for sending a status request
-	OperationType     int64                // status operation type 1 (bootstrap server), 2: print log
+	OperationType     int64                // status operation type 1: bootstrap server, 2: print log, 3: node slow down, and 4: print slot information
 	sentRequests      [][]sentRequestBatch // generator i updates sentRequests[i] :this is to avoid concurrent access to the same array
 	receivedResponses sync.Map             // set of received client response batches from replicas
 	startTime         time.Time            // test start time
 
 	clientListenAddress string // ip:port of the listening port
 
-	keyLen               int // length of keys
-	valLen               int // length of values
-	slowdown             string
-	window               int64 // number of outstanding requests
+	keyLen               int   // length of keys
+	valLen               int   // length of values
+	window               int64 // number of outstanding requests that still not responded by the replicas
 	totalSentBatches     int64
 	totalReceivedBatches int64
-	receiveCountMutex    *sync.Mutex
-	finished             bool
+	receiveCountMutex    *sync.Mutex // for mutual exclusion of totalReceivedBatches
+	finished             bool        // set true when test is done, so that no more responses are added
 }
 
 /*
@@ -76,7 +74,7 @@ type sentRequestBatch struct {
 }
 
 /*
-	received response batch contains the batch that was received from the replicas
+	received response batch contains the batch that was received from the replica[s]
 */
 
 type receivedResponseBatch struct {
@@ -95,11 +93,10 @@ const arrivalBufferSize = 1000000     // size of the buffer that collects new re
 	Instantiate a new Client instance, allocate the buffers
 */
 
-func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batchSize int64, batchTime int64, testDuration int64, arrivalRate int64, requestType string, operationType int64, debugLevel int, debugOn bool, keyLen int, valLen int, slowdown string, window int64) *Client {
+func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batchSize int64, batchTime int64, testDuration int64, arrivalRate int64, requestType string, operationType int64, debugLevel int, debugOn bool, keyLen int, valLen int, window int64) *Client {
 	cl := Client{
 		name:                   name,
 		numReplicas:            int64(len(cfg.Peers)),
-		numClients:             int64(len(cfg.Clients)),
 		replicaAddrList:        make(map[int64]string),
 		incomingReplicaReaders: make(map[int64]*bufio.Reader),
 		outgoingReplicaWriters: make(map[int64]*bufio.Writer),
@@ -126,7 +123,6 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 		clientListenAddress:    "",
 		keyLen:                 keyLen,
 		valLen:                 valLen,
-		slowdown:               slowdown,
 		window:                 window,
 		totalSentBatches:       0,
 		totalReceivedBatches:   0,
@@ -170,7 +166,7 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 }
 
 /*
-	if turned on, prints the message to console
+	if turned on, prints the debug message to console if the level is greater than the debugLevel
 */
 
 func (cl *Client) debug(message string, level int) {

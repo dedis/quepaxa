@@ -7,7 +7,6 @@ import (
 	"raxos/common"
 	"raxos/proto/client"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -32,7 +31,6 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 
 			msWait := int(pr.getLeaderWait(pr.getLeaderSequence(proposeIndex)))
 			msWait = msWait * int(proposeIndex-pr.committedIndex) // adjust waiting for the pipelining
-			msWait = msWait + pr.additionalDelay                  // for experiments
 			if pr.instanceTimeouts[proposeIndex] != nil {
 				pr.instanceTimeouts[proposeIndex].Cancel()
 			}
@@ -67,21 +65,6 @@ func (pr *Proxy) handleClientStatus(status client.ClientStatus) {
 		pr.debug("proxy printing logs", 0)
 		// print logs
 		pr.printLog()
-	}
-	if status.Operation == 3 {
-		pr.debug("proxy slowing down the proposing speed", 0)
-		slowDown := status.Message
-		split := strings.Split(slowDown, ",")
-		for h := 0; h < len(split); h++ {
-			splitItem := strings.Split(split[h], ":")
-			nodeName, _ := strconv.Atoi(splitItem[0])
-			if int64(nodeName) == pr.name {
-				newDelay, _ := strconv.Atoi(splitItem[1])
-				pr.additionalDelay = newDelay
-				pr.debug("proxy slowing down the proposing speed by "+strconv.Itoa(pr.additionalDelay), 15)
-				return
-			}
-		}
 	}
 
 	if status.Operation == 4 {

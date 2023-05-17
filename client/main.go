@@ -33,7 +33,6 @@ func main() {
 	valLen := flag.Int64("valLen", 8, "length of value in client requests")
 	debugOn := flag.Bool("debugOn", false, "turn on/off debug, turn off when benchmarking")
 	debugLevel := flag.Int64("debugLevel", 0, "debug level, debug messages with equal or higher debugLevel will be printed")
-	slowdown := flag.String("slowdown", "", "node1:wait1,node2:wait2,node3:wait3  artificial delay for each node id, in micro seconds ")
 	window := flag.Int64("window", 1000, "number of outstanding client batches sent by the client, before receiving the response")
 
 	flag.Parse()
@@ -45,7 +44,7 @@ func main() {
 		os.Exit(1)
 	}
 	// create a new client instance
-	cl := cmd.New(*name, cfg, *logFilePath, *batchSize, *batchTime, *testDuration, *arrivalRate, *requestType, *operationType, int(*debugLevel), *debugOn, int(*keyLen), int(*valLen), *slowdown, *window)
+	cl := cmd.New(*name, cfg, *logFilePath, *batchSize, *batchTime, *testDuration, *arrivalRate, *requestType, *operationType, int(*debugLevel), *debugOn, int(*keyLen), int(*valLen), *window)
 
 	// start the threads which receive out going messages
 	cl.StartOutgoingLinks()

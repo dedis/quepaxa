@@ -29,7 +29,6 @@ func (cl *Client) SendStatus(operationType int64) {
 		statusRequest := client.ClientStatus{
 			Sender:    cl.name,
 			Operation: operationType,
-			Message:   cl.slowdown,
 		}
 
 		rpcPair := common.RPCPair{
