@@ -1,4 +1,6 @@
-QuePaxa is an asynchronous consensus protocol.  The corresponding paper is in the [quepaxa-doc](https://github.com/dedis/quepaxa-doc) repository.
+QuePaxa is an asynchronous consensus protocol.  
+
+[//]: # (The corresponding paper is in the [quepaxa-doc]&#40;https://github.com/dedis/quepaxa-doc&#41; repository.)
 
 QuePaxa uses the [Mage](https://magefile.org/) build tool. Therefore it needs the ```mage``` command to be installed.
 
