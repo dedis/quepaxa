@@ -12,6 +12,8 @@ import (
 	"strconv"
 )
 
+// this file defines the tcp methods used by client to send and receive messages from replicas
+
 /*
 	fill the RPC table by assigning a unique id to each message type
 */
@@ -35,7 +37,9 @@ func (cl *Client) ConnectToReplicas() {
 		for true {
 			conn, err := net.Dial("tcp", cl.replicaAddrList[i])
 			if err == nil {
+				// save the connection info
 				cl.outgoingReplicaWriters[i] = bufio.NewWriter(conn)
+				// send my name to the replica
 				binary.LittleEndian.PutUint16(bs, uint16(cl.name))
 				_, err := conn.Write(bs)
 				if err != nil {
@@ -53,8 +57,7 @@ func (cl *Client) ConnectToReplicas() {
 }
 
 /*
-	listen on the port for new connections
-	whenever the proxy receives a new client connection, it dials the client
+	tcp listen on the port for new connections from replicas
 */
 
 func (cl *Client) WaitForConnections() {
@@ -73,14 +76,16 @@ func (cl *Client) WaitForConnections() {
 			fmt.Println("Accept error:", err)
 			panic(err)
 		}
+		// read the proxy id
 		if _, err := io.ReadFull(conn, bs); err != nil {
 			fmt.Println("Connection establish error:", err)
 			panic(err)
 		}
 		id := int32(binary.LittleEndian.Uint16(bs))
 		cl.debug("Received incoming tcp connection from "+strconv.Itoa(int(id)), -1)
-
+		// save the id and the connection reader
 		cl.incomingReplicaReaders[int64(id)] = bufio.NewReader(conn)
+		// asynchronously listen to the messages from the new connection
 		go cl.connectionListener(cl.incomingReplicaReaders[int64(id)], id)
 		cl.debug("Started listening to "+strconv.Itoa(int(id)), 0)
 
@@ -88,7 +93,8 @@ func (cl *Client) WaitForConnections() {
 }
 
 /*
-	listen to a given connection. Upon receiving any message, put it into the central buffer
+	listen to a given tcp connection. Upon receiving any message, put it into the incoming chanel
+	first the message type is received as a single byte, then the actual message is sent
 */
 
 func (cl *Client) connectionListener(reader *bufio.Reader, id int32) {
@@ -101,12 +107,14 @@ func (cl *Client) connectionListener(reader *bufio.Reader, id int32) {
 			cl.debug("Error while reading message code: connection broken from "+strconv.Itoa(int(id)), 1)
 			return
 		}
+		// proceed only if this message type is present
 		if rpair, present := cl.rpcTable[msgType]; present {
 			obj := rpair.Obj.New()
 			if err = obj.Unmarshal(reader); err != nil {
 				cl.debug("Error while unmarshalling", 1)
 				return
 			}
+			// put a new message to the incoming Chan
 			cl.incomingChan <- &common.RPCPair{
 				Code: msgType,
 				Obj:  obj,
@@ -126,7 +134,6 @@ func (cl *Client) connectionListener(reader *bufio.Reader, id int32) {
 func (cl *Client) Run() {
 	go func() {
 		for true {
-
 			cl.debug("Checking channel\n", -1)
 			replicaMessage := <-cl.incomingChan
 			cl.debug("Received message", 0)
@@ -135,13 +142,13 @@ func (cl *Client) Run() {
 
 			case cl.clientBatchRpc:
 				clientResponseBatch := replicaMessage.Obj.(*client.ClientBatch)
-				//cl.debug("client response batch "+fmt.Sprintf("%#v", clientResponseBatch), 0)
+				cl.debug("client response batch from "+strconv.Itoa(int(clientResponseBatch.Sender)), 0)
 				cl.handleClientResponseBatch(clientResponseBatch)
 				break
 
 			case cl.clientStatusRpc:
 				clientStatusResponse := replicaMessage.Obj.(*client.ClientStatus)
-				//cl.debug("Client Status Response from"+fmt.Sprintf("%#v", clientStatusResponse.Sender), 0)
+				cl.debug("Client Status Response from "+strconv.Itoa(int(clientStatusResponse.Sender)), 0)
 				cl.handleClientStatusResponse(clientStatusResponse)
 				break
 			}
@@ -157,7 +164,7 @@ func (cl *Client) internalSendMessage(peer int64, rpcPair *common.RPCPair) {
 	code := rpcPair.Code
 	msg := rpcPair.Obj
 	var w *bufio.Writer
-
+	// mutual exclusion for writers
 	w = cl.outgoingReplicaWriters[peer]
 	cl.socketMutexs[peer].Lock()
 	err := w.WriteByte(code)
@@ -190,15 +197,17 @@ func (cl *Client) StartOutgoingLinks() {
 	for i := 0; i < numOutgoingThreads; i++ {
 		go func() {
 			for true {
+				// get a new message, and invoke the internSend, which will write the message to buffer
 				outgoingMessage := <-cl.outgoingMessageChan
 				cl.internalSendMessage(outgoingMessage.Peer, outgoingMessage.RpcPair)
-				cl.debug("Invoked internal sent to replica "+strconv.Itoa(int(outgoingMessage.Peer)), -1)
+				cl.debug("Invoked internal sent to replica "+strconv.Itoa(int(outgoingMessage.Peer)), 0)
 			}
 		}()
 	}
 }
 
 /*
+	this is the api used by all network writes
 	adds a new out-going message to the out going channel
 */
 

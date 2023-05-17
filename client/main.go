@@ -28,7 +28,7 @@ func main() {
 	testDuration := flag.Int64("testDuration", 60, "test duration in seconds")
 	arrivalRate := flag.Int64("arrivalRate", 10000, "Poisson arrival rate in requests per second")
 	requestType := flag.String("requestType", "status", "request type: [status , request]")
-	operationType := flag.Int64("operationType", 1, "Type of operation for a status request: 1 bootstrap server, 2: print log, 3: slow down proposal speed for simulation, and 4. average number of steps per slot ")
+	operationType := flag.Int64("operationType", 1, "Type of operation for a status request: 1 bootstrap server, 2: print log, and 4. average number of steps per slot ")
 	keyLen := flag.Int64("keyLen", 8, "length of key in client requests")
 	valLen := flag.Int64("valLen", 8, "length of value in client requests")
 	debugOn := flag.Bool("debugOn", false, "turn on/off debug, turn off when benchmarking")
