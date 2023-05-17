@@ -6,9 +6,13 @@ import (
 	"strconv"
 )
 
-// ReplicaInstance describes a single  instance connection information
+/*
+	config.go define the structs and methods to pass the configuration file, that contains the IP:port of each client and replica
+*/
+
+// ReplicaInstance describes a single  QuePaxa connection information
 type ReplicaInstance struct {
-	Name         string `yaml:"name"`
+	Name         string `yaml:"name"` // unique id of the QuePaxa node
 	IP           string `yaml:"ip"`
 	PROXYPORT    string `yaml:"proxyport"`
 	RECORDERPORT string `yaml:"recorderport"`
@@ -21,13 +25,13 @@ type ClientInstance struct {
 	CLIENTPORT string `yaml:"clientport"`
 }
 
-// InstanceConfig describes the set of peers and clients in the system
+// InstanceConfig describes the set of replicas and clients in the system
 type InstanceConfig struct {
 	Peers   []ReplicaInstance `yaml:"peers"`
 	Clients []ClientInstance  `yaml:"clients"`
 }
 
-// NewInstanceConfig loads a  instance configuration from given file
+// NewInstanceConfig loads an instance configuration from given file
 func NewInstanceConfig(fname string, name int64) (*InstanceConfig, error) {
 	var cfg InstanceConfig
 
@@ -39,6 +43,7 @@ func NewInstanceConfig(fname string, name int64) (*InstanceConfig, error) {
 	if err != nil {
 		return nil, err
 	}
+	// set the self ip to 0.0.0.0
 	cfg = configureSelfIP(cfg, name)
 	return &cfg, nil
 }
