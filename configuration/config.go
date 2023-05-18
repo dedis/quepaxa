@@ -7,7 +7,7 @@ import (
 )
 
 /*
-	config.go define the structs and methods to pass the configuration file, that contains the IP:port of each client and replica
+	config.go defines the structs and methods to pass the configuration file, that contains the IP:port of each client and replica
 */
 
 // ReplicaInstance describes a single  QuePaxa connection information

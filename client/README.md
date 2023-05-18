@@ -9,4 +9,4 @@ Client implementation supports two operations.
 
 ```status``` client is used to send status operations: (1) server bootstrapping, (2) log printing, and (3) printing server side stats.
 
-For instructions on how to run the client, please refer the ```test/correctness-test.sh```
+For instructions on how to run the client, please refer the ```integration-test/safety-test.sh```
