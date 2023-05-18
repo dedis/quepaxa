@@ -1,0 +1,1 @@
+This directory contains the common data structures that are generic to both the client and the replica

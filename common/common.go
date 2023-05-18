@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+// this file defines the data structures and timer that are common to client and the replica
+
 /*
 	RPC pair assigns a unique id to each type of message defined in the proto files
 */
@@ -30,8 +32,8 @@ type OutgoingRPC struct {
 */
 
 type TimerWithCancel struct {
-	d time.Duration
 	t *time.Timer
+	d time.Duration
 	c chan interface{}
 	f func()
 }
@@ -88,7 +90,7 @@ func (t *TimerWithCancel) Cancel() {
 }
 
 /*
-	A util function to get the size of a message
+	A util function to get the size of a message in bytes
 */
 
 func GetRealSizeOf(v interface{}) (int, error) {
