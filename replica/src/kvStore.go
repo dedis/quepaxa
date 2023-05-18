@@ -1,10 +1,12 @@
-package benchmark
+package raxos
 
 import (
 	"context"
 	"github.com/go-redis/redis/v8"
 	"raxos/proto/client"
 )
+
+// this file defines the two key value stores supported by QuePaxa (Redis and map[string]string)
 
 /*
 	struct defining the benchmark
@@ -67,7 +69,7 @@ func Init(mode int, name int32, keyLen int, valueLen int) *Benchmark {
 }
 
 /*
-	external API to call
+	external API to call: takes a batch of client batches, and returns the response batches
 */
 
 func (b *Benchmark) Execute(requests []client.ClientBatch) []client.ClientBatch {

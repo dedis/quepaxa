@@ -10,6 +10,10 @@ import (
 )
 
 /*
+	The two components of QuePaxa (Proposer and Recorder) uses a shared BatchStore, that saves the client request batches
+*/
+
+/*
 	client batch store contains a map that assigns each client batch a unique identifier and allows fixed time fetching
 */
 
@@ -64,7 +68,7 @@ func (cb *ClientBatchStore) convertToRegularMap() map[string]client.ClientBatch 
 }
 
 /*
-	print all the batches
+	print all the batches for validation
 */
 
 func (cb *ClientBatchStore) printStore(logFilePath string, nodeName int64) {

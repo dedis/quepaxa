@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
-	"raxos/benchmark"
 	"raxos/common"
 	"raxos/configuration"
 	"raxos/proto/client"
@@ -98,7 +97,7 @@ type Proxy struct {
 	proxyToProposerDecisionChan chan Decision
 	clientBatchTimer            chan ClientBatchTime
 
-	benchmark              *benchmark.Benchmark
+	benchmark              *Benchmark
 	startTime              time.Time
 	requestPropogationTime int64
 
@@ -163,7 +162,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 		epochTimes:                  make([]EpochTime, 0),
 		proxyToProposerDecisionChan: proxyToProposerDecisionChan,
 		clientBatchTimer:            make(chan ClientBatchTime, 100000),
-		benchmark:                   benchmark.Init(benchmarkMode, int32(name), keyLen, valueLen),
+		benchmark:                   Init(benchmarkMode, int32(name), keyLen, valueLen),
 		requestPropogationTime:      requestPropogationTime,
 		clientRequestsChan:          make(chan client.ClientBatch, 100000),
 	}
