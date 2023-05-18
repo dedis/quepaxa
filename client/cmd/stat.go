@@ -10,7 +10,9 @@ import (
 	"sync"
 )
 
-const CLIENT_TIMEOUT = 2000000
+// this file defines the statistics calculation of the client, after the test. The client outputs median latency, throughput, error rate and tail latency
+
+const CLIENT_TIMEOUT = 2000000 // this is the maximum client side timeout
 
 /*
 	iteratively calculate the number of elements in the 2d array
@@ -86,7 +88,7 @@ func (cl *Client) computeStats() {
 	defer f.Close()
 
 	numTotalSentRequests := cl.getNumberOfSentRequests(cl.sentRequests)
-	var throughputList []int64 // contains the time duration spent for successful requests
+	var throughputList []int64 // contains the time duration spent for requests
 	numSuccess := 0
 	for i := 0; i < numRequestGenerationThreads; i++ {
 		fmt.Printf("Calculating stats for thread %d \n", i)
@@ -99,9 +101,15 @@ func (cl *Client) computeStats() {
 				startTime := batch.time
 				endTime := responseBatch.time
 				batchLatency := endTime.Sub(startTime).Microseconds()
-				throughputList = cl.addValueNToArrayMTimes(throughputList, batchLatency, len(batch.batch.Messages))
-				cl.printRequests(batch.batch, startTime.Sub(cl.startTime).Microseconds(), endTime.Sub(cl.startTime).Microseconds(), f)
-				numSuccess += len(batch.batch.Messages)
+				if batchLatency > CLIENT_TIMEOUT {
+					batchLatency := CLIENT_TIMEOUT
+					throughputList = cl.addValueNToArrayMTimes(throughputList, int64(batchLatency), len(batch.batch.Messages))
+					cl.printRequests(batch.batch, startTime.Sub(cl.startTime).Microseconds(), startTime.Sub(cl.startTime).Microseconds()+CLIENT_TIMEOUT, f)
+				} else {
+					throughputList = cl.addValueNToArrayMTimes(throughputList, batchLatency, len(batch.batch.Messages))
+					cl.printRequests(batch.batch, startTime.Sub(cl.startTime).Microseconds(), endTime.Sub(cl.startTime).Microseconds(), f)
+					numSuccess += len(batch.batch.Messages)
+				}
 			} else {
 				startTime := batch.time
 				batchLatency := CLIENT_TIMEOUT
@@ -118,9 +126,9 @@ func (cl *Client) computeStats() {
 	errorRate := (numTotalSentRequests - numSuccess) * 100.0 / numTotalSentRequests
 
 	fmt.Printf("Total time := %v seconds\n", duration)
-	fmt.Printf("Throughput  := %v requests per second\n", numSuccess/int(duration))
-	fmt.Printf("Median Latency  := %v micro seconds per request\n", medianLatency)
-	fmt.Printf("99 pecentile latency  := %v micro seconds per request\n", percentile99)
+	fmt.Printf("Throughput := %v requests per second\n", numSuccess/int(duration))
+	fmt.Printf("Median Latency := %v micro seconds per request\n", medianLatency)
+	fmt.Printf("99 pecentile latency := %v micro seconds per request\n", percentile99)
 	fmt.Printf("Error Rate := %v \n", float64(errorRate))
 }
 

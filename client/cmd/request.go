@@ -12,13 +12,22 @@ import (
 )
 
 /*
+	this file defines the client request and response logics
+	request sending sends a stream of batched client requests in a Poisson open loop with back pressure
+	response handling just saves the reveived response
+*/
+
+/*
 	Upon receiving a client response batch, add the batch to the received requests map
 */
 
 func (cl *Client) handleClientResponseBatch(batch *client.ClientBatch) {
+
+	// we are done, then do not handle response
 	if cl.finished {
 		return
 	}
+	// if we already received this response batch, then ignore
 	_, ok := cl.receivedResponses.Load(batch.Id)
 	if ok {
 		return
@@ -36,7 +45,8 @@ func (cl *Client) handleClientResponseBatch(batch *client.ClientBatch) {
 
 /*
 	start the poisson arrival process (put arrivals to arrivalTimeChan) in a separate thread
-	start request generation processes  (get arrivals from arrivalTimeChan and generate batches and send them) in separate threads, and send them to all the proxies, and write batch to the correct array in sentRequests
+	start request generation processes  (get arrivals from arrivalTimeChan and generate batches and send them) in separate threads,
+and send them to all the proxies, and write batch to the correct array in sentRequests
 	start the scheduler that schedules new requests
 	the thread sleeps for test duration + delta and then starts processing the responses
 */
@@ -87,7 +97,7 @@ func (cl *Client) RandString(n int) string {
 }
 
 /*
-	each request generator generates requests by generating string requests, forming batches, send batches and add them to the correct sent array
+	request generator generates requests by generating string requests, forming batches, send batches and add them to the correct sent array
 */
 
 func (cl *Client) startRequestGenerators() {
@@ -102,7 +112,7 @@ func (cl *Client) startRequestGenerators() {
 				}
 				numRequests := int64(0)
 				var requests []*client.ClientBatch_SingleMessage
-				// this loop collects requests until the minimum batch size is met
+				// this loop collects requests until the minimum batch size or batch time is met
 				for !(numRequests >= cl.batchSize || (time.Now().Sub(lastSent).Microseconds() > cl.batchTime && numRequests > 0)) {
 					_ = <-cl.arrivalChan // keep collecting new requests arrivals
 					requests = append(requests, &client.ClientBatch_SingleMessage{

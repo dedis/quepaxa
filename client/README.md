@@ -1,13 +1,12 @@
+This directory implements the QuePaxa client.
+
+
 Client implementation supports two operations.
 
 (1) Send a ```status``` request to proxies
 
 (2) Send SMR ```request```s to proxies
 
-To send a status request ```./client/bin/client --name 11 --requestType status --operationType [1, 2]```
+```status``` client is used to send status operations: (1) server bootstrapping, (2) log printing, and (3) printing server side stats.
 
-```OperationType 1``` for server bootstrapping 
-
-```OperationType 2``` for server log printing
-
-To send client requests with minimal options ```./client/bin/client --name 11 --requestType request```
+For instructions on how to run the client, please refer the ```test/correctness-test.sh```

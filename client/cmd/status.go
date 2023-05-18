@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+// this file defines the client status sender and the receiver
+
 /*
 	when a status response is received, print it to console
 */
