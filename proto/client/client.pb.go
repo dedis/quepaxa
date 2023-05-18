@@ -26,8 +26,8 @@ type ClientBatch struct {
 	unknownFields protoimpl.UnknownFields
 
 	Sender   int64                        `protobuf:"varint,1,opt,name=sender,proto3" json:"sender,omitempty"`
-	Messages []*ClientBatch_SingleMessage `protobuf:"bytes,2,rep,name=messages,proto3" json:"messages,omitempty"`
-	Id       string                       `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"` // unique identifier for a batch
+	Messages []*ClientBatch_SingleMessage `protobuf:"bytes,2,rep,name=messages,proto3" json:"messages,omitempty"` // a batch of client requests
+	Id       string                       `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`             // unique identifier for a batch
 }
 
 func (x *ClientBatch) Reset() {
@@ -90,7 +90,7 @@ type ClientStatus struct {
 
 	Sender    int64  `protobuf:"varint,1,opt,name=sender,proto3" json:"sender,omitempty"`
 	Operation int64  `protobuf:"varint,2,opt,name=operation,proto3" json:"operation,omitempty"`
-	Message   string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	Message   string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"` // optional
 }
 
 func (x *ClientStatus) Reset() {
@@ -151,7 +151,7 @@ type ClientBatch_SingleMessage struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Message string `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	Message string `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"` // a single client request
 }
 
 func (x *ClientBatch_SingleMessage) Reset() {

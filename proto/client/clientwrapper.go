@@ -7,6 +7,8 @@ import (
 	proto2 "raxos/proto"
 )
 
+// this file defines the wrapper methods for ClientBatch and ClientStatus messages
+
 // ClientBatch
 
 func (t *ClientBatch) Marshal(wire io.Writer) error {

@@ -6,9 +6,9 @@ option go_package = "proto/client";
 message ClientBatch {
   int64 sender = 1;
   message SingleMessage {
-    string message = 1;
+    string message = 1; // a single client request
   }
-  repeated SingleMessage messages = 2;
+  repeated SingleMessage messages = 2; // a batch of client requests
   string id = 3; // unique identifier for a batch
 }
 
@@ -17,5 +17,5 @@ message ClientBatch {
 message ClientStatus {
   int64 sender = 1;
   int64 operation = 2;
-  string message = 3;
+  string message = 3; // optional
 }
