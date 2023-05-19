@@ -7,7 +7,6 @@ import (
 	"raxos/configuration"
 	"raxos/proto/client"
 	"strconv"
-	"time"
 )
 
 // server is the main struct for the replica that has a proxy, multiple proposers and a recorder in it
@@ -25,8 +24,6 @@ type Server struct {
 	proxyToProposerFetchChan chan FetchRequest
 	proposerToProxyFetchChan chan FetchResposne
 
-	lastSeenTimeProposers [][]*time.Time // last seen times of each proposer
-
 	cfg                         configuration.InstanceConfig // configuration of clients and replicas
 	numProposers                int                          // number of proposers == pipeline length
 	store                       *ClientBatchStore            // shared client batch store
@@ -34,7 +31,7 @@ type Server struct {
 	debugOn                     bool
 	debugLevel                  int
 	leaderTimeout               int64
-	leaderMode                  int //0 for fixed leader order, 1 for fixed order, static partition,  2 for M.A.B based on commit times, 3 for asynchronous
+	leaderMode                  int //0 for fixed leader order, 1 for round robin, static partition,  2 for M.A.B based on commit times, 3 for asynchronous, 4 for last decided proposer
 	batchTime                   int64
 	epochSize                   int
 	proxyToProposerDecisionChan chan Decision
@@ -132,8 +129,7 @@ func (s *Server) setupgRPC() []peer {
 
 func (s *Server) createProposers() {
 	peers := s.setupgRPC()
-	for i := 0; i < s.numProposers+4; i++ { //+1 is for decision sending
-		// create N gRPC connections
+	for i := 0; i < s.numProposers+4; i++ { //+4 is for decision sending and fetch requests
 		hi := 100000
 		newProposer := NewProposer(s.name, int64(i), peers, s.proxyToProposerChan, s.proposerToProxyChan, s.proxyToProposerFetchChan, s.proposerToProxyFetchChan, s.debugOn, s.debugLevel, hi, s.serverMode, s.proxyToProposerDecisionChan)
 		s.ProposerInstances = append(s.ProposerInstances, newProposer)
@@ -157,7 +153,6 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		recorderToProxyChan:         make(chan Decision, 10000),
 		proxyToProposerFetchChan:    make(chan FetchRequest, 10000),
 		proposerToProxyFetchChan:    make(chan FetchResposne, 10000),
-		lastSeenTimeProposers:       make([][]*time.Time, 1),
 		cfg:                         *cfg,
 		numProposers:                int(pipelineLength) + 1 + 3,
 		store:                       &ClientBatchStore{},
@@ -171,16 +166,8 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		proxyToProposerDecisionChan: make(chan Decision, 10000),
 	}
 
-	// allocate the lastSeenTimeProposers
-
-	for i := 0; i < 1; i++ {
-		sr.lastSeenTimeProposers[i] = make([]*time.Time, len(cfg.Peers))
-		for j := 0; j < len(cfg.Peers); j++ {
-			sr.lastSeenTimeProposers[i][j] = &time.Time{}
-		}
-	}
-
-	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store, serverMode, sr.proxyToProposerFetchChan, sr.proposerToProxyFetchChan, sr.batchTime, sr.epochSize, sr.proxyToProposerDecisionChan, benchmarkMode, keyLen, valueLen, requestPropogationTime)
+	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store, serverMode, sr.proxyToProposerFetchChan,
+		sr.proposerToProxyFetchChan, sr.batchTime, sr.epochSize, sr.proxyToProposerDecisionChan, benchmarkMode, keyLen, valueLen, requestPropogationTime)
 	sr.RecorderInstance = NewRecorder(*cfg, sr.store, sr.recorderToProxyChan, name, debugOn, debugLevel)
 	fmt.Printf("started QuePaxa Server")
 	return &sr
