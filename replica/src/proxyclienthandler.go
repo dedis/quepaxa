@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+// this file defines the client handling part of Proxy QuePaxa
+
 // handler for new client batches
 
 func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
@@ -31,10 +33,13 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 
 			msWait := int(pr.getLeaderWait(pr.getLeaderSequence(proposeIndex)))
 			msWait = msWait * int(proposeIndex-pr.committedIndex) // adjust waiting for the pipelining
+			if msWait < 0 {
+				panic("should not happen")
+			}
 			if pr.instanceTimeouts[proposeIndex] != nil {
 				pr.instanceTimeouts[proposeIndex].Cancel()
 			}
-			//pr.debug("timeout for instance "+fmt.Sprintf("%v is %v", proposeIndex, msWait), 20)
+			pr.debug("timeout for instance "+strconv.Itoa(int(proposeIndex))+"is"+strconv.Itoa(msWait), 20)
 			pr.instanceTimeouts[proposeIndex] = common.NewTimerWithCancel(time.Duration(msWait) * time.Microsecond)
 			pr.instanceTimeouts[proposeIndex].SetTimeoutFuntion(func() {
 				pr.proposeRequestIndex <- ProposeRequestIndex{index: proposeIndex}
@@ -136,7 +141,7 @@ func (pr *Proxy) printConsensusLog() {
 func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 
 	if int64(len(pr.replicatedLog)) > proposeIndex && pr.replicatedLog[proposeIndex].decided == true {
-		//pr.debug("did not propose for index "+fmt.Sprintf("%v", proposeIndex)+" because it was decided", 9)
+		pr.debug("did not propose for index "+strconv.Itoa(int(proposeIndex))+" because it was decided", 9)
 		return
 	}
 	pr.instanceTimeouts[proposeIndex] = nil
@@ -145,7 +150,7 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 
 	if pr.leaderMode == 2 {
 		if pr.isBeginningOfEpoch(proposeIndex) {
-			//pr.debug("proposing the last epoch summary for index "+fmt.Sprintf("%v", proposeIndex)+"", 13)
+			pr.debug("proposing the last epoch summary for index "+strconv.Itoa(int(proposeIndex))+"", 13)
 			pr.proposePreviousEpochSummary(proposeIndex)
 			return
 		}
@@ -202,7 +207,7 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 	}
 
 	pr.proxyToProposerChan <- newProposalRequest
-	//pr.debug("proxy sent a proposal request to proposer  "+fmt.Sprintf("%v", newProposalRequest), -1)
+	pr.debug("proxy sent a proposal request to proposer  ", -1)
 	// create the slot index
 	for len(pr.replicatedLog) < int(proposeIndex+1) {
 		// create the new entry
