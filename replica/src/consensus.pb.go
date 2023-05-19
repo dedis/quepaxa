@@ -106,7 +106,7 @@ type RecorderResponse struct {
 
 	S                     int64                      `protobuf:"varint,1,opt,name=S,proto3" json:"S,omitempty"`                                         // step
 	F                     *RecorderResponse_Proposal `protobuf:"bytes,2,opt,name=F,proto3" json:"F,omitempty"`                                          // first proposal
-	M                     *RecorderResponse_Proposal `protobuf:"bytes,3,opt,name=M,proto3" json:"M,omitempty"`                                          // the maximum of all values (v) proposed in the prior epoch for s’-1
+	M                     *RecorderResponse_Proposal `protobuf:"bytes,3,opt,name=M,proto3" json:"M,omitempty"`                                          // the maximum of all values (v) proposed in the prior epoch for S-1
 	ClientBatchesNotFound bool                       `protobuf:"varint,4,opt,name=ClientBatchesNotFound,proto3" json:"ClientBatchesNotFound,omitempty"` // if any of the client batches are not found, set this to true
 }
 
@@ -497,7 +497,7 @@ type ProposerMessage_DecidedSlot struct {
 	unknownFields protoimpl.UnknownFields
 
 	Index    int64    `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`       // replicated slot
-	Ids      []string `protobuf:"bytes,2,rep,name=ids,proto3" json:"ids,omitempty"`            // in the fast path client request ids
+	Ids      []string `protobuf:"bytes,2,rep,name=ids,proto3" json:"ids,omitempty"`            // client batch ids
 	Proposer int64    `protobuf:"varint,3,opt,name=proposer,proto3" json:"proposer,omitempty"` // proposer who decided this index
 }
 

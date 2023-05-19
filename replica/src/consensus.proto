@@ -1,6 +1,9 @@
 syntax = "proto3";
 option go_package = "/raxos";
 
+// this file defined the proto definitions of the messages that are used in QuePaxa
+
+
 /*
   proposerMessage is the message type that is used for proposer-to-recorder
 */
@@ -33,7 +36,7 @@ message ProposerMessage {
 
   message DecidedSlot{
     int64 index = 1; // replicated slot
-    repeated string ids = 2; // in the fast path client request ids
+    repeated string ids = 2; // client batch ids
     int64 proposer = 3; // proposer who decided this index
   }
 
@@ -51,7 +54,7 @@ message RecorderResponse {
   }
 
   Proposal F = 2; // first proposal
-  Proposal M = 3; // the maximum of all values (v) proposed in the prior epoch for s’-1  
+  Proposal M = 3; // the maximum of all values (v) proposed in the prior epoch for S-1
 
   bool ClientBatchesNotFound = 4; // if any of the client batches are not found, set this to true
 }
