@@ -10,6 +10,8 @@ import (
 	"sync"
 )
 
+// this file implements the IST of QuePaxa
+
 type Value struct {
 	priority    int64
 	proposer_id int64
@@ -46,12 +48,11 @@ type Recorder struct {
 func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchStore, recorderToProxyChan chan Decision, name int64, debugOn bool, debugLevel int) *Recorder {
 
 	re := Recorder{
-		address:       "",
-		listener:      nil,
-		server:        nil,
-		connection:    nil,
-		clientBatches: clientBatches,
-		//lastSeenTimeProposers: lastSeenTimeProposers,
+		address:             "",
+		listener:            nil,
+		server:              nil,
+		connection:          nil,
+		clientBatches:       clientBatches,
 		recorderToProxyChan: recorderToProxyChan,
 		name:                name,
 		slots:               make([]RecorderSlot, 0),
@@ -70,7 +71,7 @@ func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchSto
 		}
 	}
 
-	//re.debug("created a new recorder  "+fmt.Sprintf("%v", re.name), -1)
+	re.debug("created a new recorder  "+strconv.Itoa(int(name)), 0)
 
 	return &re
 }
@@ -95,13 +96,13 @@ func (r *Recorder) NetworkInit() {
 	// start listener
 	listener, err := net.Listen("tcp", r.address)
 	if err != nil {
-		panic("listen: %v")
+		panic(err.Error())
 	}
 	r.listener = listener
 	go func() {
 		err := r.server.Serve(r.listener)
 		if err != nil {
-			panic("should not happen")
+			panic(err.Error())
 		}
 	}()
 
@@ -196,9 +197,9 @@ func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (in
 		})
 	}
 
-	//re.debug("recorder processing esp for s  "+fmt.Sprintf("%v", s)+" for index "+fmt.Sprintf("%v", index)+" for proposal "+fmt.Sprintf("pID: %v, tID: %v, prio:%v, initRequest: %v", p.ProposerId, p.ThreadId, p.Priority, p.Ids[0]), 2)
+	re.debug("recorder processing esp for s = "+strconv.Itoa(s)+" for index "+strconv.Itoa(int(index)), 0)
 	if re.slots[index].S == s {
-		//re.debug("recorder received esp for the same s  "+" for index "+fmt.Sprintf("%v", index), -1)
+		re.debug("recorder received esp for the same s  "+" for index "+strconv.Itoa(int(index)), 0)
 		re.slots[index].A = re.max(re.slots[index].A, p)
 	} else if re.slots[index].S < s {
 		if re.slots[index].S+1 < s {
@@ -209,8 +210,6 @@ func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (in
 				thread_id:   -1,
 				ids:         nil,
 			}
-		} else {
-			//re.debug("recorder received esp for s with one step ahead "+" for index "+fmt.Sprintf("%v", index), -1)
 		}
 		re.slots[index].S = s
 		re.slots[index].F = Value{
@@ -270,20 +269,20 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 		}
 
 		re.recorderToProxyChan <- d
-		//re.debug("recorder sent the decisions to the proxy  "+fmt.Sprintf("%v", d)+" for index "+fmt.Sprintf("%v", req.Index), -1)
+		re.debug("recorder sent the decisions to the proxy  "+" for index "+strconv.Itoa(int(req.Index)), -1)
 	}
 
 	if req.S == 4 && len(req.P.ClientBatches) == 0 && len(req.P.Ids) > 0 {
 		// if there are only hashes, then check if all the client batches are available in the shared pool
 		allBatchesFound := re.findAllBatches(req.P.Ids)
 		if !allBatchesFound {
-			//re.debug("recorder does not have all the client batches, hence rejecting  "+fmt.Sprintf("%v", req)+" for index "+fmt.Sprintf("%v", req.Index), 17)
+			re.debug("recorder does not have all the client batches, hence rejecting", 17)
 			response.ClientBatchesNotFound = true
 			return &response
 		}
 	}
 
-	//re.debug("recorder has all the client batches to process  "+fmt.Sprintf("%v", req)+" for index "+fmt.Sprintf("%v", req.Index), -1)
+	re.debug("recorder has all the client batches to process  "+strconv.Itoa(int(req.Index)), 0)
 
 	if len(req.P.ClientBatches) > 0 {
 		// add all the batches to the store
@@ -335,7 +334,7 @@ func (r *Recorder) convertToDecideResponseClientBatchMessages(messages []*client
 // answer to fetch request
 
 func (r *Recorder) HandleFetch(req *DecideRequest) *DecideResponse {
-	//r.debug("recorder received a fetch request  "+fmt.Sprintf("%v", req), 0)
+	r.debug("recorder received a fetch request", 0)
 	response := DecideResponse{
 		ClientBatches: nil,
 	}
@@ -358,7 +357,7 @@ func (r *Recorder) HandleFetch(req *DecideRequest) *DecideResponse {
 // update the decisions
 
 func (re *Recorder) HandleDecisions(decisions *Decisions) {
-	//re.debug("recorder handling decisions "+fmt.Sprintf("%v", decisions.DecidedSlots), 11)
+	re.debug("recorder handling decisions ", 11)
 	// send the last decided index details to the proxy, if available
 	if len(decisions.DecidedSlots) > 0 {
 		d := Decision{
