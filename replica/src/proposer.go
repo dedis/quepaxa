@@ -123,7 +123,7 @@ func (prop *Proposer) handleFetchRequest(message FetchRequest) FetchResposne {
 
 		client_r := prop.getRandomClient()
 		clientCon := client_r.client
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Second))
+		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
 		resp, err := clientCon.FetchBatches(ctx, &DecideRequest{
 			Ids: message.ids,
 		})
@@ -355,7 +355,7 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 		}
 
 		responses := make(chan *RecorderResponse, prop.numReplicas)
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10)*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(50)*time.Second)
 		prop.debug("proposer sending rpc in parallel ", 0)
 		wg := sync.WaitGroup{}
 		for i := 0; i < prop.numReplicas; i++ {
@@ -566,7 +566,7 @@ func (prop *Proposer) runProposer() {
 func (prop *Proposer) handleDecisionRequest(decision Decision) {
 	prop.debug("proposer starting to handle a decision request ", 11)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Second))
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
 	decidedSlots := prop.extractDecisionSlots(decision.indexes, decision.decisions, decision.proposers)
 	prop.debug("proposer sending rpc in parallel ", -1)
 	wg := sync.WaitGroup{}
