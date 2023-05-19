@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+// proxy is the client facing part of the replica. It collects client batches, send them to proposers to propose, and once decided, updates the state machine and sends back the response to the client
+
 // slot defines a single instance in the replicated log
 
 type Slot struct {
@@ -103,6 +105,8 @@ type Proxy struct {
 
 	clientRequestsChan chan client.ClientBatch
 }
+
+// EpochTime stores the timing information of each epoch, used in MAB
 
 type EpochTime struct {
 	startTime time.Time
@@ -213,7 +217,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	//pr.debug("initiazlied a new proxy "+fmt.Sprintf("%v", pr.name), -1)
+	pr.debug("initiazlied a new proxy "+strconv.Itoa(int(pr.name)), 0)
 
 	return &pr
 }
@@ -245,11 +249,11 @@ func (pr *Proxy) Run() {
 				pr.proposeToIndex(proposeRequest.index)
 				break
 			case proposerMessage := <-pr.proposerToProxyChan:
-				pr.debug("proxy received proposer message", -1)
+				pr.debug("proxy received proposer message", 0)
 				pr.handleProposeResponse(proposerMessage)
 				break
 			case recorderMessage := <-pr.recorderToProxyChan:
-				//pr.debug("proxy received recorder decide message"+fmt.Sprintf("%v", recorderMessage), -1)
+				pr.debug("proxy received recorder decide message", 0)
 				pr.handleRecorderResponse(recorderMessage)
 				break
 			case fetchResponse := <-pr.proposerToProxyFetchChan:
@@ -261,12 +265,12 @@ func (pr *Proxy) Run() {
 				pr.handleClientBatch(clientRequest)
 				break
 			case inpputMessage := <-pr.incomingChan:
-				pr.debug("Received client  message", -1)
+				pr.debug("Received client  message", 0)
 				code := inpputMessage.Code
 				switch code {
 				case pr.clientBatchRpc:
 					clientBatch := inpputMessage.Obj.(*client.ClientBatch)
-					//pr.debug("proxy received client batch  "+fmt.Sprintf("%#v", clientBatch), -1)
+					pr.debug("proxy received client batch from "+strconv.Itoa(int(clientBatch.Sender)), 0)
 					pr.clientBatchTimer <- ClientBatchTime{
 						batch:        *clientBatch,
 						incomingTime: time.Now(),
