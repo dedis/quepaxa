@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+// this file defines the Multi-armed-bandit based implementation of QuePaxa
+
 // checks if all indexes in this epoch are decided
 
 func (pr *Proxy) hasAllDecided(epoch int) bool {
@@ -41,16 +43,15 @@ func (pr *Proxy) updateEpochTime(index int) {
 	}
 
 	if pr.epochTimes[epoch].started == false {
-		//pr.debug("starting epoch "+fmt.Sprintf("%v at time %v", epoch, time.Now()), 11)
+		pr.debug("starting epoch "+strconv.Itoa(epoch), 0)
 		pr.epochTimes[epoch].started = true
 		pr.epochTimes[epoch].startTime = time.Now()
 	}
 
 	if pr.epochTimes[epoch].ended == false && pr.hasAllDecided(epoch) {
-		//pr.debug("finishing epoch "+fmt.Sprintf("%v at time %v", epoch, time.Now()), 11)
+		pr.debug("finishing epoch "+strconv.Itoa(epoch), 0)
 		pr.epochTimes[epoch].ended = true
 		pr.epochTimes[epoch].endTime = time.Now()
-		//pr.debug("epoch "+fmt.Sprintf("%v took %v ms, epoch leader:%v", epoch, pr.epochTimes[epoch].endTime.Sub(pr.epochTimes[epoch].startTime).Milliseconds(), pr.getLeaderSequence(int64(epoch * pr.epochSize))[0]), 14)
 	}
 }
 
@@ -216,7 +217,7 @@ func (pr *Proxy) proposePreviousEpochSummary(index int64) {
 		Messages: []*client.ClientBatch_SingleMessage{{Message: "Epoch" + strSequence}},
 		Id:       "Epoch" + strSequence,
 	})
-	//pr.debug("proposing new summary for index "+fmt.Sprintf("%v, epoch:%v, sequence:%v ", index, curEpoch, strSequence), 13)
+	pr.debug("proposing new MAB summary for index "+strconv.Itoa(int(index)), 0)
 
 	waitTime := int(pr.getLeaderWait(pr.getLeaderSequence(index)))
 	isLeader := true
