@@ -2,7 +2,7 @@ import os
 
 
 def base_case():
-    print("testing base case with no batching and no pipelining, no view changes, fixed leader")
+    print("testing base case with no batching and no pipelining, no view changes, fixed leader", flush=True)
     leaderTimeout = 3000000
     serverMode = 0
     leaderMode = 0
@@ -18,7 +18,7 @@ def base_case():
 
 
 def fixed_leader():
-    print("testing with batching and no pipelining, no view changes, fixed leader")
+    print("testing with batching and no pipelining, no view changes, fixed leader", flush=True)
     leaderTimeout = 3000000
     serverMode = 0
     leaderMode = 0
@@ -34,7 +34,7 @@ def fixed_leader():
 
 
 def rotating_leader():
-    print("testing with batching and no pipelining, no view changes, rotating leader")
+    print("testing with batching and no pipelining, no view changes, rotating leader", flush=True)
     leaderTimeout = 3000000
     serverMode = 0
     leaderMode = 1
@@ -50,7 +50,7 @@ def rotating_leader():
 
 
 def mab_leader():
-    print("testing with batching and no pipelining, no view changes, MAB leader")
+    print("testing with batching and no pipelining, no view changes, MAB leader", flush=True)
     leaderTimeout = 3000000
     serverMode = 0
     leaderMode = 2
@@ -66,7 +66,7 @@ def mab_leader():
 
 
 def last_proposed_leader():
-    print("testing with batching and no pipelining, no view changes, last proposed leader")
+    print("testing with batching and no pipelining, no view changes, last proposed leader", flush=True)
     leaderTimeout = 3000000
     serverMode = 0
     leaderMode = 4
@@ -82,7 +82,7 @@ def last_proposed_leader():
 
 
 def asynchronous_leader():
-    print("testing with batching and no pipelining, no view changes, no leaders")
+    print("testing with batching and no pipelining, no view changes, no leaders", flush=True)
     leaderTimeout = 1000
     serverMode = 0
     leaderMode = 3
@@ -98,7 +98,7 @@ def asynchronous_leader():
 
 
 def optimization():
-    print("testing with batching and no pipelining, no view changes, with the optimization")
+    print("testing with batching and no pipelining, no view changes, with the optimization", flush=True)
     leaderTimeout = 3000000
     serverMode = 1
     leaderMode = 0
@@ -114,7 +114,7 @@ def optimization():
 
 
 def pipelining():
-    print("testing with batching and pipelining, no view changes")
+    print("testing with batching and pipelining, no view changes", flush=True)
     leaderTimeout = 3000000
     serverMode = 0
     leaderMode = 0
@@ -130,7 +130,7 @@ def pipelining():
 
 
 def hedging():
-    print("testing with batching and no pipelining, with hedging")
+    print("testing with batching and no pipelining, with hedging", flush=True)
     leaderTimeout = 2000
     serverMode = 0
     leaderMode = 0
