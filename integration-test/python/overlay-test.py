@@ -15,7 +15,7 @@ for i in range(1, len(sys.argv)):
         numberOfRequests = numberOfRequests + 1
 
     files.append(dict)
-    print("Length of " + sys.argv[i] + " is " + str(numberOfRequests))
+    # print("Length of " + sys.argv[i] + " is " + str(numberOfRequests))
 
 
 def checkMaps(files):
@@ -40,6 +40,11 @@ def checkMaps(files):
 
     print(str(match) + " entries match")
     print(str(misMatch) + " entries miss match")
+
+    if misMatch == 0 and match > 0:
+        print("\n\nTEST PASS\n\n")
+    else:
+        print("\n\nTEST FAIL\n\n")
 
 
 checkMaps(files)
