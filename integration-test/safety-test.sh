@@ -1,25 +1,27 @@
-epoch=$1
-leaderTimeout=$2
-serverMode=$3
-leaderMode=$4
-pipeline=$5
-batchTime=$6
-batchSize=$7
-arrivalRate=$8
-closeLoopWindow=$9
-requestPropagationTime=${10}
+leaderTimeout=$1
+serverMode=$2
+leaderMode=$3
+pipeline=$4
+batchTime=$5
+batchSize=$6
+arrivalRate=$7
+closeLoopWindow=$8
+requestPropagationTime=$9
 
+# create a new local configuration
 rm -r configuration/local
 mkdir -p configuration/local
-python3 configuration/config-generate.py 5 5 localhost localhost localhost localhost localhost localhost localhost localhost localhost localhost > configuration/local/configuration.yml
+python3 configuration/config-generate.py 5 5 0.0.0.0 0.0.0.0 0.0.0.0 0.0.0.0 0.0.0.0 0.0.0.0 0.0.0.0 0.0.0.0 0.0.0.0 0.0.0.0 > configuration/local/configuration.yml
 
+# build the project
 mage generate && mage build
 
 raxos_path="replica/bin/replica"
 ctl_path="client/bin/client"
-output_path="logs/"
+d_t=$(date)
+output_path="logs/${d_t}/${leaderTimeout}/${serverMode}/${leaderMode}/${pipeline}/${batchTime}/${batchSize}/${arrivalRate}/${closeLoopWindow}/${requestPropagationTime}/"
 
-rm -r ${output_path} ; mkdir ${output_path}
+rm -r "${output_path}" ; mkdir "${output_path}"
 
 echo "Removed old log files"
 
@@ -28,11 +30,11 @@ pkill client; pkill client; pkill client; pkill client; pkill client;
 
 echo "Killed previously running instances"
 
-nohup ./${raxos_path} --name 1 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" >${output_path}1.log &
-nohup ./${raxos_path} --name 2 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" >${output_path}2.log &
-nohup ./${raxos_path} --name 3 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" >${output_path}3.log &
-nohup ./${raxos_path} --name 4 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" >${output_path}4.log &
-nohup ./${raxos_path} --name 5 --debugOn --debugLevel 30 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --epochSize "${epoch}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" >${output_path}5.log &
+nohup ./${raxos_path} --name 1 --debugOn --debugLevel 200 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" >${output_path}1.log &
+nohup ./${raxos_path} --name 2 --debugOn --debugLevel 200 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" >${output_path}2.log &
+nohup ./${raxos_path} --name 3 --debugOn --debugLevel 200 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" >${output_path}3.log &
+nohup ./${raxos_path} --name 4 --debugOn --debugLevel 200 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" >${output_path}4.log &
+nohup ./${raxos_path} --name 5 --debugOn --debugLevel 200 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" >${output_path}5.log &
 
 echo "Started 5 servers"
 
@@ -42,15 +44,15 @@ nohup ./${ctl_path} --name 22 --requestType status --operationType 1 >${output_p
 
 echo "Sent initial status to bootstrap"
 
-sleep 15
+sleep 12
 
 echo "Starting client[s]"
 
-nohup ./${ctl_path} --name 21 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${closeLoopWindow}" >${output_path}21.log &
-nohup ./${ctl_path} --name 22 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${closeLoopWindow}" >${output_path}22.log &
-nohup ./${ctl_path} --name 23 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${closeLoopWindow}" >${output_path}23.log &
-nohup ./${ctl_path} --name 24 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${closeLoopWindow}" >${output_path}24.log &
-nohup ./${ctl_path} --name 25 --debugOn --debugLevel 20 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${closeLoopWindow}" >${output_path}25.log &
+nohup ./${ctl_path} --name 21 --debugOn --debugLevel 100 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${closeLoopWindow}" >${output_path}21.log &
+nohup ./${ctl_path} --name 22 --debugOn --debugLevel 100 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${closeLoopWindow}" >${output_path}22.log &
+nohup ./${ctl_path} --name 23 --debugOn --debugLevel 100 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${closeLoopWindow}" >${output_path}23.log &
+nohup ./${ctl_path} --name 24 --debugOn --debugLevel 100 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${closeLoopWindow}" >${output_path}24.log &
+nohup ./${ctl_path} --name 25 --debugOn --debugLevel 100 --requestType request --arrivalRate "${arrivalRate}"  --batchSize "${batchSize}" --batchTime "${batchTime}" --window "${closeLoopWindow}" >${output_path}25.log &
 
 sleep 100
 
@@ -63,10 +65,11 @@ echo "Sent status to print log and print steps per slot"
 
 sleep 40
 
-python3 experiment/python/overlay-test.py 60 ${output_path}1-consensus.txt ${output_path}2-consensus.txt ${output_path}3-consensus.txt ${output_path}4-consensus.txt ${output_path}5-consensus.txt >${output_path}local-test-consensus.log
+python3 integration-test/python/overlay-test.py ${output_path}1-consensus.txt ${output_path}2-consensus.txt ${output_path}3-consensus.txt ${output_path}4-consensus.txt ${output_path}5-consensus.txt >${output_path}local-test-consensus.log
 
 pkill replica; pkill replica; pkill replica; pkill replica; pkill replica
 pkill client; pkill client; pkill client; pkill client; pkill client
+
 rm -r configuration/local
 
 echo "Killed previously running instances"
