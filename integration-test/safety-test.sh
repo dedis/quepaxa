@@ -20,7 +20,7 @@ raxos_path="replica/bin/replica"
 ctl_path="client/bin/client"
 output_path="logs/${leaderTimeout}/${serverMode}/${leaderMode}/${pipeline}/${batchTime}/${batchSize}/${arrivalRate}/${closeLoopWindow}/${requestPropagationTime}/"
 
-rm -r "${output_path}" ; mkdir "${output_path}"
+rm -r "${output_path}" ; mkdir -p "${output_path}"
 
 echo "Removed old log files"
 
