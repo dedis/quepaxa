@@ -39,7 +39,7 @@ func (pr *Proxy) handleClientBatch(batch client.ClientBatch) {
 			if pr.instanceTimeouts[proposeIndex] != nil {
 				pr.instanceTimeouts[proposeIndex].Cancel()
 			}
-			pr.debug("timeout for instance "+strconv.Itoa(int(proposeIndex))+"is"+strconv.Itoa(msWait), 20)
+			//pr.debug("timeout for instance "+strconv.Itoa(int(proposeIndex))+"is"+strconv.Itoa(msWait), 20)
 			pr.instanceTimeouts[proposeIndex] = common.NewTimerWithCancel(time.Duration(msWait) * time.Microsecond)
 			pr.instanceTimeouts[proposeIndex].SetTimeoutFuntion(func() {
 				pr.proposeRequestIndex <- ProposeRequestIndex{index: proposeIndex}
@@ -60,20 +60,20 @@ func (pr *Proxy) handleClientStatus(status client.ClientStatus) {
 	if status.Operation == 1 {
 		if pr.serverStarted == false {
 			// initiate gRPC connections
-			pr.debug("proxy starting proposers  ", -1)
+			//pr.debug("proxy starting proposers  ", -1)
 			pr.server.StartProposers()
 			pr.serverStarted = true
 			pr.startTime = time.Now()
 		}
 	}
 	if status.Operation == 2 {
-		pr.debug("proxy printing logs", 0)
+		//pr.debug("proxy printing logs", 0)
 		// print logs
 		pr.printLog()
 	}
 
 	if status.Operation == 4 {
-		pr.debug("printing the steps per slot", 0)
+		//pr.debug("printing the steps per slot", 0)
 		avg, totalSlots, stepsAccum := pr.calculateStepsPerSlot()
 		fmt.Printf("\nAverage number of steps per slot: %f, total slots %v, steps accumilated %v ", avg, totalSlots, stepsAccum)
 	}
@@ -141,16 +141,16 @@ func (pr *Proxy) printConsensusLog() {
 func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 
 	if int64(len(pr.replicatedLog)) > proposeIndex && pr.replicatedLog[proposeIndex].decided == true {
-		pr.debug("did not propose for index "+strconv.Itoa(int(proposeIndex))+" because it was decided", 9)
+		//pr.debug("did not propose for index "+strconv.Itoa(int(proposeIndex))+" because it was decided", 9)
 		return
 	}
 	pr.instanceTimeouts[proposeIndex] = nil
 
-	pr.debug("proposing for index "+strconv.Itoa(int(proposeIndex)), 20)
+	//pr.debug("proposing for index "+strconv.Itoa(int(proposeIndex)), 20)
 
 	if pr.leaderMode == 2 {
 		if pr.isBeginningOfEpoch(proposeIndex) {
-			pr.debug("proposing the last epoch summary for index "+strconv.Itoa(int(proposeIndex))+"", 13)
+			//pr.debug("proposing the last epoch summary for index "+strconv.Itoa(int(proposeIndex))+"", 13)
 			pr.proposePreviousEpochSummary(proposeIndex)
 			return
 		}
@@ -171,7 +171,7 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 			Messages: nil,
 			Id:       "nil",
 		})
-		pr.debug("proposing empty values for index "+strconv.Itoa(int(proposeIndex)), 9)
+		//pr.debug("proposing empty values for index "+strconv.Itoa(int(proposeIndex)), 9)
 	} else {
 		// send a new proposal Request to the ProposersChan
 		strProposals = pr.toBeProposed[0:batchSize]
@@ -207,7 +207,7 @@ func (pr *Proxy) proposeToIndex(proposeIndex int64) {
 	}
 
 	pr.proxyToProposerChan <- newProposalRequest
-	pr.debug("proxy sent a proposal request to proposer  ", -1)
+	//pr.debug("proxy sent a proposal request to proposer  ", -1)
 	// create the slot index
 	for len(pr.replicatedLog) < int(proposeIndex+1) {
 		// create the new entry

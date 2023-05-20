@@ -40,7 +40,7 @@ func (cl *Client) handleClientResponseBatch(batch *client.ClientBatch) {
 	cl.receiveCountMutex.Lock()
 	cl.totalReceivedBatches++
 	cl.receiveCountMutex.Unlock()
-	cl.debug("Added response Batch from "+strconv.Itoa(int(batch.Sender))+" to received map", 0)
+	//cl.debug("Added response Batch from "+strconv.Itoa(int(batch.Sender))+" to received map", 0)
 }
 
 /*
@@ -151,7 +151,7 @@ func (cl *Client) startRequestGenerators() {
 					cl.sendMessage(i, rpcPair)
 				}
 
-				cl.debug("Sent "+strconv.Itoa(int(cl.name))+"."+strconv.Itoa(threadNumber)+"."+strconv.Itoa(localCounter), 0)
+				//cl.debug("Sent "+strconv.Itoa(int(cl.name))+"."+strconv.Itoa(threadNumber)+"."+strconv.Itoa(localCounter), 0)
 				cl.totalSentBatches++
 
 				batch := client.ClientBatch{

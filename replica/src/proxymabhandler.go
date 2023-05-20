@@ -43,13 +43,13 @@ func (pr *Proxy) updateEpochTime(index int) {
 	}
 
 	if pr.epochTimes[epoch].started == false {
-		pr.debug("starting epoch "+strconv.Itoa(epoch), 0)
+		//pr.debug("starting epoch "+strconv.Itoa(epoch), 0)
 		pr.epochTimes[epoch].started = true
 		pr.epochTimes[epoch].startTime = time.Now()
 	}
 
 	if pr.epochTimes[epoch].ended == false && pr.hasAllDecided(epoch) {
-		pr.debug("finishing epoch "+strconv.Itoa(epoch), 0)
+		//pr.debug("finishing epoch "+strconv.Itoa(epoch), 0)
 		pr.epochTimes[epoch].ended = true
 		pr.epochTimes[epoch].endTime = time.Now()
 	}
@@ -217,7 +217,7 @@ func (pr *Proxy) proposePreviousEpochSummary(index int64) {
 		Messages: []*client.ClientBatch_SingleMessage{{Message: "Epoch" + strSequence}},
 		Id:       "Epoch" + strSequence,
 	})
-	pr.debug("proposing new MAB summary for index "+strconv.Itoa(int(index)), 0)
+	//pr.debug("proposing new MAB summary for index "+strconv.Itoa(int(index)), 0)
 
 	waitTime := int(pr.getLeaderWait(pr.getLeaderSequence(index)))
 	isLeader := true

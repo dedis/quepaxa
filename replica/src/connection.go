@@ -2,7 +2,6 @@ package raxos
 
 import (
 	"context"
-	"strconv"
 )
 
 // this file defines the gRPC receive side code for the recorder. the actual Recorder implementation is in the recorder.go
@@ -14,7 +13,7 @@ type GRPCConnection struct {
 }
 
 func (gc *GRPCConnection) InformDecision(ctx context.Context, decisions *Decisions) (*Empty, error) {
-	gc.Recorder.debug("received decisions response", 0)
+	//gc.Recorder.debug("received decisions response", 0)
 	var response *Empty
 	response = &Empty{}
 	gc.Recorder.HandleDecisions(decisions)
@@ -24,10 +23,10 @@ func (gc *GRPCConnection) InformDecision(ctx context.Context, decisions *Decisio
 // answer to proposer RPC
 
 func (gc *GRPCConnection) ESP(ctx context.Context, req *ProposerMessage) (*RecorderResponse, error) {
-	gc.Recorder.debug("received esp request from"+strconv.Itoa(int(req.Sender)), 0)
+	//gc.Recorder.debug("received esp request from"+strconv.Itoa(int(req.Sender)), 0)
 	var response *RecorderResponse
 	response = gc.Recorder.HandleESP(req)
-	gc.Recorder.debug("recorder responded to esp request from "+strconv.Itoa(int(req.Sender)), 0)
+	//gc.Recorder.debug("recorder responded to esp request from "+strconv.Itoa(int(req.Sender)), 0)
 	if response == nil {
 		panic("should this happen?")
 	}
@@ -43,9 +42,9 @@ func (gc *GRPCConnection) mustEmbedUnimplementedConsensusServer() {
 // answer to fetch Request
 
 func (gc *GRPCConnection) FetchBatches(ctx context.Context, req *DecideRequest) (*DecideResponse, error) {
-	gc.Recorder.debug("received fetch batch request", 0)
+	//gc.Recorder.debug("received fetch batch request", 0)
 	var response *DecideResponse
 	response = gc.Recorder.HandleFetch(req)
-	gc.Recorder.debug("responded to fetch batch request ", 0)
+	//gc.Recorder.debug("responded to fetch batch request ", 0)
 	return response, nil
 }

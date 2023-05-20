@@ -24,7 +24,7 @@ func (cl *Client) handleClientStatusResponse(response *client.ClientStatus) {
 
 func (cl *Client) SendStatus(operationType int64) {
 
-	cl.debug("Sending status request to all proxies", 0)
+	//cl.debug("Sending status request to all proxies", 0)
 
 	for i, _ := range cl.replicaAddrList {
 
@@ -39,7 +39,7 @@ func (cl *Client) SendStatus(operationType int64) {
 		}
 
 		cl.sendMessage(i, rpcPair)
-		cl.debug("Sent status to "+strconv.Itoa(int(i)), 0)
+		//cl.debug("Sent status to "+strconv.Itoa(int(i)), 0)
 	}
 	time.Sleep(time.Duration(statusTimeout) * time.Second)
 }

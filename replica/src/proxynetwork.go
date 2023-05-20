@@ -8,13 +8,12 @@ import (
 	"net"
 	"raxos/common"
 	"raxos/proto"
-	"strconv"
 )
 
 // start listening to the proxy tcp connection, and setup all outgoing wires
 
 func (pr *Proxy) NetworkInit() {
-	pr.debug("proxy network init", -1)
+	//pr.debug("proxy network init", -1)
 	pr.startOutgoingLinks()
 	go pr.waitForConnections()
 }
@@ -36,7 +35,7 @@ func (pr *Proxy) waitForConnections() {
 
 	var b [4]byte
 	bs := b[:4]
-	pr.debug("Listening to messages on "+pr.serverAddress, 0)
+	//pr.debug("Listening to messages on "+pr.serverAddress, 0)
 	// listen to proxy port
 	pr.Listener, _ = net.Listen("tcp", pr.serverAddress)
 
@@ -51,11 +50,11 @@ func (pr *Proxy) waitForConnections() {
 			panic(err)
 		}
 		id := int32(binary.LittleEndian.Uint16(bs))
-		pr.debug("Received incoming tcp connection from "+strconv.Itoa(int(id)), -1)
+		//pr.debug("Received incoming tcp connection from "+strconv.Itoa(int(id)), -1)
 
 		pr.incomingClientReaders[int64(id)] = bufio.NewReader(conn)
 		go pr.connectionListener(pr.incomingClientReaders[int64(id)], id)
-		pr.debug("Started listening to "+strconv.Itoa(int(id)), -1)
+		//pr.debug("Started listening to "+strconv.Itoa(int(id)), -1)
 		pr.connectToClient(id) // make a TCP connection with client id
 	}
 }
@@ -71,13 +70,13 @@ func (pr *Proxy) connectionListener(reader *bufio.Reader, id int32) {
 
 	for true {
 		if msgType, err = reader.ReadByte(); err != nil {
-			pr.debug("Error while reading code byte: the TCP connection was broken for "+strconv.Itoa(int(id)), 0)
+			//pr.debug("Error while reading code byte: the TCP connection was broken for "+strconv.Itoa(int(id)), 0)
 			return
 		}
 		if rpair, present := pr.rpcTable[msgType]; present {
 			obj := rpair.Obj.New()
 			if err = obj.Unmarshal(reader); err != nil {
-				pr.debug("Error while unmarshalling", 0)
+				//pr.debug("Error while unmarshalling", 0)
 				return
 			}
 			pr.incomingChan <- common.RPCPair{
@@ -85,7 +84,7 @@ func (pr *Proxy) connectionListener(reader *bufio.Reader, id int32) {
 				Obj:  obj,
 			}
 		} else {
-			pr.debug("Error: received unknown message type", 0)
+			//pr.debug("Error: received unknown message type", 0)
 			return
 		}
 	}
@@ -105,10 +104,10 @@ func (pr *Proxy) connectToClient(id int32) {
 			binary.LittleEndian.PutUint16(bs, uint16(pr.name))
 			_, err := conn.Write(bs)
 			if err != nil {
-				pr.debug("Error connecting to client "+strconv.Itoa(int(id)), 0)
+				//pr.debug("Error connecting to client "+strconv.Itoa(int(id)), 0)
 				panic(err)
 			}
-			pr.debug("Started outgoing tcp connection to client "+strconv.Itoa(int(id)), -1)
+			//pr.debug("Started outgoing tcp connection to client "+strconv.Itoa(int(id)), -1)
 			break
 		}
 	}
@@ -121,7 +120,7 @@ func (pr *Proxy) connectToClient(id int32) {
 
 func (pr *Proxy) internalSendMessage(peer int64, rpcPair common.RPCPair) {
 
-	pr.debug("proxy internal sending message to  "+strconv.Itoa(int(peer)), 0)
+	//pr.debug("proxy internal sending message to  "+strconv.Itoa(int(peer)), 0)
 
 	code := rpcPair.Code
 	msg := rpcPair.Obj
@@ -133,25 +132,25 @@ func (pr *Proxy) internalSendMessage(peer int64, rpcPair common.RPCPair) {
 
 	err := w.WriteByte(code)
 	if err != nil {
-		pr.debug("Error while writing byte", 0)
+		//pr.debug("Error while writing byte", 0)
 		pr.buffioWriterMutexes[peer].Unlock()
 		return
 	}
 	err = msg.Marshal(w)
 	if err != nil {
-		pr.debug("Error while marshalling", 0)
+		//pr.debug("Error while marshalling", 0)
 		pr.buffioWriterMutexes[peer].Unlock()
 		return
 	}
 	err = w.Flush()
 	if err != nil {
-		pr.debug("Error while flushing", 0)
+		//pr.debug("Error while flushing", 0)
 		pr.buffioWriterMutexes[peer].Unlock()
 		return
 	}
 	pr.buffioWriterMutexes[peer].Unlock()
 
-	pr.debug("proxy sent internal sending message to  "+strconv.Itoa(int(peer)), -1)
+	//pr.debug("proxy sent internal sending message to  "+strconv.Itoa(int(peer)), -1)
 
 }
 
@@ -165,7 +164,7 @@ func (pr *Proxy) startOutgoingLinks() {
 			for true {
 				outgoingMessage := <-pr.outgoingMessageChan
 				pr.internalSendMessage(outgoingMessage.Peer, *outgoingMessage.RpcPair)
-				pr.debug("proxy called internal send", 0)
+				//pr.debug("proxy called internal send", 0)
 			}
 		}()
 	}
@@ -181,5 +180,5 @@ func (pr *Proxy) sendMessage(peer int64, rpcPair common.RPCPair) {
 		RpcPair: &rpcPair,
 		Peer:    peer,
 	}
-	pr.debug("proxy added a new outgoing message  ", -1)
+	//pr.debug("proxy added a new outgoing message  ", -1)
 }

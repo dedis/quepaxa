@@ -2,7 +2,6 @@ package raxos
 
 import (
 	"bufio"
-	"fmt"
 	"math/rand"
 	"net"
 	"raxos/common"
@@ -217,7 +216,7 @@ func NewProxy(name int64, cfg configuration.InstanceConfig, proxyToProposerChan 
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	pr.debug("initiazlied a new proxy "+strconv.Itoa(int(pr.name)), 0)
+	//pr.debug("initiazlied a new proxy "+strconv.Itoa(int(pr.name)), 0)
 
 	return &pr
 }
@@ -245,32 +244,32 @@ func (pr *Proxy) Run() {
 
 			select {
 			case proposeRequest := <-pr.proposeRequestIndex:
-				pr.debug("proxy received internal propose request", 1)
+				//pr.debug("proxy received internal propose request", 1)
 				pr.proposeToIndex(proposeRequest.index)
 				break
 			case proposerMessage := <-pr.proposerToProxyChan:
-				pr.debug("proxy received proposer message", 0)
+				//pr.debug("proxy received proposer message", 0)
 				pr.handleProposeResponse(proposerMessage)
 				break
 			case recorderMessage := <-pr.recorderToProxyChan:
-				pr.debug("proxy received recorder decide message", 0)
+				//pr.debug("proxy received recorder decide message", 0)
 				pr.handleRecorderResponse(recorderMessage)
 				break
 			case fetchResponse := <-pr.proposerToProxyFetchChan:
-				pr.debug("proxy received fetch response", 1)
+				//pr.debug("proxy received fetch response", 1)
 				pr.handleFetchResponse(fetchResponse)
 				break
 			case clientRequest := <-pr.clientRequestsChan:
-				pr.debug("proxy received a client request that is ready to be replicated", 0)
+				//pr.debug("proxy received a client request that is ready to be replicated", 0)
 				pr.handleClientBatch(clientRequest)
 				break
 			case inpputMessage := <-pr.incomingChan:
-				pr.debug("Received client  message", 0)
+				//pr.debug("Received client  message", 0)
 				code := inpputMessage.Code
 				switch code {
 				case pr.clientBatchRpc:
 					clientBatch := inpputMessage.Obj.(*client.ClientBatch)
-					pr.debug("proxy received client batch from "+strconv.Itoa(int(clientBatch.Sender)), 0)
+					//pr.debug("proxy received client batch from "+strconv.Itoa(int(clientBatch.Sender)), 0)
 					pr.clientBatchTimer <- ClientBatchTime{
 						batch:        *clientBatch,
 						incomingTime: time.Now(),
@@ -278,7 +277,7 @@ func (pr *Proxy) Run() {
 					break
 				case pr.clientStatusRpc:
 					clientStatus := inpputMessage.Obj.(*client.ClientStatus)
-					pr.debug("proxy received client status  ", 0)
+					//pr.debug("proxy received client status  ", 0)
 					pr.handleClientStatus(*clientStatus)
 					break
 				}
@@ -304,12 +303,12 @@ func (pr *Proxy) Run() {
 
 }
 
-/*
-	if turned on, print the message to console
-*/
-
-func (pr *Proxy) debug(message string, level int) {
-	if pr.debugOn && level >= pr.debugLevel {
-		fmt.Printf("%s\n", message)
-	}
-}
+///*
+//	if turned on, print the message to console
+//*/
+//
+//func (pr *Proxy) debug(message string, level int) {
+//	if pr.debugOn && level >= pr.debugLevel {
+//		fmt.Printf("%s\n", message)
+//	}
+//}

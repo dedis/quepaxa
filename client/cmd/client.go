@@ -165,12 +165,12 @@ func New(name int64, cfg *configuration.InstanceConfig, logFilePath string, batc
 	return &cl
 }
 
-/*
-	if turned on, prints the debug message to console if the level is greater than the debugLevel
-*/
-
-func (cl *Client) debug(message string, level int) {
-	if cl.debugOn && level >= cl.debugLevel {
-		fmt.Printf("%s\n", message)
-	}
-}
+///*
+//	if turned on, prints the debug message to console if the level is greater than the debugLevel
+//*/
+//
+//func (cl *Client) debug(message string, level int) {
+//	if cl.debugOn && level >= cl.debugLevel {
+//		fmt.Printf("%s\n", message)
+//	}
+//}

@@ -82,7 +82,7 @@ func (cl *Client) computeStats() {
 
 	f, err := os.Create(cl.logFilePath + strconv.Itoa(int(cl.name)) + ".txt")
 	if err != nil {
-		cl.debug("Error creating the output log file", 1)
+		//cl.debug("Error creating the output log file", 1)
 		log.Fatal(err)
 	}
 	defer f.Close()

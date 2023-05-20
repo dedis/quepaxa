@@ -1,7 +1,6 @@
 package raxos
 
 import (
-	"fmt"
 	"google.golang.org/grpc"
 	"net"
 	"raxos/configuration"
@@ -71,20 +70,20 @@ func NewRecorder(cfg configuration.InstanceConfig, clientBatches *ClientBatchSto
 		}
 	}
 
-	re.debug("created a new recorder  "+strconv.Itoa(int(name)), 0)
+	//re.debug("created a new recorder  "+strconv.Itoa(int(name)), 0)
 
 	return &re
 }
 
-/*
-	if turned on, print the message to console
-*/
-
-func (re *Recorder) debug(message string, level int) {
-	if re.debugOn && level >= re.debugLevel {
-		fmt.Printf("%s\n", message)
-	}
-}
+///*
+//	if turned on, print the message to console
+//*/
+//
+//func (re *Recorder) debug(message string, level int) {
+//	if re.debugOn && level >= re.debugLevel {
+//		fmt.Printf("%s\n", message)
+//	}
+//}
 
 // start listening to gRPC connection
 
@@ -106,7 +105,7 @@ func (r *Recorder) NetworkInit() {
 		}
 	}()
 
-	r.debug("recorder started listening to grpc  ", -1)
+	//r.debug("recorder started listening to grpc  ", -1)
 }
 
 // check if all the batches are available in the store
@@ -197,9 +196,9 @@ func (re *Recorder) espImpl(index int64, s int, p *ProposerMessage_Proposal) (in
 		})
 	}
 
-	re.debug("recorder processing esp for s = "+strconv.Itoa(s)+" for index "+strconv.Itoa(int(index)), 0)
+	//re.debug("recorder processing esp for s = "+strconv.Itoa(s)+" for index "+strconv.Itoa(int(index)), 0)
 	if re.slots[index].S == s {
-		re.debug("recorder received esp for the same s  "+" for index "+strconv.Itoa(int(index)), 0)
+		//re.debug("recorder received esp for the same s  "+" for index "+strconv.Itoa(int(index)), 0)
 		re.slots[index].A = re.max(re.slots[index].A, p)
 	} else if re.slots[index].S < s {
 		if re.slots[index].S+1 < s {
@@ -269,20 +268,20 @@ func (re *Recorder) HandleESP(req *ProposerMessage) *RecorderResponse {
 		}
 
 		re.recorderToProxyChan <- d
-		re.debug("recorder sent the decisions to the proxy  "+" for index "+strconv.Itoa(int(req.Index)), -1)
+		//re.debug("recorder sent the decisions to the proxy  "+" for index "+strconv.Itoa(int(req.Index)), -1)
 	}
 
 	if req.S == 4 && len(req.P.ClientBatches) == 0 && len(req.P.Ids) > 0 {
 		// if there are only hashes, then check if all the client batches are available in the shared pool
 		allBatchesFound := re.findAllBatches(req.P.Ids)
 		if !allBatchesFound {
-			re.debug("recorder does not have all the client batches, hence rejecting", 17)
+			//re.debug("recorder does not have all the client batches, hence rejecting", 17)
 			response.ClientBatchesNotFound = true
 			return &response
 		}
 	}
 
-	re.debug("recorder has all the client batches to process  "+strconv.Itoa(int(req.Index)), 0)
+	//re.debug("recorder has all the client batches to process  "+strconv.Itoa(int(req.Index)), 0)
 
 	if len(req.P.ClientBatches) > 0 {
 		// add all the batches to the store
@@ -334,7 +333,7 @@ func (r *Recorder) convertToDecideResponseClientBatchMessages(messages []*client
 // answer to fetch request
 
 func (r *Recorder) HandleFetch(req *DecideRequest) *DecideResponse {
-	r.debug("recorder received a fetch request", 0)
+	//r.debug("recorder received a fetch request", 0)
 	response := DecideResponse{
 		ClientBatches: nil,
 	}
@@ -357,7 +356,7 @@ func (r *Recorder) HandleFetch(req *DecideRequest) *DecideResponse {
 // update the decisions
 
 func (re *Recorder) HandleDecisions(decisions *Decisions) {
-	re.debug("recorder handling decisions ", 11)
+	//re.debug("recorder handling decisions ", 11)
 	// send the last decided index details to the proxy, if available
 	if len(decisions.DecidedSlots) > 0 {
 		d := Decision{
