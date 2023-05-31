@@ -20,7 +20,7 @@ remote_algo_path="/raxos/binary/quepaxa_replica"
 remote_ctl_path="/raxos/binary/quepaxa_client"
 remote_log_path="/home/${user_name}/raxos/logs/"
 
-remote_config_path="/home/${username}/raxos/binary/quepaxa.yml"
+remote_config_path="/home/${user_name}/raxos/binary/quepaxa.yml"
 
 echo "Starting execution latency test"
 
