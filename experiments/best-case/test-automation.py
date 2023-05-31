@@ -3,7 +3,7 @@ import sys
 
 setting = sys.argv[1]  # LAN or WAN
 
-if setting != "LAN" or setting != "WAN":
+if setting != "LAN" and setting != "WAN":
     exit("wrong input, input should be LAN/WAN")
 
 os.system("/bin/bash experiments/setup-5/setup.sh")
