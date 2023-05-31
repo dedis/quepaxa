@@ -1,20 +1,26 @@
 pwd=$(pwd)
-reset_directory="rm -r /home/ubuntu/raxos; mkdir /home/ubuntu/raxos; mkdir -p /home/ubuntu/raxos/logs"
-local_zip_path="${pwd}/bin/"
-replica_home_path="/home/ubuntu/raxos/"
-raxos_config="${pwd}/aws/best-case-lan/raxos/configuration/raxos_configuration.yml"
-paxos_raft_config="${pwd}/aws/best-case-lan/paxos_raft/configuration/paxos_raft_configuration.yml"
+. "${pwd}"/experiments/setup-5/ip.sh
 
+reset_directory="rm -r /home/${user_name}/*; mkdir -p /home/${user_name}/raxos; mkdir -p /home/${user_name}/raxos/logs"
+local_binary_path="${pwd}/experiments/binary/"
+replica_home_path="/home/${user_name}/raxos/"
 
-. "${pwd}"/aws/best-case-lan/setup/ip.sh
+# generate config files
+
+python3 experiments/python/quepaxa-config.py 5 5 ${replica1} ${replica2} ${replica3} ${replica4} ${replica5} ${client1} ${client2} ${client3} ${client4} ${client5} > experiments/binary/quepaxa.yml
+python3 experiments/python/paxos-config.py   5 5 ${replica1} ${replica2} ${replica3} ${replica4} ${replica5} ${client1} ${client2} ${client3} ${client4} ${client5} > experiments/binary/paxos.yml
+
 
 for i in "${machines[@]}"
 do
-   echo "$i"
+   echo "copying files to ${i}"
    sshpass ssh "$i" -i ${cert} "${reset_directory}"
-   scp -r -i ${cert} ${local_zip_path} "$i":${replica_home_path}
-   scp -i ${cert} ${raxos_config} "$i":${replica_home_path}
-   scp -i ${cert} ${paxos_raft_config} "$i":${replica_home_path}
+   scp -r -i ${cert} ${local_binary_path} "$i":${replica_home_path}
 done
 
+
+rm experiments/binary/quepaxa.yml
+rm experiments/binary/paxos.yml
+
+echo "5 replica setup complete"
 
