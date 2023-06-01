@@ -106,5 +106,3 @@ def remove_farthest_from_median(A, n):
     cleaned_A = np.delete(A, sorted_indices[:n])
 
     return cleaned_A
-
-print(remove_farthest_from_median([1,2,3,4,5,100,6,7], 5))
