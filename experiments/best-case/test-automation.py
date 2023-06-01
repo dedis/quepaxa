@@ -8,13 +8,17 @@ numIter = sys.argv[2]
 if setting != "LAN" and setting != "WAN":
     exit("wrong input, input should be LAN/WAN")
 
-if int(numIter) < 5:
-    exit("at least 5 iterations needed")
+if int(numIter) < 4:
+    exit("at least 4 iterations needed")
 
 os.system("/bin/bash experiments/setup-5/setup.sh")
 
 replicaBatchSize = 2000
 replicaBatchTime = 4000
+
+if setting == "WAN":
+    replicaBatchSize = 3000
+    replicaBatchTime = 5000
 
 iterations =  list(range(1,int(numIter)+1))
 arrivals = []

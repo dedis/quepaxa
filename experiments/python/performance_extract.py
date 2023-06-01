@@ -1,3 +1,5 @@
+import numpy as np
+
 def getPaxosRaftPerformance(root, initClient, numClients):
     throughputs = []
     medians = []
@@ -89,3 +91,20 @@ def getEPaxosPaxosPerformance(root, initClient, numClients):
         errors.append(float(content[4].strip().split(" ")[3]))
 
     return [sum(throughputs), sum(medians) / numClients, sum(ninety9s) / numClients, sum(errors)]
+
+
+def remove_farthest_from_median(A, n):
+    median = np.median(A)
+
+    # Calculate distances from the median
+    distances = np.abs(A - median)
+
+    # Sort the distances in descending order
+    sorted_indices = np.argsort(distances)[::-1]
+
+    # Remove n items farthest from the median
+    cleaned_A = np.delete(A, sorted_indices[:n])
+
+    return cleaned_A
+
+print(remove_farthest_from_median([1,2,3,4,5,100,6,7], 5))
