@@ -51,14 +51,14 @@ def getEPaxosSummary():
             latency.append(l)
             nine9.append(n)
             err.append(e)
-        record.append(sum(remove_farthest_from_median(throughput)) / len(iterations))
-        record.append(sum(remove_farthest_from_median(latency)) / len(iterations))
-        record.append(sum(remove_farthest_from_median(nine9)) / len(iterations))
-        record.append(sum(remove_farthest_from_median(err)) / len(iterations))
+        record.append(sum(remove_farthest_from_median(throughput,1)) / len(iterations-1))
+        record.append(sum(remove_farthest_from_median(latency,1)) / len(iterations-1))
+        record.append(sum(remove_farthest_from_median(nine9,1)) / len(iterations-1))
+        record.append(sum(remove_farthest_from_median(err,1)) / len(iterations-1))
         l_records.append(record)
 
         record = ["epaxos-commit", str(arrival)]
-        throughput, latency, nine9, err = 0, 0, 0, 0
+        throughput, latency, nine9, err = [], [], [], []
         for iteration in iterations:
             root = "experiments/best-case/logs/epaxos/" + str(arrival) + "/" + str(int(replicaBatchSize)) \
                    + "/" + str(replicaBatchTime) + "/" + str(setting) + "/" + str(iteration) + "/commit/"
@@ -67,10 +67,10 @@ def getEPaxosSummary():
             latency.append(l)
             nine9.append(n)
             err.append(e)
-        record.append(sum(remove_farthest_from_median(throughput)) / len(iterations))
-        record.append(sum(remove_farthest_from_median(latency)) / len(iterations))
-        record.append(sum(remove_farthest_from_median(nine9)) / len(iterations))
-        record.append(sum(remove_farthest_from_median(err)) / len(iterations))
+        record.append(sum(remove_farthest_from_median(throughput,1)) / len(iterations-1))
+        record.append(sum(remove_farthest_from_median(latency,1)) / len(iterations-1))
+        record.append(sum(remove_farthest_from_median(nine9,1)) / len(iterations-1))
+        record.append(sum(remove_farthest_from_median(err,1)) / len(iterations-1))
         l_records.append(record)
 
     return l_records
@@ -80,7 +80,7 @@ def getPaxosSummary():
     l_records = []
     for arrival in arrivals:
         record = ["paxos", str(arrival)]
-        throughput, latency, nine9, err = 0, 0, 0, 0
+        throughput, latency, nine9, err = [], [], [], []
         for iteration in iterations:
             "experiments/best-case/logs/paxos/" + str(arrival) + "/" + str(int(replicaBatchSize)) \
             + "/" + str(replicaBatchTime) + "/" + str(setting) + "/" + str(iteration) + "/execution/"
@@ -89,10 +89,10 @@ def getPaxosSummary():
             latency.append(l)
             nine9.append(n)
             err.append(e)
-        record.append(sum(remove_farthest_from_median(throughput)) / len(iterations))
-        record.append(sum(remove_farthest_from_median(latency)) / len(iterations))
-        record.append(sum(remove_farthest_from_median(nine9)) / len(iterations))
-        record.append(sum(remove_farthest_from_median(err)) / len(iterations))
+        record.append(sum(remove_farthest_from_median(throughput,1)) / len(iterations-1))
+        record.append(sum(remove_farthest_from_median(latency,1)) / len(iterations-1))
+        record.append(sum(remove_farthest_from_median(nine9,1)) / len(iterations-1))
+        record.append(sum(remove_farthest_from_median(err,1)) / len(iterations-1))
         l_records.append(record)
     return l_records
 
@@ -101,37 +101,37 @@ def getQuePaxaSummary():
     l_records = []
     for arrival in arrivals:
         record = ["raxos-0", str(arrival)]
-        throughput, latency, nine9, err = 0, 0, 0, 0
+        throughput, latency, nine9, err = [], [], [], []
         for iteration in iterations:
             root = "experiments/best-case/logs/quepaxa" + str(arrival) + "/" + str(int(replicaBatchSize)) + "/" + str(
                 replicaBatchTime) + "/" + str(setting) + "/" + str(iteration) + "/" + str(0) + "/" + str(
-                0) + "/execution/"
+                propTime) + "/execution/"
             t, l, n, e = getQuePaxaPerformance(root, 21, 5)
             throughput.append(t)
             latency.append(l)
             nine9.append(n)
             err.append(e)
-        record.append(sum(remove_farthest_from_median(throughput)) / len(iterations))
-        record.append(sum(remove_farthest_from_median(latency)) / len(iterations))
-        record.append(sum(remove_farthest_from_median(nine9)) / len(iterations))
-        record.append(sum(remove_farthest_from_median(err)) / len(iterations))
+        record.append(sum(remove_farthest_from_median(throughput,1)) / len(iterations-1))
+        record.append(sum(remove_farthest_from_median(latency,1)) / len(iterations-1))
+        record.append(sum(remove_farthest_from_median(nine9,1)) / len(iterations-1))
+        record.append(sum(remove_farthest_from_median(err,1)) / len(iterations-1))
         l_records.append(record)
 
         record = ["raxos-1", str(arrival)]
-        throughput, latency, nine9, err = 0, 0, 0, 0
+        throughput, latency, nine9, err = [], [], [], []
         for iteration in iterations:
             root = "experiments/best-case/logs/quepaxa" + str(arrival) + "/" + str(int(replicaBatchSize)) + "/" + str(
                 replicaBatchTime) + "/" + str(setting) + "/" + str(iteration) + "/" + str(1) + "/" + str(
                 propTime) + "/execution/"
             t, l, n, e = getQuePaxaPerformance(root, 21, 5)
-            throughput = throughput + t
-            latency = latency + l
-            nine9 = nine9 + n
-            err = err + e
-        record.append(throughput / len(iterations))
-        record.append(latency / len(iterations))
-        record.append(nine9 / len(iterations))
-        record.append(err / len(iterations))
+            throughput.append(t)
+            latency.append(l)
+            nine9.append(n)
+            err.append(e)
+        record.append(sum(remove_farthest_from_median(throughput,1)) / len(iterations-1))
+        record.append(sum(remove_farthest_from_median(latency,1)) / len(iterations-1))
+        record.append(sum(remove_farthest_from_median(nine9,1)) / len(iterations-1))
+        record.append(sum(remove_farthest_from_median(err,1)) / len(iterations-1))
         l_records.append(record)
     return l_records
 

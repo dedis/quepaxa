@@ -30,6 +30,11 @@ if setting == "LAN":
 if setting == "WAN":
     arrivals = [200, 1000, 5000, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000]
 
+propTime = 0
+
+if setting == "WAN":
+    propTime = 5
+
 for iteration in iterations:
     for arrival in arrivals:
         os.system(
@@ -61,7 +66,7 @@ for iteration in iterations:
                 + str(replicaBatchTime) + " "
                 + setting + " "
                 + str(iteration) + " "
-                + str(1) + " " + str(0))
+                + str(1) + " " + str(propTime))
         if setting == "WAN":
             os.system(
                 "/bin/bash experiments/best-case/quepaxa.sh " + str(int(arrival)) + " "
@@ -69,4 +74,4 @@ for iteration in iterations:
                 + str(replicaBatchTime) + " "
                 + setting + " "
                 + str(iteration) + " "
-                + str(1) + " " + str(5))
+                + str(1) + " " + str(propTime))
