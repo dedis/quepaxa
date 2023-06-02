@@ -1,10 +1,9 @@
 arrival=$1
+iteration=$2
+
 replicaBatchSize=$2
 replicaBatchTime=$3
 setting=$4 # LAN or WAN
-iteration=$5
-serverMode=$6
-requestPropagationTime=$7
 
 pipelineLength=1
 
