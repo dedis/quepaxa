@@ -48,3 +48,4 @@ client4_ip="10.156.33.148"
 client5_ip="10.156.33.149"
 
 user_name="pasindu"
+device="enp1s0" # "ens3"
