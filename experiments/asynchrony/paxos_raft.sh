@@ -1,6 +1,6 @@
 algo=$1
-arrival=$1
-iteration=$2
+arrival=$2
+iteration=$3
 
 replicaBatchSize=3000
 replicaBatchTime=5000
@@ -35,32 +35,32 @@ echo "Removed all files in remote servers"
 
 sleep 2
 
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica1} ".${remote_algo_path} --name 1 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --consAlgo ${algo}  --viewTimeout 5000000 --pipelineLength ${pipelineLength} " >${output_path}1.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica2} ".${remote_algo_path} --name 2 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --consAlgo ${algo}  --viewTimeout ${leaderTimeout} --pipelineLength ${pipelineLength} " >${output_path}2.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica3} ".${remote_algo_path} --name 3 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --consAlgo ${algo}  --viewTimeout ${leaderTimeout} --pipelineLength ${pipelineLength} " >${output_path}3.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica4} ".${remote_algo_path} --name 4 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --consAlgo ${algo}  --viewTimeout ${leaderTimeout} --pipelineLength ${pipelineLength} " >${output_path}4.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica5} ".${remote_algo_path} --name 5 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --consAlgo ${algo}  --viewTimeout ${leaderTimeout} --pipelineLength ${pipelineLength} " >${output_path}5.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica1} ".${remote_algo_path} --name 1 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --consAlgo ${algo}  --viewTimeout 5000000 " >${output_path}1.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica2} ".${remote_algo_path} --name 2 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --consAlgo ${algo}  --viewTimeout 5000000 " >${output_path}2.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica3} ".${remote_algo_path} --name 3 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --consAlgo ${algo}  --viewTimeout 5000000 " >${output_path}3.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica4} ".${remote_algo_path} --name 4 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --consAlgo ${algo}  --viewTimeout 5000000 " >${output_path}4.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica5} ".${remote_algo_path} --name 5 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --consAlgo ${algo}  --viewTimeout 5000000 " >${output_path}5.log &
 echo "Started servers"
 
 sleep 10
 
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client1} ".${remote_ctl_path} --name 11 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType status --operationType 1" >${output_path}status1.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client1} ".${remote_ctl_path} --name 21 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType status --operationType 1" >${output_path}status1.log &
 echo "Sent initial status"
 
 sleep 5
 
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client2} ".${remote_ctl_path} --name 12 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType status --operationType 3" >${output_path}status3.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client2} ".${remote_ctl_path} --name 22 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType status --operationType 3" >${output_path}status3.log &
 echo "Sent consensus start up"
 
 sleep 35
 
 echo "Starting client[s]"
 
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client1} ".${remote_ctl_path} --name 11 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType request --arrivalRate ${arrivalRate}  --batchSize ${clientBatchSize} --batchTime ${clientBatchTime}" >${output_path}11.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client2} ".${remote_ctl_path} --name 12 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType request --arrivalRate ${arrivalRate}  --batchSize ${clientBatchSize} --batchTime ${clientBatchTime}" >${output_path}12.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client3} ".${remote_ctl_path} --name 13 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType request --arrivalRate ${arrivalRate}  --batchSize ${clientBatchSize} --batchTime ${clientBatchTime}" >${output_path}13.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client4} ".${remote_ctl_path} --name 14 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType request --arrivalRate ${arrivalRate}  --batchSize ${clientBatchSize} --batchTime ${clientBatchTime}" >${output_path}14.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client5} ".${remote_ctl_path} --name 15 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType request --arrivalRate ${arrivalRate}  --batchSize ${clientBatchSize} --batchTime ${clientBatchTime}" >${output_path}15.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client1} ".${remote_ctl_path} --name 21 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType request --arrivalRate ${arrival}  --batchSize 50 --batchTime 500" >${output_path}21.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client2} ".${remote_ctl_path} --name 22 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType request --arrivalRate ${arrival}  --batchSize 50 --batchTime 500" >${output_path}22.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client3} ".${remote_ctl_path} --name 23 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType request --arrivalRate ${arrival}  --batchSize 50 --batchTime 500" >${output_path}23.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client4} ".${remote_ctl_path} --name 24 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType request --arrivalRate ${arrival}  --batchSize 50 --batchTime 500" >${output_path}24.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client5} ".${remote_ctl_path} --name 25 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType request --arrivalRate ${arrival}  --batchSize 50 --batchTime 500" >${output_path}25.log &
 
 sleep 15
 
