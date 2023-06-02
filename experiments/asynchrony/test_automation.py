@@ -20,6 +20,6 @@ for iteration in iterations:
 
         for algo in ["paxos", "raft"]:
             os.system(
-                "/bin/bash experiments/asynchrony/paxos_raft.sh/ " + str(algo) + " "
+                "/bin/bash experiments/asynchrony/paxos_raft.sh " + str(algo) + " "
                 + str(arrival) + " "
                 + str(iteration))
