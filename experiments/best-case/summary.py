@@ -210,11 +210,11 @@ ax = plt.gca()
 ax.grid()
 
 if setting == "LAN":
-    # ax.set_xlim([0, 350])
+    ax.set_xlim([0, 350])
     ax.set_ylim([0, 80])
 
 if setting == "WAN":
-    # ax.set_xlim([0, 390])
+    ax.set_xlim([0, 390])
     ax.set_ylim([0, 5000])
 
 
@@ -239,11 +239,11 @@ ax = plt.gca()
 ax.grid()
 
 if setting == "LAN":
-    # ax.set_xlim([0, 700])
+    ax.set_xlim([0, 700])
     ax.set_ylim([0, 7])
 
 if setting == "WAN":
-    # ax.set_xlim([0, 360])
+    ax.set_xlim([0, 360])
     ax.set_ylim([0, 3000])
 
 plt.plot(di_func(quepaxa_throughput), di_func(quepaxa_latency), 'b.-', label="QuePaxa")
