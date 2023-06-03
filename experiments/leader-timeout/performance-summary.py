@@ -21,7 +21,7 @@ def getPaxosSummary():
         record = ["paxos", str(timeout)]
         throughput, latency, nine9, err = [], [], [], []
         for iteration in iterations:
-            root = "experiments/leader-timeout/logs/performance/paxos/" + str(iteration) + "/" + str(int(timeout))
+            root = "experiments/leader-timeout/logs/performance/paxos/" + str(iteration) + "/" + str(int(timeout))+ "/"
             t, l, n, e = getPaxosRaftPerformance(root, 21, 5)
             throughput.append(t)
             latency.append(l)
@@ -88,7 +88,7 @@ records = records + raftSummary + paxosSummary + quePaxaSummary
 
 import csv
 
-with open("experiments/leader-timeout/logs/summary.csv", "w", newline="") as f:
+with open("experiments/leader-timeout/logs/performance-summary.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerows(records)
 
@@ -149,7 +149,7 @@ ax1.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 plt.xlabel('Leader Timeout / Hedging Delay (ms)')
 plt.ylabel('Throughput \n cmd/sec')
 plt.legend()
-plt.savefig('aws/timeout-performance/timeout_performance.pdf', bbox_inches='tight', pad_inches=0)
+plt.savefig('experiments/leader-timeout/logs/timeout_performance.pdf', bbox_inches='tight', pad_inches=0)
 plt.close()
 plt.clf()
 plt.cla()
