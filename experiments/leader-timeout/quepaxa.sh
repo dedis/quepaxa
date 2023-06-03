@@ -70,4 +70,14 @@ sleep 110
 
 echo "Completed Client[s]"
 
+if [[ "${mode}" == "recovery" ]]
+then
+  scp -i ${cert} ${client1}:${remote_log_path}21.txt ${output_path}21.txt
+  scp -i ${cert} ${client2}:${remote_log_path}22.txt ${output_path}22.txt
+  scp -i ${cert} ${client3}:${remote_log_path}23.txt ${output_path}23.txt
+  scp -i ${cert} ${client4}:${remote_log_path}24.txt ${output_path}24.txt
+  scp -i ${cert} ${client5}:${remote_log_path}25.txt ${output_path}25.txt
+
+fi
+
 echo "Finish test"
