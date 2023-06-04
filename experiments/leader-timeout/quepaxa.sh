@@ -70,6 +70,13 @@ sleep 110
 
 echo "Completed Client[s]"
 
+if [[ "${mode}" == "performance" ]]
+then
+  nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client1} ".${remote_ctl_path} --name 21 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType status  --operationType 4" >"${output_path}"status4.log &
+  echo "Sent print slot calculation"
+
+fi
+
 if [[ "${mode}" == "recovery" ]]
 then
   scp -i ${cert} ${client1}:${remote_log_path}21.txt ${output_path}21.txt
