@@ -9,7 +9,7 @@ conflicts=2
 
 if [[ "${setting}" == "WAN" ]]
 then
-  pipelineLength=20
+  pipelineLength=10
 fi
 
 pwd=$(pwd)
