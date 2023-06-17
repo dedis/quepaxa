@@ -186,11 +186,18 @@ quepaxa_throughput = []
 quepaxa_latency = []
 quepaxa_tail = []
 
-for ra in quePaxaSummary:
-    if ra[0] == "quepaxa-1":
-        quepaxa_throughput.append(ra[2])
-        quepaxa_latency.append(ra[3])
-        quepaxa_tail.append(ra[4])
+if setting == "LAN":
+    for ra in quePaxaSummary:
+        if ra[0] == "quepaxa-1":
+            quepaxa_throughput.append(ra[2])
+            quepaxa_latency.append(ra[3])
+            quepaxa_tail.append(ra[4])
+elif setting == "WAN":
+    for ra in quePaxaSummary:
+        if ra[0] == "quepaxa-0":
+            quepaxa_throughput.append(ra[2])
+            quepaxa_latency.append(ra[3])
+            quepaxa_tail.append(ra[4])
 
 import matplotlib.pyplot as plt
 
@@ -217,7 +224,6 @@ if setting == "WAN":
     ax.set_xlim([0, 390])
     ax.set_ylim([0, 5000])
 
-
 plt.plot(di_func(quepaxa_throughput), di_func(quepaxa_tail), 'b.-', label="QuePaxa")
 plt.plot(di_func(paxos_throughput), di_func(paxos_tail), 'y*-', label="Multi-Paxos")
 plt.plot(di_func(epaxos_no_exec_throughput), di_func(epaxos_no_exec_tail), 'cx-', label="Epaxos-commit")
@@ -226,7 +232,7 @@ plt.plot(di_func(epaxos_exec_throughput), di_func(epaxos_exec_tail), 'mo-.', lab
 plt.xlabel('Throughput (x 1k cmd/sec)')
 plt.ylabel('99 percentile Latency (ms)')
 plt.legend()
-plt.savefig('experiments/best-case/logs/throughput_tail'+setting+'.pdf', bbox_inches='tight', pad_inches=0)
+plt.savefig('experiments/best-case/logs/throughput_tail' + setting + '.pdf', bbox_inches='tight', pad_inches=0)
 plt.close()
 plt.clf()
 plt.cla()
@@ -254,7 +260,7 @@ plt.plot(di_func(epaxos_exec_throughput), di_func(epaxos_exec_latency), 'mo-', l
 plt.xlabel('Throughput (x 1k cmd/sec)')
 plt.ylabel('Median Latency (ms)')
 plt.legend()
-plt.savefig('experiments/best-case/logs/throughput_median'+setting+'.pdf', bbox_inches='tight', pad_inches=0)
+plt.savefig('experiments/best-case/logs/throughput_median' + setting + '.pdf', bbox_inches='tight', pad_inches=0)
 plt.close()
 plt.clf()
 plt.cla()
