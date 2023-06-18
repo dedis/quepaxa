@@ -28,10 +28,10 @@ def getPaxosSummary():
             latency.append(l)
             nine9.append(n)
             err.append(e)
-        record.append(int(sum(remove_farthest_from_median(throughput, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(latency, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(nine9, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
+        record.append(int(sum(remove_farthest_from_median(throughput, 5)) / (len(iterations) - 5)))
+        record.append(int(sum(remove_farthest_from_median(latency, 5)) / (len(iterations) - 5)))
+        record.append(int(sum(remove_farthest_from_median(nine9, 5)) / (len(iterations) - 5)))
+        record.append(int(sum(remove_farthest_from_median(err, 5)) / (len(iterations) - 5)))
         l_records.append(record)
 
     return l_records
@@ -50,10 +50,10 @@ def getRaftSummary():
             latency.append(l)
             nine9.append(n)
             err.append(e)
-        record.append(int(sum(remove_farthest_from_median(throughput, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(latency, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(nine9, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
+        record.append(int(sum(remove_farthest_from_median(throughput, 5)) / (len(iterations) - 5)))
+        record.append(int(sum(remove_farthest_from_median(latency, 5)) / (len(iterations) - 5)))
+        record.append(int(sum(remove_farthest_from_median(nine9, 5)) / (len(iterations) - 5)))
+        record.append(int(sum(remove_farthest_from_median(err, 5)) / (len(iterations) - 5)))
         l_records.append(record)
 
     return l_records
@@ -72,10 +72,10 @@ def getQuePaxaSummary():
             latency.append(l)
             nine9.append(n)
             err.append(e)
-        record.append(int(sum(remove_farthest_from_median(throughput, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(latency, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(nine9, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
+        record.append(int(sum(remove_farthest_from_median(throughput, 5)) / (len(iterations) - 5)))
+        record.append(int(sum(remove_farthest_from_median(latency, 5)) / (len(iterations) - 5)))
+        record.append(int(sum(remove_farthest_from_median(nine9, 5)) / (len(iterations) - 5)))
+        record.append(int(sum(remove_farthest_from_median(err, 5)) / (len(iterations) - 5)))
         l_records.append(record)
     return l_records
 
