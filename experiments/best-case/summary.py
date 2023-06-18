@@ -105,7 +105,7 @@ def getQuePaxaSummary():
         for iteration in iterations:
             root = "experiments/best-case/logs/quepaxa/" + str(arrival) + "/" + str(int(replicaBatchSize)) + "/" + str(
                 replicaBatchTime) + "/" + str(setting) + "/" + str(iteration) + "/" + str(0) + "/" + str(
-                propTime) + "/execution/"
+                0) + "/execution/"
             t, l, n, e = getQuePaxaPerformance(root, 21, 5)
             throughput.append(t)
             latency.append(l)
@@ -165,7 +165,7 @@ for e in ePaxosSummary:
         epaxos_no_exec_latency.append(e[3])
         epaxos_no_exec_tail.append(e[4])
     elif e[0] == "epaxos-exec":
-        if 1000 < float(e[1]) < 6000:
+        if 900 < float(e[1]) < 6000:
             continue  # arrival rate 5000 requires a low batch size
         epaxos_exec_throughput.append(e[2])
         epaxos_exec_latency.append(e[3])
@@ -220,9 +220,9 @@ if setting == "LAN":
     ax.set_xlim([0, 350])
     ax.set_ylim([0, 80])
 
-if setting == "WAN":
-    ax.set_xlim([0, 390])
-    ax.set_ylim([0, 5000])
+# if setting == "WAN":
+    # ax.set_xlim([0, 390])
+    # ax.set_ylim([0, 5000])
 
 plt.plot(di_func(quepaxa_throughput), di_func(quepaxa_tail), 'b.-', label="QuePaxa")
 plt.plot(di_func(paxos_throughput), di_func(paxos_tail), 'y*-', label="Multi-Paxos")
@@ -249,8 +249,8 @@ if setting == "LAN":
     ax.set_ylim([0, 7])
 
 if setting == "WAN":
-    ax.set_xlim([0, 360])
-    ax.set_ylim([0, 3000])
+#     ax.set_xlim([0, 360])
+    ax.set_ylim([200, 800])
 
 plt.plot(di_func(quepaxa_throughput), di_func(quepaxa_latency), 'b.-', label="QuePaxa")
 plt.plot(di_func(paxos_throughput), di_func(paxos_latency), 'y*-', label="Multi-Paxos")
