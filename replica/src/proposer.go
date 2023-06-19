@@ -24,11 +24,13 @@ type Proposer struct {
 	hi                          int  // hi priority
 	serverMode                  int  // if 1, use the fast path optimizations
 	proxyToProposerDecisionChan chan Decision
+	isAsync                     bool
+	asyncTimeOut                int64
 }
 
 // instantiate a new Proposer
 
-func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, debugOn bool, debugLevel int, hi int, serverMode int, proxyToProposerDecisionChan chan Decision) *Proposer {
+func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, debugOn bool, debugLevel int, hi int, serverMode int, proxyToProposerDecisionChan chan Decision, isAsync bool, asyncTimeOut int64) *Proposer {
 
 	pr := Proposer{
 		numReplicas:                 len(peers),
@@ -44,6 +46,8 @@ func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan c
 		hi:                          hi,
 		serverMode:                  serverMode,
 		proxyToProposerDecisionChan: proxyToProposerDecisionChan,
+		isAsync:                     isAsync,
+		asyncTimeOut:                asyncTimeOut,
 	}
 
 	//pr.debug("created a new proposer instance", -1)
@@ -360,7 +364,12 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 			wg.Add(1)
 			go func(p peer, pi ProposerMessage_Proposal, s int, decidedSlots []*ProposerMessage_DecidedSlot) {
 				defer wg.Done()
-
+				if prop.isAsync {
+					n := rand.Intn(prop.numReplicas) + 1
+					if int64(n) == prop.name {
+						time.Sleep(time.Duration(prop.asyncTimeOut) * time.Millisecond)
+					}
+				}
 				if s == 4 && prop.serverMode == 1 {
 					newP := &ProposerMessage_Proposal{
 						Priority:      pi.Priority,

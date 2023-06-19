@@ -35,6 +35,8 @@ type Server struct {
 	batchTime                   int64
 	epochSize                   int
 	proxyToProposerDecisionChan chan Decision
+	isAsync                     bool
+	asyncTimeOut                int64
 }
 
 // from proxy to proposer
@@ -131,7 +133,7 @@ func (s *Server) createProposers() {
 	peers := s.setupgRPC()
 	for i := 0; i < s.numProposers+4; i++ { //+4 is for decision sending and fetch requests
 		hi := 100000
-		newProposer := NewProposer(s.name, int64(i), peers, s.proxyToProposerChan, s.proposerToProxyChan, s.proxyToProposerFetchChan, s.proposerToProxyFetchChan, s.debugOn, s.debugLevel, hi, s.serverMode, s.proxyToProposerDecisionChan)
+		newProposer := NewProposer(s.name, int64(i), peers, s.proxyToProposerChan, s.proposerToProxyChan, s.proxyToProposerFetchChan, s.proposerToProxyFetchChan, s.debugOn, s.debugLevel, hi, s.serverMode, s.proxyToProposerDecisionChan, s.isAsync, s.asyncTimeOut)
 		s.ProposerInstances = append(s.ProposerInstances, newProposer)
 		s.ProposerInstances[len(s.ProposerInstances)-1].runProposer()
 	}
@@ -141,7 +143,7 @@ func (s *Server) createProposers() {
 	create a new server instance, inside which there are proxy instance, proposer instances and recorder instance. initialize all fields
 */
 
-func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, leaderTimeout int64, pipelineLength int64, debugOn bool, debugLevel int, leaderMode int, serverMode int, batchTime int64, epochSize int, benchmarkMode int, keyLen int, valueLen int, requestPropogationTime int64) *Server {
+func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batchSize int64, leaderTimeout int64, pipelineLength int64, debugOn bool, debugLevel int, leaderMode int, serverMode int, batchTime int64, epochSize int, benchmarkMode int, keyLen int, valueLen int, requestPropogationTime int64, isAsync bool, asyncTimeOut int64) *Server {
 
 	sr := Server{
 		name:                        name,
@@ -164,6 +166,8 @@ func New(cfg *configuration.InstanceConfig, name int64, logFilePath string, batc
 		batchTime:                   batchTime,
 		epochSize:                   epochSize,
 		proxyToProposerDecisionChan: make(chan Decision, 10000),
+		isAsync:                     isAsync,
+		asyncTimeOut:                asyncTimeOut,
 	}
 
 	sr.ProxyInstance = NewProxy(name, *cfg, sr.proxyToProposerChan, sr.proposerToProxyChan, sr.recorderToProxyChan, logFilePath, batchSize, pipelineLength, leaderTimeout, debugOn, debugLevel, &sr, leaderMode, sr.store, serverMode, sr.proxyToProposerFetchChan,
