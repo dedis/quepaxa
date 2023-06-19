@@ -28,7 +28,7 @@ func main() {
 	epochSize := flag.Int("epochSize", 100, "epoch size for MAB")
 	keyLen := flag.Int64("keyLen", 8, "length of key")
 	valLen := flag.Int64("valLen", 8, "length of value")
-	asyncTimeOut := flag.Int64("asyncTimeOut", 500, "async timeout in milli seconds")
+	asyncTimeOut := flag.Int64("asyncTimeOut", 500, "artificial async timeout in milli seconds")
 	requestPropagationTime := flag.Int64("requestPropagationTime", 0, "additional wait time in 'milli seconds' for client batches, such that there is enough time for client driven request propagation, for LAN this is 0, for WAN it is usually set to 5ms")
 	flag.Parse()
 
