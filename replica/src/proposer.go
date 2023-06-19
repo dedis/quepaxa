@@ -360,16 +360,16 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(50)*time.Second)
 		//prop.debug("proposer sending rpc in parallel ", 0)
 		wg := sync.WaitGroup{}
+		if prop.isAsync {
+			n := rand.Intn(prop.numReplicas) + 1
+			if int64(n) == prop.name {
+				time.Sleep(time.Duration(prop.asyncTimeOut) * time.Millisecond)
+			}
+		}
 		for i := 0; i < prop.numReplicas; i++ {
 			wg.Add(1)
 			go func(p peer, pi ProposerMessage_Proposal, s int, decidedSlots []*ProposerMessage_DecidedSlot) {
 				defer wg.Done()
-				if prop.isAsync {
-					n := rand.Intn(prop.numReplicas) + 1
-					if int64(n) == prop.name {
-						time.Sleep(time.Duration(prop.asyncTimeOut) * time.Millisecond)
-					}
-				}
 				if s == 4 && prop.serverMode == 1 {
 					newP := &ProposerMessage_Proposal{
 						Priority:      pi.Priority,
