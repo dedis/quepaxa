@@ -139,7 +139,7 @@ plt.rcParams.update({'font.size': 10.00})
 ax = plt.gca()
 ax.grid()
 # ax.set_xlim([0, 350])
-ax.set_ylim([0, 1100])
+# ax.set_ylim([0, 1100])
 
 plt.plot(di_func(quepaxa_throughput), di_func(quepaxa_latency), 'b.-', label="QuePaxa")
 plt.plot(di_func(paxos_throughput), di_func(paxos_latency), 'y*-', label="Multi-Paxos")
