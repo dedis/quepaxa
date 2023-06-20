@@ -120,6 +120,6 @@ def execute():
 records_timeout = execute()
 
 import csv
-with open("experiments/leader-timeout/logs/longest_zero_local" + sys.argv[1] + ".csv", "w", newline="") as f:
+with open("experiments/leader-timeout/logs/longest_zero_local" + sys.argv[2] + ".csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerows(records_timeout)

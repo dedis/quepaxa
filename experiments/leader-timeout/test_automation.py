@@ -9,7 +9,7 @@ if int(numIter) < 4:
 os.system("/bin/bash experiments/setup-5/setup.sh")
 
 leaderTimeouts = [1000, 20000, 50000, 100000, 150000, 200000, 250000, 300000, 350000, 400000, 450000, 500000, 550000,
-                  600000, 650000, 750000, 850000, 950000, 1050000, 1150000, 1250000, 1350000, 1450000]
+                  600000, 650000, 750000]
 
 iterations = list(range(1, int(numIter) + 1))
 modes = ["performance", "recovery"]
