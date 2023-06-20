@@ -1,0 +1,38 @@
+peers:
+   - name: 1
+     ip: 3.112.210.151
+     proxyport: 9001
+     recorderport: 10001
+   - name: 2
+     ip: 3.109.144.150
+     proxyport: 9002
+     recorderport: 10002
+   - name: 3
+     ip: 54.169.115.28
+     proxyport: 9003
+     recorderport: 10003
+   - name: 4
+     ip: 52.50.51.40
+     proxyport: 9004
+     recorderport: 10004
+   - name: 5
+     ip: 54.94.32.33
+     proxyport: 9005
+     recorderport: 10005
+
+clients:
+   - name: 21
+     ip: 54.249.7.175
+     clientport: 11001
+   - name: 22
+     ip: 13.233.88.111
+     clientport: 11002
+   - name: 23
+     ip: 13.215.153.159
+     clientport: 11003
+   - name: 24
+     ip: 63.32.89.0
+     clientport: 11004
+   - name: 25
+     ip: 18.231.178.141
+     clientport: 11005
