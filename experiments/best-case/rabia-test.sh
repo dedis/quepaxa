@@ -9,7 +9,7 @@ pwd=$(pwd)
 . "${pwd}"/experiments/setup-5/ip.sh
 
 Controller=${replica1_ip}:8070
-RCFolder="/home/${username}/raxos"
+RCFolder="/home/${user_name}/raxos/"
 NServers=5
 NFaulty=2
 NClients=5
