@@ -30,7 +30,7 @@ rm -r "${output_path}" ; mkdir -p "${output_path}"
 echo "Removed old local log files"
 
 reset_logs="rm -r ${remote_log_path} ; mkdir -p ${remote_log_path}"
-kill_command="pkill epaxos_master ; pkill epaxos_server; pkill epaxos_client; pkill paxos_raft_repl ; pkill paxos_raft_clie; pkill quepaxa_replica ; pkill quepaxa_client"
+kill_command="pkill epaxos_master ; pkill epaxos_server; pkill epaxos_client; pkill paxos_raft_repl ; pkill paxos_raft_clie; pkill quepaxa_replica ; pkill quepaxa_client; pkill rabia"
 
 for i in "${machines[@]}"
 do
