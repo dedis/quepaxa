@@ -12,7 +12,7 @@ if int(numIter) < 4:
     exit("at least 4 iterations needed")
 
 iterations = list(range(1, int(numIter) + 1))
-leaderTimeouts = [1000, 20000, 50000, 100000, 150000, 200000, 250000, 300000, 350000, 400000, 450000, 500000, 550000,
+leaderTimeouts = [50000, 100000, 150000, 200000, 250000, 300000, 350000, 400000, 450000, 500000, 550000,
                   600000, 650000, 750000]
 
 def getPaxosSummary():
@@ -120,6 +120,7 @@ for ra in quePaxaSummary:
     quepaxa_tail.append(ra[4])
 
 import matplotlib.pyplot as plt
+import matplotlib
 
 
 def di_func(array):
@@ -141,7 +142,7 @@ ax1.axvline(x = 179.83, linestyle='dotted',  color = 'm', label = 'Round trip la
 ax1.set_xscale('log')
 ax1.set_yscale('log')
 ax1.grid()
-ax1.set_xticks([100, 200, 300, 500])
+ax1.set_xticks([50,100, 200, 300, 500])
 ax1.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 ax1.set_yticks([1000,4000, 10000,25000])
 ax1.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
