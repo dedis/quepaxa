@@ -1,8 +1,9 @@
-import matplotlib.pyplot as plt
 import sys
 
+import matplotlib.pyplot as plt
+
 numIter = sys.argv[1]
-arrival = sys.argv[2] # invoke separately for each arrival rate
+arrival = sys.argv[2]  # invoke separately for each arrival rate
 
 iterations = list(range(1, int(numIter) + 1))
 
@@ -30,7 +31,7 @@ def extractTimes(file_name):
 def getTimes(file_root, start_client, num_client):
     times = []
     for iteration in iterations:
-        local_root = file_root + str(iteration) + "/"+str(arrival)+"/"
+        local_root = file_root + str(iteration) + "/" + str(arrival) + "/"
         for cl in list(range(start_client, start_client + num_client, 1)):
             file_name = local_root + str(cl) + ".txt"
             times_local = extractTimes(file_name)
@@ -41,7 +42,8 @@ def getTimes(file_root, start_client, num_client):
 
 
 def getStats(times):
-    times_s = list(range(1, 60000, 10))
+    times_s = list(range(1, 60000, 100))
+    times_c = []
     throughputs = []
     latency = []
     prev = 0
@@ -53,11 +55,14 @@ def getStats(times):
                 count = count + 1
                 summa = summa + (t[1] - t[0])
 
-        throughputs.append(count / len(iterations))
-        latency.append(int((summa) / count))
+        if count > 0:
+            throughputs.append(count / len(iterations))
+            latency.append(int((summa) / count))
+            times_c.append(i)
+
         prev = i
 
-    return [times_s, throughputs, latency]
+    return [times_c, throughputs, latency]
 
 
 paxos_s, paxos_t, paxos_l = getStats(getTimes("experiments/tuning/logs/paxos/", 21, 1))

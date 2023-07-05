@@ -136,14 +136,37 @@ def getQuePaxaSummary():
     return l_records
 
 
+def getRabiaSummary():
+    l_records = []
+    for arrival in arrivals:
+        record = ["rabia", str(arrival * 5)]
+        throughput, latency, nine9, err = [], [], [], []
+        for iteration in iterations:
+            root = "experiments/best-case/logs/rabia/" + str(arrival) + "/" + str(int(300)) \
+                   + "/" + setting + "/" + str(iteration) + "/execution/"
+            t, l, n, e = getRabiaPerformance(root, 5, 5)
+            throughput.append(t)
+            latency.append(l)
+            nine9.append(n)
+            err.append(e)
+        record.append(int(sum(remove_farthest_from_median(throughput, 1)) / (len(iterations) - 1)))
+        record.append(int(sum(remove_farthest_from_median(latency, 1)) / (len(iterations) - 1)))
+        record.append(int(sum(remove_farthest_from_median(nine9, 1)) / (len(iterations) - 1)))
+        record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
+        l_records.append(record)
+    return l_records
+
+
+
 headers = ["algo", "arrivalRate", "throughput", "median latency", "99%", "error rate"]
 records = [headers]
 
 ePaxosSummary = getEPaxosSummary()
 paxosSummary = getPaxosSummary()
 quePaxaSummary = getQuePaxaSummary()
+rabiaSummary = getRabiaSummary()
 
-records = records + ePaxosSummary + paxosSummary + quePaxaSummary
+records = records + ePaxosSummary + paxosSummary + quePaxaSummary +rabiaSummary
 
 import csv
 
@@ -181,6 +204,15 @@ for p in paxosSummary:
     paxos_throughput.append(p[2])
     paxos_latency.append(p[3])
     paxos_tail.append(p[4])
+
+rabia_throughput = []
+rabia_latency = []
+rabia_tail = []
+
+for rab in rabiaSummary:
+    rabia_throughput.append(rab[2])
+    rabia_latency.append(rab[3])
+    rabia_tail.append(rab[4])
 
 quepaxa_throughput = []
 quepaxa_latency = []
@@ -228,6 +260,7 @@ plt.plot(di_func(quepaxa_throughput), di_func(quepaxa_tail), 'b.-', label="QuePa
 plt.plot(di_func(paxos_throughput), di_func(paxos_tail), 'y*-', label="Multi-Paxos")
 plt.plot(di_func(epaxos_no_exec_throughput), di_func(epaxos_no_exec_tail), 'cx-', label="Epaxos-commit")
 plt.plot(di_func(epaxos_exec_throughput), di_func(epaxos_exec_tail), 'mo-.', label="Epaxos-exec")
+plt.plot(di_func(rabia_throughput), di_func(rabia_tail), 'g-', label="Rabia")
 
 plt.xlabel('Throughput (x 1k cmd/sec)')
 plt.ylabel('99 percentile Latency (ms)')
@@ -256,6 +289,7 @@ plt.plot(di_func(quepaxa_throughput), di_func(quepaxa_latency), 'b.-', label="Qu
 plt.plot(di_func(paxos_throughput), di_func(paxos_latency), 'y*-', label="Multi-Paxos")
 plt.plot(di_func(epaxos_no_exec_throughput), di_func(epaxos_no_exec_latency), 'cx-', label="Epaxos-commit")
 plt.plot(di_func(epaxos_exec_throughput), di_func(epaxos_exec_latency), 'mo-', label="Epaxos-exec")
+plt.plot(di_func(rabia_throughput), di_func(rabia_latency), 'g-', label="Rabia")
 
 plt.xlabel('Throughput (x 1k cmd/sec)')
 plt.ylabel('Median Latency (ms)')
