@@ -3,7 +3,7 @@ import sys
 numIter = sys.argv[1]
 
 iterations = list(range(1, int(numIter) + 1))
-leaderTimeouts = [50000, 100000, 150000, 200000, 250000, 300000, 350000, 400000, 450000, 500000, 550000, 600000, 650000,
+leaderTimeouts = [1000, 20000, 50000, 100000, 150000, 200000, 250000, 300000, 350000, 400000, 450000, 500000, 550000, 600000, 650000,
                   750000]
 
 
@@ -22,7 +22,8 @@ def slots_and_steps(file_name):
 
 
 def get_que_paxa_summary():
-    l_records = [["timeout", "steps-per-slot"]]
+    print("timeout", "slots", "steps", "average")
+    l_records = []
     for timeout in leaderTimeouts:
         record = [str(timeout)]
         slots = 0
@@ -38,6 +39,7 @@ def get_que_paxa_summary():
 
         record.append(steps / slots)
         l_records.append(record)
+        print(str(timeout) + " " + str(slots) + " " + str(steps) + " " + str(steps / slots))
     return l_records
 
 
@@ -46,7 +48,6 @@ quePaxaSummary = get_que_paxa_summary()
 quePaxaAverage = []
 
 for s in quePaxaSummary:
-    print(str(s[0]) + " " + str(s[1]))
     quePaxaAverage.append(s[1])
 
 import matplotlib.pyplot as plt
@@ -68,13 +69,13 @@ ax1.axvline(x=179.83, linestyle='dotted', color='m', label='Round trip latency')
 
 ax1.set_xscale('log')
 ax1.grid()
-ax1.set_xticks([50, 100, 200, 300, 500])
+ax1.set_xticks([50, 100, 300, 500])
 ax1.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-# ax1.set_yticks([1000,4000, 10000,25000])
+ax1.set_yticks([1,2, 3,4,5])
 ax1.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
 plt.xlabel('Leader Timeout / Hedging Delay (ms)')
-plt.ylabel('Steps per  \n slot')
+plt.ylabel('Steps per slot')
 plt.legend()
 plt.savefig('experiments/leader-timeout/logs/steps.pdf', bbox_inches='tight', pad_inches=0)
 plt.close()
