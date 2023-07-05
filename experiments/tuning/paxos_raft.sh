@@ -24,7 +24,7 @@ echo "Removed old local log files"
 reset_logs="rm -r ${remote_log_path} ; mkdir -p ${remote_log_path}"
 kill_command="pkill epaxos_master ; pkill epaxos_server; pkill epaxos_client; pkill paxos_raft_repl ; pkill paxos_raft_clie; pkill quepaxa_replica ; pkill quepaxa_client"
 
-for i in "${machines[@]}"
+for i in "${machines_tune[@]}"
 do
    echo "killing instances and removing old files in ${i}"
    sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "$i" "${reset_logs}; ${kill_command}"
@@ -47,21 +47,21 @@ sleep 10
 nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client1} ".${remote_ctl_path} --name 21 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType status --operationType 1" >${output_path}status1.log &
 echo "Sent initial status"
 
-sleep 5
+sleep 35
 
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client2} ".${remote_ctl_path} --name 22 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType status --operationType 3" >${output_path}status3.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client1} ".${remote_ctl_path} --name 21 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType status --operationType 3" >${output_path}status3.log &
 echo "Sent consensus start up"
 
-sleep 15
+sleep 35
 
 echo "Starting client[s]"
 
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client5} ".${remote_ctl_path} --name 25 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType request --arrivalRate ${arrival}  --batchSize 50 --batchTime 500 --window 100" >${output_path}25.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client1} ".${remote_ctl_path} --name 21 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType request --arrivalRate ${arrival}  --batchSize 50 --batchTime 500 --window 100" >${output_path}21.log &
 
 sleep 110
 
 echo "Completed Client[s]"
 
-scp -i ${cert} ${client5}:${remote_log_path}25.txt ${output_path}25.txt
+scp -i ${cert} ${client1}:${remote_log_path}21.txt ${output_path}21.txt
 
 echo "Finish test"

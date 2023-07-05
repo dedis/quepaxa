@@ -4,9 +4,6 @@ import sys
 numIter = sys.argv[1]
 arrival = sys.argv[2] # invoke separately for each arrival rate
 
-if int(numIter) < 4:
-    exit("at least 4 iterations needed")
-
 iterations = list(range(1, int(numIter) + 1))
 
 
@@ -63,11 +60,11 @@ def getStats(times):
     return [times_s, throughputs, latency]
 
 
-paxos_s, paxos_t, paxos_l = getStats(getTimes("experiments/tuning/logs/paxos/", 25, 1))
+paxos_s, paxos_t, paxos_l = getStats(getTimes("experiments/tuning/logs/paxos/", 21, 1))
 
-raft_s, raft_t, raft_l = getStats(getTimes("experiments/tuning/logs/raft/", 25, 1))
+raft_s, raft_t, raft_l = getStats(getTimes("experiments/tuning/logs/raft/", 21, 1))
 
-quepaxa_s, quepaxa_t, quepaxa_l = getStats(getTimes("experiments/tuning/logs/quepaxa/", 25, 1))
+quepaxa_s, quepaxa_t, quepaxa_l = getStats(getTimes("experiments/tuning/logs/quepaxa/", 21, 1))
 
 
 def di_func(array):

@@ -9,7 +9,7 @@ if int(numIter) < 4:
 os.system("/bin/bash experiments/setup-5/setup.sh")
 
 iterations = list(range(1, int(numIter) + 1))
-arrivals = [80000, 100000, 120000]
+arrivals = [100000]
 
 for iteration in iterations:
     for arrival in arrivals:
