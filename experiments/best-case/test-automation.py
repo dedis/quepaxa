@@ -37,44 +37,44 @@ if setting == "WAN":
 
 for iteration in iterations:
     for arrival in arrivals:
-        # os.system(
-        #     "/bin/bash experiments/best-case/epaxos.sh " + str(int(arrival)) + " "
-        #     + str(replicaBatchSize) + " "
-        #     + str(replicaBatchTime) + " "
-        #     + setting + " "
-        #     + str(iteration))
-        #
-        # os.system(
-        #     "/bin/bash experiments/best-case/paxos.sh " + str(int(arrival)) + " "
-        #     + str(replicaBatchSize) + " "
-        #     + str(replicaBatchTime) + " "
-        #     + setting + " "
-        #     + str(iteration))
-        #
-        # os.system(
-        #     "/bin/bash experiments/best-case/quepaxa.sh " + str(int(arrival)) + " "
-        #     + str(replicaBatchSize) + " "
-        #     + str(replicaBatchTime) + " "
-        #     + setting + " "
-        #     + str(iteration) + " "
-        #     + str(0) + " " + str(0))
-        #
-        # if setting == "LAN":
-        #     os.system(
-        #         "/bin/bash experiments/best-case/quepaxa.sh " + str(int(arrival)) + " "
-        #         + str(replicaBatchSize) + " "
-        #         + str(replicaBatchTime) + " "
-        #         + setting + " "
-        #         + str(iteration) + " "
-        #         + str(1) + " " + str(propTime))
-        # if setting == "WAN":
-        #     os.system(
-        #         "/bin/bash experiments/best-case/quepaxa.sh " + str(int(arrival)) + " "
-        #         + str(replicaBatchSize) + " "
-        #         + str(replicaBatchTime) + " "
-        #         + setting + " "
-        #         + str(iteration) + " "
-        #         + str(1) + " " + str(propTime))
+        os.system(
+            "/bin/bash experiments/best-case/epaxos.sh " + str(int(arrival)) + " "
+            + str(replicaBatchSize) + " "
+            + str(replicaBatchTime) + " "
+            + setting + " "
+            + str(iteration))
+
+        os.system(
+            "/bin/bash experiments/best-case/paxos.sh " + str(int(arrival)) + " "
+            + str(replicaBatchSize) + " "
+            + str(replicaBatchTime) + " "
+            + setting + " "
+            + str(iteration))
+
+        os.system(
+            "/bin/bash experiments/best-case/quepaxa.sh " + str(int(arrival)) + " "
+            + str(replicaBatchSize) + " "
+            + str(replicaBatchTime) + " "
+            + setting + " "
+            + str(iteration) + " "
+            + str(0) + " " + str(0))
+
+        if setting == "LAN":
+            os.system(
+                "/bin/bash experiments/best-case/quepaxa.sh " + str(int(arrival)) + " "
+                + str(replicaBatchSize) + " "
+                + str(replicaBatchTime) + " "
+                + setting + " "
+                + str(iteration) + " "
+                + str(1) + " " + str(propTime))
+        if setting == "WAN":
+            os.system(
+                "/bin/bash experiments/best-case/quepaxa.sh " + str(int(arrival)) + " "
+                + str(replicaBatchSize) + " "
+                + str(replicaBatchTime) + " "
+                + setting + " "
+                + str(iteration) + " "
+                + str(1) + " " + str(propTime))
 
         os.system(
             "/bin/bash experiments/best-case/rabia-test.sh " + str(int(arrival)) + " "
