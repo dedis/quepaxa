@@ -80,7 +80,7 @@ if [[ "${mode}" == "performance" ]]
 then
   nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client1} ".${remote_ctl_path} --name 21 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType status  --operationType 4" >"${output_path}"status4.log &
   echo "Sent print slot calculation"
-  sleep 5
+  sleep 20
 
 fi
 
