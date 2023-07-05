@@ -33,6 +33,7 @@ def findLongestZero(x):
 
 
 def binToMiiliSeconds(times):  # times is a microseconds array
+    times = list(dict.fromkeys(times))
     times.sort()
     x = list(range(1, 60000, 1))
     time_x = []

@@ -8,3 +8,4 @@ experiments/private_key_aws/pasindu2023.pem
 *.png
 *.pyc
 *.txt
+*.zip
