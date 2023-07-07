@@ -42,7 +42,7 @@ def getTimes(file_root, start_client, num_client):
 
 
 def getStats(times):
-    times_s = list(range(1, 60000, 100))
+    times_s = list(range(0, 60, 1))
     times_c = []
     throughputs = []
     latency = []
@@ -51,7 +51,7 @@ def getStats(times):
         count = 0
         summa = 0
         for t in times:
-            if prev * 1000 < t[1] < i * 1000:
+            if prev * 1000000 < t[1] < i * 1000000:
                 count = count + 1
                 summa = summa + (t[1] - t[0])
 
@@ -86,7 +86,7 @@ plt.rcParams.update({'font.size': 10.00})
 ax = plt.gca()
 ax.grid()
 ax.set_xlim([0, 25])
-ax.set_ylim([2, 9])
+ax.set_ylim([2, 10])
 
 plt.plot(quepaxa_s, di_func(quepaxa_l), 'b.-', label="QuePaxa")
 plt.plot(paxos_s, di_func(paxos_l), 'y*-', label="Multi-Paxos")
