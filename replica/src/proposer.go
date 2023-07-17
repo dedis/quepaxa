@@ -24,13 +24,16 @@ type Proposer struct {
 	hi                          int  // hi priority
 	serverMode                  int  // if 1, use the fast path optimizations
 	proxyToProposerDecisionChan chan Decision
-	isAsync                     bool
-	asyncTimeOut                int64
+	isAsynchronous              bool
+	asyncSimulationTimeOut      int64
+	asynchronousReplicas        map[int][]int // for each time based epoch, the minority replicas that are attacked
+	timeEpochSize               int
+	startTime                   time.Time
 }
 
 // instantiate a new Proposer
 
-func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, debugOn bool, debugLevel int, hi int, serverMode int, proxyToProposerDecisionChan chan Decision, isAsync bool, asyncTimeOut int64) *Proposer {
+func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan chan ProposeRequest, proposerToProxyChan chan ProposeResponse, proxyToProposerFetchChan chan FetchRequest, proposerToProxyFetchChan chan FetchResposne, debugOn bool, debugLevel int, hi int, serverMode int, proxyToProposerDecisionChan chan Decision, isAsync bool, asyncTimeOut int64, timeEpochSize int) *Proposer {
 
 	pr := Proposer{
 		numReplicas:                 len(peers),
@@ -46,13 +49,65 @@ func NewProposer(name int64, threadId int64, peers []peer, proxyToProposerChan c
 		hi:                          hi,
 		serverMode:                  serverMode,
 		proxyToProposerDecisionChan: proxyToProposerDecisionChan,
-		isAsync:                     isAsync,
-		asyncTimeOut:                asyncTimeOut,
+		isAsynchronous:              isAsync,
+		asyncSimulationTimeOut:      asyncTimeOut,
+		asynchronousReplicas:        make(map[int][]int),
+		timeEpochSize:               timeEpochSize,
+		startTime:                   time.Now(),
+	}
+
+	if pr.isAsynchronous {
+		// initialize the attack replicas for each time epoch, we assume a total number of time of the run to be 10 minutes just for convenience, but this does not affect the correctness
+		numEpochs := 10 * 60 * 1000 / pr.timeEpochSize
+		s2 := rand.NewSource(39)
+		r2 := rand.New(s2)
+
+		for i := 0; i < numEpochs; i++ {
+			pr.asynchronousReplicas[i] = []int{}
+			for j := 0; j < pr.numReplicas/2; j++ {
+				newReplica := r2.Intn(39)%pr.numReplicas + 1
+				for pr.inArray(pr.asynchronousReplicas[i], newReplica) {
+					newReplica = r2.Intn(39)%pr.numReplicas + 1
+				}
+				pr.asynchronousReplicas[i] = append(pr.asynchronousReplicas[i], newReplica)
+			}
+		}
+
+		//if pr.debugOn {
+		//rp.debug(fmt.Sprintf("set of attacked nodes %v ", rp.asynchronousReplicas), 0)
+		//}
 	}
 
 	//pr.debug("created a new proposer instance", -1)
 
 	return &pr
+}
+
+/*
+	checks if replica is in ints
+*/
+
+func (pr *Proposer) inArray(ints []int, replica int) bool {
+	for i := 0; i < len(ints); i++ {
+		if ints[i] == replica {
+			return true
+		}
+	}
+	return false
+}
+
+/*
+	checks if self is in the set of attacked nodes for this replica in this time epoch
+*/
+
+func (pr *Proposer) amIAttacked(epoch int) bool {
+	attackedNodes := pr.asynchronousReplicas[epoch]
+	for i := 0; i < len(attackedNodes); i++ {
+		if pr.name == int64(attackedNodes[i]) {
+			return true
+		}
+	}
+	return false
 }
 
 ///*
@@ -360,10 +415,12 @@ func (prop *Proposer) handleProposeRequest(message ProposeRequest) ProposeRespon
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(50)*time.Second)
 		//prop.debug("proposer sending rpc in parallel ", 0)
 		wg := sync.WaitGroup{}
-		if prop.isAsync {
-			n := rand.Intn(prop.numReplicas) + 1
-			if int64(n) == prop.name {
-				time.Sleep(time.Duration(prop.asyncTimeOut) * time.Millisecond)
+		if prop.isAsynchronous {
+
+			epoch := time.Now().Sub(prop.startTime).Milliseconds() / int64(prop.timeEpochSize)
+
+			if prop.amIAttacked(int(epoch)) {
+				time.Sleep(time.Duration(prop.asyncSimulationTimeOut) * time.Millisecond)
 			}
 		}
 		for i := 0; i < prop.numReplicas; i++ {

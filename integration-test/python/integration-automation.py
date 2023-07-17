@@ -12,9 +12,10 @@ def base_case():
     arrivalRate = 50
     closeLoopWindow = 2
     requestPropagationTime = 0
+    asynchronousSimulationTime = 0
     os.system("/bin/bash integration-test/safety-test.sh " + str(leaderTimeout) + " " + str(serverMode) + " " + str(
         leaderMode) + " " + str(pipeline) + " " + str(batchTime) + " " + str(batchSize) + " " + str(arrivalRate) +
-              " " + str(closeLoopWindow) + " " + str(requestPropagationTime))
+              " " + str(closeLoopWindow) + " " + str(requestPropagationTime)+ " "+str(asynchronousSimulationTime))
 
 
 def fixed_leader():
@@ -28,9 +29,10 @@ def fixed_leader():
     arrivalRate = 10000
     closeLoopWindow = 100
     requestPropagationTime = 0
+    asynchronousSimulationTime = 0
     os.system("/bin/bash integration-test/safety-test.sh " + str(leaderTimeout) + " " + str(serverMode) + " " + str(
         leaderMode) + " " + str(pipeline) + " " + str(batchTime) + " " + str(batchSize) + " " + str(arrivalRate) +
-              " " + str(closeLoopWindow) + " " + str(requestPropagationTime))
+              " " + str(closeLoopWindow) + " " + str(requestPropagationTime)+ " "+str(asynchronousSimulationTime))
 
 
 def rotating_leader():
@@ -44,9 +46,10 @@ def rotating_leader():
     arrivalRate = 10000
     closeLoopWindow = 100
     requestPropagationTime = 0
+    asynchronousSimulationTime = 0
     os.system("/bin/bash integration-test/safety-test.sh " + str(leaderTimeout) + " " + str(serverMode) + " " + str(
         leaderMode) + " " + str(pipeline) + " " + str(batchTime) + " " + str(batchSize) + " " + str(arrivalRate) +
-              " " + str(closeLoopWindow) + " " + str(requestPropagationTime))
+              " " + str(closeLoopWindow) + " " + str(requestPropagationTime)+ " "+str(asynchronousSimulationTime))
 
 
 def mab_leader():
@@ -60,9 +63,10 @@ def mab_leader():
     arrivalRate = 10000
     closeLoopWindow = 100
     requestPropagationTime = 0
+    asynchronousSimulationTime = 0
     os.system("/bin/bash integration-test/safety-test.sh " + str(leaderTimeout) + " " + str(serverMode) + " " + str(
         leaderMode) + " " + str(pipeline) + " " + str(batchTime) + " " + str(batchSize) + " " + str(arrivalRate) +
-              " " + str(closeLoopWindow) + " " + str(requestPropagationTime))
+              " " + str(closeLoopWindow) + " " + str(requestPropagationTime)+ " "+str(asynchronousSimulationTime))
 
 
 def last_proposed_leader():
@@ -76,9 +80,10 @@ def last_proposed_leader():
     arrivalRate = 10000
     closeLoopWindow = 100
     requestPropagationTime = 0
+    asynchronousSimulationTime = 0
     os.system("/bin/bash integration-test/safety-test.sh " + str(leaderTimeout) + " " + str(serverMode) + " " + str(
         leaderMode) + " " + str(pipeline) + " " + str(batchTime) + " " + str(batchSize) + " " + str(arrivalRate) +
-              " " + str(closeLoopWindow) + " " + str(requestPropagationTime))
+              " " + str(closeLoopWindow) + " " + str(requestPropagationTime)+ " "+str(asynchronousSimulationTime))
 
 
 def asynchronous_leader():
@@ -92,9 +97,10 @@ def asynchronous_leader():
     arrivalRate = 2000
     closeLoopWindow = 50
     requestPropagationTime = 0
+    asynchronousSimulationTime = 0
     os.system("/bin/bash integration-test/safety-test.sh " + str(leaderTimeout) + " " + str(serverMode) + " " + str(
         leaderMode) + " " + str(pipeline) + " " + str(batchTime) + " " + str(batchSize) + " " + str(arrivalRate) +
-              " " + str(closeLoopWindow) + " " + str(requestPropagationTime))
+              " " + str(closeLoopWindow) + " " + str(requestPropagationTime)+ " "+str(asynchronousSimulationTime))
 
 
 def optimization():
@@ -108,9 +114,10 @@ def optimization():
     arrivalRate = 10000
     closeLoopWindow = 100
     requestPropagationTime = 1
+    asynchronousSimulationTime = 0
     os.system("/bin/bash integration-test/safety-test.sh " + str(leaderTimeout) + " " + str(serverMode) + " " + str(
         leaderMode) + " " + str(pipeline) + " " + str(batchTime) + " " + str(batchSize) + " " + str(arrivalRate) +
-              " " + str(closeLoopWindow) + " " + str(requestPropagationTime))
+              " " + str(closeLoopWindow) + " " + str(requestPropagationTime)+ " "+str(asynchronousSimulationTime))
 
 
 def pipelining():
@@ -124,9 +131,10 @@ def pipelining():
     arrivalRate = 10000
     closeLoopWindow = 100
     requestPropagationTime = 0
+    asynchronousSimulationTime = 0
     os.system("/bin/bash integration-test/safety-test.sh " + str(leaderTimeout) + " " + str(serverMode) + " " + str(
         leaderMode) + " " + str(pipeline) + " " + str(batchTime) + " " + str(batchSize) + " " + str(arrivalRate) +
-              " " + str(closeLoopWindow) + " " + str(requestPropagationTime))
+              " " + str(closeLoopWindow) + " " + str(requestPropagationTime)+ " "+str(asynchronousSimulationTime))
 
 
 def hedging():
@@ -140,9 +148,26 @@ def hedging():
     arrivalRate = 10000
     closeLoopWindow = 100
     requestPropagationTime = 0
+    asynchronousSimulationTime = 0
     os.system("/bin/bash integration-test/safety-test.sh " + str(leaderTimeout) + " " + str(serverMode) + " " + str(
         leaderMode) + " " + str(pipeline) + " " + str(batchTime) + " " + str(batchSize) + " " + str(arrivalRate) +
-              " " + str(closeLoopWindow) + " " + str(requestPropagationTime))
+              " " + str(closeLoopWindow) + " " + str(requestPropagationTime)+ " "+str(asynchronousSimulationTime))
+
+def asynchronous():
+    print("testing with batching and no pipelining, with asynchronous attack", flush=True)
+    leaderTimeout = 2000
+    serverMode = 0
+    leaderMode = 4
+    pipeline = 1
+    batchTime = 5000
+    batchSize = 50
+    arrivalRate = 10000
+    closeLoopWindow = 1000
+    requestPropagationTime = 0
+    asynchronousSimulationTime = 2
+    os.system("/bin/bash integration-test/safety-test.sh " + str(leaderTimeout) + " " + str(serverMode) + " " + str(
+        leaderMode) + " " + str(pipeline) + " " + str(batchTime) + " " + str(batchSize) + " " + str(arrivalRate) +
+              " " + str(closeLoopWindow) + " " + str(requestPropagationTime)+ " "+str(asynchronousSimulationTime))
 
 
 base_case()
@@ -154,3 +179,4 @@ asynchronous_leader()
 optimization()
 pipelining()
 hedging()
+asynchronous()

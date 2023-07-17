@@ -7,6 +7,7 @@ batchSize=$6
 arrivalRate=$7
 closeLoopWindow=$8
 requestPropagationTime=$9
+asynchronousSimulationTime=${10}
 
 # create a new local configuration
 rm -r configuration/local
@@ -18,22 +19,22 @@ mage generate && mage build
 
 raxos_path="replica/bin/replica"
 ctl_path="client/bin/client"
-output_path="logs/${leaderTimeout}/${serverMode}/${leaderMode}/${pipeline}/${batchTime}/${batchSize}/${arrivalRate}/${closeLoopWindow}/${requestPropagationTime}/"
+output_path="logs/${leaderTimeout}/${serverMode}/${leaderMode}/${pipeline}/${batchTime}/${batchSize}/${arrivalRate}/${closeLoopWindow}/${requestPropagationTime}/${asynchronousSimulationTime}/"
 
 rm -r "${output_path}" ; mkdir -p "${output_path}"
 
 echo "Removed old log files"
 
 pkill replica; pkill replica; pkill replica; pkill replica; pkill replica
-pkill client; pkill client; pkill client; pkill client; pkill client; 
+pkill client; pkill client; pkill client; pkill client; pkill client;
 
 echo "Killed previously running instances"
 
-nohup ./${raxos_path} --name 1 --debugOn --debugLevel 200 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" --logFilePath "${output_path}" >${output_path}1.log &
-nohup ./${raxos_path} --name 2 --debugOn --debugLevel 200 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" --logFilePath "${output_path}" >${output_path}2.log &
-nohup ./${raxos_path} --name 3 --debugOn --debugLevel 200 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" --logFilePath "${output_path}" >${output_path}3.log &
-nohup ./${raxos_path} --name 4 --debugOn --debugLevel 200 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" --logFilePath "${output_path}" >${output_path}4.log &
-nohup ./${raxos_path} --name 5 --debugOn --debugLevel 200 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" --logFilePath "${output_path}" >${output_path}5.log &
+nohup ./${raxos_path} --name 1 --isAsync --asyncTimeOut ${asynchronousSimulationTime} --debugOn --debugLevel 200 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" --logFilePath "${output_path}" >${output_path}1.log &
+nohup ./${raxos_path} --name 2 --isAsync --asyncTimeOut ${asynchronousSimulationTime} --debugOn --debugLevel 200 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" --logFilePath "${output_path}" >${output_path}2.log &
+nohup ./${raxos_path} --name 3 --isAsync --asyncTimeOut ${asynchronousSimulationTime} --debugOn --debugLevel 200 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" --logFilePath "${output_path}" >${output_path}3.log &
+nohup ./${raxos_path} --name 4 --isAsync --asyncTimeOut ${asynchronousSimulationTime} --debugOn --debugLevel 200 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" --logFilePath "${output_path}" >${output_path}4.log &
+nohup ./${raxos_path} --name 5 --isAsync --asyncTimeOut ${asynchronousSimulationTime} --debugOn --debugLevel 200 --batchSize "${batchSize}" --batchTime  "${batchTime}" --leaderTimeout "${leaderTimeout}" --pipelineLength "${pipeline}" --leaderMode "${leaderMode}" --serverMode "${serverMode}" --requestPropagationTime "${requestPropagationTime}" --logFilePath "${output_path}" >${output_path}5.log &
 
 echo "Started 5 servers"
 
@@ -69,7 +70,7 @@ pkill client; pkill client; pkill client; pkill client; pkill client
 
 rm -r configuration/local
 
-python3 integration-test/python/overlay-test.py ${output_path}1-consensus.txt ${output_path}2-consensus.txt ${output_path}3-consensus.txt ${output_path}4-consensus.txt ${output_path}5-consensus.txt
+python3 integration-test/python/overlay-test.py ${output_path}1-consensus.txt ${output_path}2-consensus.txt ${output_path}3-consensus.txt ${output_path}4-consensus.txt ${output_path}5-consensus.txt > ${output_path}consensus.log
 
 echo "Killed previously running instances"
 
