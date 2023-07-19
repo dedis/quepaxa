@@ -22,7 +22,7 @@ remote_log_path="/home/${user_name}/raxos/logs/"
 
 echo "Starting execution latency test"
 
-output_path="${pwd}/experiments/best-case/logs/paxos/${arrival}/${replicaBatchSize}/${replicaBatchTime}/${setting}/${iteration}/execution/"
+output_path="${pwd}/experiments/best-case/logs/paxos-v1/${arrival}/${replicaBatchSize}/${replicaBatchTime}/${setting}/${iteration}/execution/"
 rm -r "${output_path}" ; mkdir -p "${output_path}"
 
 echo "Removed old local log files"
@@ -33,7 +33,7 @@ kill_command="pkill epaxos_master ; pkill epaxos_server; pkill epaxos_client; pk
 for i in "${machines[@]}"
 do
    echo "killing instances and removing old files in ${i}"
-   sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "$i" "${reset_logs}; ${kill_command}"
+   sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "$i" "${reset_logs}; ${kill_command}; ${kill_command}"
 done
 
 sleep 5

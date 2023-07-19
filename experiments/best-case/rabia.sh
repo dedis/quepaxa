@@ -24,7 +24,7 @@ echo "Removed old log files"
 
 Rabia_Path="/raxos/binary/rabia"
 
-remote_log_path="/home/ubuntu/raxos/logs/"
+remote_log_path="/home/${user_name}/raxos/logs/"
 
 reset_logs="rm -r ${remote_log_path} ; mkdir -p ${remote_log_path}"
 kill_command="pkill epaxos_master ; pkill epaxos_server; pkill epaxos_client; pkill paxos_raft_repl ; pkill paxos_raft_clie; pkill quepaxa_replica ; pkill quepaxa_client; pkill rabia"
@@ -32,7 +32,7 @@ kill_command="pkill epaxos_master ; pkill epaxos_server; pkill epaxos_client; pk
 for i in "${machines[@]}"
 do
    echo "killing instances and removing old files in ${i}"
-   sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "$i" "${reset_logs}; ${kill_command}"
+   sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "$i" "${reset_logs}; ${kill_command}; ${kill_command}"
 done
 
 echo "killed previous running instances"
@@ -89,7 +89,7 @@ echo "Completed Client[s]"
 for i in "${machines[@]}"
 do
    echo "killing instances  ${i}"
-   sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "$i" "${kill_command}"
+   sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "$i" "${kill_command};${kill_command}"
 done
 
 echo "Finish test"

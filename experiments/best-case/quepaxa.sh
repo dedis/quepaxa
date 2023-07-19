@@ -35,7 +35,7 @@ kill_command="pkill epaxos_master ; pkill epaxos_server; pkill epaxos_client; pk
 for i in "${machines[@]}"
 do
    echo "killing instances and removing old files in ${i}"
-   sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "$i" "${reset_logs}; ${kill_command}"
+   sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "$i" "${reset_logs}; ${kill_command}; ${kill_command}"
 done
 
 sleep 5
