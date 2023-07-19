@@ -1,6 +1,7 @@
 # this file assigns the ip address of each replica and client to variables
 pwd=$(pwd)
 cert=${pwd}/experiments/private_key_aws/pasindu_rsa
+user_name="ubuntu"
 
 replica1=pasindu@dedis-140.icsil1.epfl.ch
 replica1_name=dedis-140.icsil1.epfl.ch
@@ -111,5 +112,3 @@ client10_ip="10.156.33.149"
 client11_ip="10.156.33.145"
 client12_ip="10.156.33.146"
 client13_ip="10.156.33.147"
-
-user_name="pasindu"
