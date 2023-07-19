@@ -2,7 +2,6 @@ import sys
 
 # this python script generates a configuration using a given set of IPs the scripts
 # expects multiple arguments (1) number of replicas, (2) number of clients, (3) replica_1_ip, (4) replica_2_ip.... (n) client_1_ip, (m) client_2_ip...
-# for example use of this script, refer to integration-test/safety-test.sh
 
 if len(sys.argv) < 3:
     exit("not enough arguments")
