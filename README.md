@@ -19,4 +19,4 @@ Download code dependencies by running ```mage deps``` or ```go mod vendor```.
 
 Build the code using ```mage generate && mage build``` in the root directory
 
-All the commands to run the server and the client are available in the ```integration-test``` directory
+All the commands to run the server and the client are available in the ```integration-test/safety-test.sh```
