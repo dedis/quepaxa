@@ -1,8 +1,8 @@
 experiments/private_key_aws/pasindu_rsa
 experiments/private_key_aws/private.pem
 experiments/private_key_aws/pasindu2023.pem
-replica/bin/replica
-client/bin/client
+
+
 logs/
 *.log
 *.csv
