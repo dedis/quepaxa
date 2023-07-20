@@ -9,11 +9,11 @@ from performance_extract import *
 numIter = sys.argv[1]
 device = sys.argv[2]
 
-if int(numIter) < 4:
-    exit("at least 4 iterations needed")
+if int(numIter) < 3:
+    exit("at least 3 iterations needed")
 
 iterations = list(range(1, int(numIter) + 1))
-arrivals = [200, 1000, 2000, 3000, 5000, 6000, 7000, 8000, 9000, 10000, 12000]
+arrivals = [200, 500, 1000, 2000, 3000, 5000, 6000, 7000, 8000, 9000, 10000, 12000, 15000, 18000, 20000]
 
 def getPaxosSummary():
     l_records = []
@@ -62,7 +62,7 @@ def getRaftSummary():
 def getQuePaxaSummary():
     l_records = []
     for arrival in arrivals:
-        record = ["quepaxa-0", str(arrival * 5)]
+        record = ["quepaxa", str(arrival * 5)]
         throughput, latency, nine9, err = [], [], [], []
         for iteration in iterations:
             root = "experiments/asynchrony/logs/quepaxa/" + str(arrival) + "/" + str(int(iteration)) + "/" + str(
@@ -141,9 +141,9 @@ ax.grid()
 # ax.set_xlim([0, 350])
 # ax.set_ylim([0, 1100])
 
-plt.plot(di_func(quepaxa_throughput), di_func(quepaxa_latency), 'b.-', label="QuePaxa")
-plt.plot(di_func(paxos_throughput), di_func(paxos_latency), 'y*-', label="Multi-Paxos")
-plt.plot(di_func(raft_throughput), di_func(raft_latency), 'gx-', label="Raft")
+plt.plot(di_func(quepaxa_throughput), di_func(quepaxa_latency), 'g.-', label="QuePaxa")
+plt.plot(di_func(paxos_throughput), di_func(paxos_latency), 'c*-', label="Multi-Paxos")
+plt.plot(di_func(raft_throughput), di_func(raft_latency), 'rx-', label="Raft")
 
 plt.xlabel('Throughput (x 1k cmd/sec)')
 plt.ylabel('Median latency (ms)')

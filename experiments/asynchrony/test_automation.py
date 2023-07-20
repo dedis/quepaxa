@@ -3,13 +3,13 @@ import sys
 
 numIter = sys.argv[1]
 
-if int(numIter) < 4:
-    exit("at least 4 iterations needed")
+if int(numIter) < 3:
+    exit("at least 3 iterations needed")
 
 os.system("/bin/bash experiments/setup-5/setup.sh")
 
 iterations = list(range(1, int(numIter) + 1))
-arrivals = [200, 1000, 2000, 3000, 5000, 6000, 7000, 8000, 9000, 10000, 12000]
+arrivals = [200, 500, 1000, 2000, 3000, 5000, 6000, 7000, 8000, 9000, 10000, 12000, 15000, 18000, 20000]
 arrivals.reverse()
 
 for iteration in iterations:
