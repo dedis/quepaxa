@@ -42,7 +42,7 @@ def getTimes(file_root, start_client, num_client):
 
 
 def getStats(times):
-    times_s = list(range(0, 60, 1))
+    times_s = list(range(0, 30, 1))
     times_c = []
     throughputs = []
     latency = []
@@ -88,9 +88,9 @@ ax.grid()
 ax.set_xlim([0, 25])
 ax.set_ylim([2, 10])
 
-plt.plot(quepaxa_s, di_func(quepaxa_l), 'b.-', label="QuePaxa")
-plt.plot(paxos_s, di_func(paxos_l), 'y*-', label="Multi-Paxos")
-plt.plot(raft_s, di_func(raft_l), 'gx-', label="Raft")
+plt.plot(quepaxa_s, di_func(quepaxa_l), 'g.-', label="QuePaxa")
+plt.plot(paxos_s, di_func(paxos_l), 'c*-', label="Multi-Paxos")
+plt.plot(raft_s, di_func(raft_l), 'rx-', label="Raft")
 
 plt.xlabel('Time (s)')
 plt.ylabel('Average Latency \n (ms)')

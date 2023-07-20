@@ -3,8 +3,8 @@ import sys
 
 numIter = sys.argv[1]
 
-if int(numIter) < 4:
-    exit("at least 4 iterations needed")
+if int(numIter) < 3:
+    exit("at least 3 iterations needed")
 
 os.system("/bin/bash experiments/setup-5/setup.sh")
 
