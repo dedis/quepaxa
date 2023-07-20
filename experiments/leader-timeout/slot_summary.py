@@ -3,8 +3,8 @@ import sys
 numIter = sys.argv[1]
 
 iterations = list(range(1, int(numIter) + 1))
-leaderTimeouts = [1000, 20000, 50000, 100000, 150000, 200000, 250000, 300000, 350000, 400000, 450000, 500000, 550000, 600000, 650000,
-                  750000]
+leaderTimeouts = [50000, 100000, 150000, 200000, 250000, 300000, 350000, 400000, 450000, 500000, 550000,
+                  600000, 650000, 750000]
 
 
 def slots_and_steps(file_name):
@@ -16,7 +16,7 @@ def slots_and_steps(file_name):
         content = f.readlines()
 
     for c in content:
-        if c.startswith("Average number of steps"):
+        if c.startswith("Average number of steps per slot"):
             return [float(c.strip().split(" ")[9][:-1]), float(c.strip().split(" ")[12])]
     exit(file_name + " error")
 
@@ -36,6 +36,8 @@ def get_que_paxa_summary():
                 if len(file_stat) == 2:
                     slots = slots + file_stat[0]
                     steps = steps + file_stat[1]
+                else:
+                    exit("error in file name "+file_name)
 
         record.append(steps / slots)
         l_records.append(record)
@@ -64,7 +66,7 @@ def di_func(array):
 plt.rcParams.update({'font.size': 9.00})
 fig1, ax1 = plt.subplots(figsize=(5, 1.5))
 
-ax1.plot(di_func(leaderTimeouts), quePaxaAverage, 'b.-', label="QuePaxa")
+ax1.plot(di_func(leaderTimeouts), quePaxaAverage, 'g.-', label="QuePaxa")
 ax1.axvline(x=179.83, linestyle='dotted', color='m', label='Round trip latency')
 
 ax1.set_xscale('log')

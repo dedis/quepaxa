@@ -8,8 +8,8 @@ from performance_extract import *
 
 numIter = sys.argv[1]
 
-if int(numIter) < 4:
-    exit("at least 4 iterations needed")
+if int(numIter) < 3:
+    exit("at least 3 iterations needed")
 
 iterations = list(range(1, int(numIter) + 1))
 leaderTimeouts = [50000, 100000, 150000, 200000, 250000, 300000, 350000, 400000, 450000, 500000, 550000,
@@ -134,9 +134,9 @@ plt.rcParams.update({'font.size': 9.00})
 fig1, ax1 = plt.subplots(figsize=(5, 1.5))
 
 
-ax1.plot(di_func(leaderTimeouts), quepaxa_throughput, 'b.-', label="QuePaxa")
-ax1.plot(di_func(leaderTimeouts), paxos_throughput, 'y*-', label="Multi-Paxos")
-ax1.plot(di_func(leaderTimeouts), raft_throughput, 'gx-', label="Raft")
+ax1.plot(di_func(leaderTimeouts), quepaxa_throughput, 'g.-', label="QuePaxa")
+ax1.plot(di_func(leaderTimeouts), paxos_throughput, 'c*-', label="Multi-Paxos")
+ax1.plot(di_func(leaderTimeouts), raft_throughput, 'rx-', label="Raft")
 ax1.axvline(x = 179.83, linestyle='dotted',  color = 'm', label = 'Round trip latency')
 
 ax1.set_xscale('log')

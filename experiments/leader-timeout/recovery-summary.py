@@ -4,8 +4,8 @@ from threading import Barrier, Thread
 
 numIter = sys.argv[1]
 
-if int(numIter) < 4:
-    exit("at least 4 iterations needed")
+if int(numIter) < 3:
+    exit("at least 3 iterations needed")
 
 leaderTimeouts = [50000, 100000, 150000, 200000, 250000, 300000, 350000, 400000, 450000, 500000, 550000,
                   600000, 650000, 750000]
@@ -16,9 +16,9 @@ def execute(timeout_l, barrier):
     os.system("python3 experiments/leader-timeout/timeout_summary.py " + numIter + " " + str(timeout_l))
     barrier.wait()
     print("finished " + str(timeout_l))
+    sys.stdout.flush()
 
 
-sys.stdout.flush()
 barrier = Barrier(len(leaderTimeouts) + 1)
 
 for timeout in leaderTimeouts:
@@ -76,9 +76,9 @@ def di_func(array):
 plt.rcParams.update({'font.size': 9.00})
 fig1, ax1 = plt.subplots(figsize=(5, 1.5))
 
-ax1.plot(di_func(quepaxa_timeouts), quepaxa_recovery, 'b.-', label="QuePaxa")
-ax1.plot(di_func(paxos_timeouts), paxos_recovery, 'y*-', label="Multi-Paxos")
-ax1.plot(di_func(raft_timeouts), raft_recovery, 'gx-', label="Raft")
+ax1.plot(di_func(quepaxa_timeouts), quepaxa_recovery, 'g.-', label="QuePaxa")
+ax1.plot(di_func(paxos_timeouts), paxos_recovery, 'c*-', label="Multi-Paxos")
+ax1.plot(di_func(raft_timeouts), raft_recovery, 'rx-', label="Raft")
 ax1.axvline(x = 179.83, linestyle='dotted',  color = 'm', label = 'Round trip latency')
 
 ax1.set_xscale('log')
@@ -86,7 +86,7 @@ ax1.set_yscale('log')
 ax1.grid()
 ax1.set_xticks([50,100, 200, 300, 500])
 ax1.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-# ax1.set_yticks([100, 1000,25000])
+ax1.set_yticks([100, 500, 1000,21000])
 ax1.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
 

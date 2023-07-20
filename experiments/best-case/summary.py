@@ -287,7 +287,7 @@ if setting == "LAN":
 
 
 if setting == "LAN":
-    plt.plot(di_func(quepaxa_1_throughput), di_func(quepaxa_1_tail), 'b.-', label="QuePaxa-Optimized")
+    plt.plot(di_func(quepaxa_1_throughput), di_func(quepaxa_1_tail), 'b.-', label="QuePaxa-LAN")
 
 plt.plot(di_func(quepaxa_0_throughput), di_func(quepaxa_0_tail), 'g.-', label="QuePaxa")
 plt.plot(di_func(paxos_v1_throughput), di_func(paxos_v1_tail), 'r*-', label="Multi-Paxos-I1")

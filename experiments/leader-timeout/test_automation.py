@@ -3,13 +3,13 @@ import sys
 
 numIter = sys.argv[1]
 
-if int(numIter) < 4:
-    exit("at least 4 iterations needed")
+if int(numIter) < 3:
+    exit("at least 3 iterations needed")
 
 os.system("/bin/bash experiments/setup-5/setup.sh")
 
 leaderTimeouts = [1000, 20000, 50000, 100000, 150000, 200000, 250000, 300000, 350000, 400000, 450000, 500000, 550000,
-                  600000, 650000, 750000]
+                  600000, 650000, 750000, 85000]
 
 iterations = list(range(1, int(numIter) + 1))
 modes = ["performance", "recovery"]

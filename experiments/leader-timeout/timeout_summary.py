@@ -3,8 +3,8 @@ import sys
 numIter = sys.argv[1]
 timeout = sys.argv[2]
 
-if int(numIter) < 4:
-    exit("at least 4 iterations needed")
+if int(numIter) < 3:
+    exit("at least 3 iterations needed")
 
 iterations = list(range(1, int(numIter) + 1))
 
@@ -41,7 +41,8 @@ def binToMiiliSeconds(times):  # times is a microseconds array
     index = 0
     for i in x:
         count = 0
-        for t in times[index:]:
+        index_l = index
+        for t in times[index_l:]:
             if prev * 1000 < t < i * 1000:
                 count = count + 1
             if t >= i * 1000:
