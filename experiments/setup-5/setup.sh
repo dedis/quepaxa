@@ -1,7 +1,7 @@
 pwd=$(pwd)
 . "${pwd}"/experiments/setup-5/ip.sh
 
-reset_directory="rm -r /home/${user_name}/ ; mkdir -p /home/${user_name}/raxos; mkdir -p /home/${user_name}/raxos/logs"
+reset_directory="rm -r /home/${user_name}/raxos/ ; mkdir -p /home/${user_name}/raxos; mkdir -p /home/${user_name}/raxos/logs"
 local_binary_path="${pwd}/experiments/binary/"
 replica_home_path="/home/${user_name}/raxos/"
 
