@@ -14,7 +14,7 @@ python3 experiments/python/paxos-config.py   5 5 ${replica1_ip} ${replica2_ip} $
 for i in "${machines[@]}"
 do
    echo "copying files to ${i}"
-   sshpass ssh "$i" -i ${cert} "${reset_directory}"
+   sshpass ssh -o "StrictHostKeyChecking no" "$i" -i ${cert} "${reset_directory}"
    scp -r -i ${cert} ${local_binary_path} "$i":${replica_home_path}
 done
 
