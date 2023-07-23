@@ -73,7 +73,7 @@ ax1.set_xscale('log')
 ax1.grid()
 ax1.set_xticks([50, 100, 300, 500])
 ax1.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-ax1.set_yticks([1,2, 3,4,5])
+ax1.set_yticks([1,2, 3,4])
 ax1.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
 plt.xlabel('Leader Timeout / Hedging Delay (ms)')
