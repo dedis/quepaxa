@@ -287,9 +287,9 @@ if setting == "LAN":
 
 
 if setting == "LAN":
-    plt.plot(di_func(quepaxa_1_throughput), di_func(quepaxa_1_tail), 'b.-', label="QuePaxa-LAN")
+    plt.plot(di_func(quepaxa_1_throughput), di_func(quepaxa_1_tail), 'g.-', label="QuePaxa-LAN")
 
-plt.plot(di_func(quepaxa_0_throughput), di_func(quepaxa_0_tail), 'g.-', label="QuePaxa")
+plt.plot(di_func(quepaxa_0_throughput), di_func(quepaxa_0_tail), 'b.-', label="QuePaxa")
 plt.plot(di_func(paxos_v1_throughput), di_func(paxos_v1_tail), 'c*-', label="Multi-Paxos")
 # plt.plot(di_func(paxos_v2_throughput), di_func(paxos_v2_tail), 'r*-', label="Multi-Paxos-I2")
 plt.plot(di_func(epaxos_no_exec_throughput), di_func(epaxos_no_exec_tail), 'mx-', label="Epaxos-commit")
@@ -320,9 +320,9 @@ if setting == "WAN":
     ax.set_ylim([200, 800])
 
 if setting == "LAN":
-    plt.plot(di_func(quepaxa_1_throughput), di_func(quepaxa_1_latency), 'b.-', label="QuePaxa-Optimized")
+    plt.plot(di_func(quepaxa_1_throughput), di_func(quepaxa_1_latency), 'g.-', label="QuePaxa-LAN")
 
-plt.plot(di_func(quepaxa_0_throughput), di_func(quepaxa_0_latency), 'g.-', label="QuePaxa")
+plt.plot(di_func(quepaxa_0_throughput), di_func(quepaxa_0_latency), 'b.-', label="QuePaxa")
 plt.plot(di_func(paxos_v1_throughput), di_func(paxos_v1_latency), 'c*-', label="Multi-Paxos")
 # plt.plot(di_func(paxos_v2_throughput), di_func(paxos_v2_latency), 'r*-', label="Multi-Paxos-I2")
 plt.plot(di_func(epaxos_no_exec_throughput), di_func(epaxos_no_exec_latency), 'mx-', label="Epaxos-commit")
