@@ -3,22 +3,22 @@ pwd=$(pwd)
 cert=${pwd}/experiments/private_key_aws/pasindu2023.pem
 user_name="ubuntu"
 
-replica1_name=ec2-18-176-215-125.ap-northeast-1.compute.amazonaws.com
+replica1_name=ec2-35-93-7-223.us-west-2.compute.amazonaws.com
 replica1=${user_name}@${replica1_name}
 
-replica2_name=ec2-3-109-183-37.ap-south-1.compute.amazonaws.com
+replica2_name=ec2-35-165-6-8.us-west-2.compute.amazonaws.com
 replica2=${user_name}@${replica2_name}
 
-replica3_name=ec2-3-0-51-53.ap-southeast-1.compute.amazonaws.com
+replica3_name=ec2-54-184-246-145.us-west-2.compute.amazonaws.com
 replica3=${user_name}@${replica3_name}
 
-replica4_name=ec2-54-216-10-235.eu-west-1.compute.amazonaws.com
+replica4_name=ec2-54-212-114-230.us-west-2.compute.amazonaws.com
 replica4=${user_name}@${replica4_name}
 
-replica5_name=ec2-18-228-219-145.sa-east-1.compute.amazonaws.com
+replica5_name=ec2-34-222-4-7.us-west-2.compute.amazonaws.com
 replica5=${user_name}@${replica5_name}
 
-client1_name=ec2-43-207-237-241.ap-northeast-1.compute.amazonaws.com
+client1_name=ec2-54-212-103-170.us-west-2.compute.amazonaws.com
 client1=${user_name}@${client1_name}
 
 client2_name=ec2-3-110-177-243.ap-south-1.compute.amazonaws.com
@@ -37,13 +37,13 @@ declare -a machines=(${replica1} ${replica2} ${replica3} ${replica4} ${replica5}
 declare -a machines_tune=(${replica1} ${replica2} ${replica3} ${replica4} ${replica5} ${client1})
 echo "ip addresses loaded"
 
-replica1_ip="18.176.215.125"
-replica2_ip="3.109.183.37"
-replica3_ip="3.0.51.53"
-replica4_ip="54.216.10.235"
-replica5_ip="18.228.219.145"
+replica1_ip="35.93.7.223"
+replica2_ip="35.165.6.8"
+replica3_ip="54.184.246.145"
+replica4_ip="54.212.114.230"
+replica5_ip="34.222.4.7"
 
-client1_ip="43.207.237.241"
+client1_ip="54.212.103.170"
 client2_ip="3.110.177.243"
 client3_ip="13.229.139.178"
 client4_ip="3.253.155.13"
