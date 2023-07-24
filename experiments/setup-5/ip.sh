@@ -21,16 +21,16 @@ replica5=${user_name}@${replica5_name}
 client1_name=ec2-54-212-103-170.us-west-2.compute.amazonaws.com
 client1=${user_name}@${client1_name}
 
-client2_name=ec2-3-110-177-243.ap-south-1.compute.amazonaws.com
+client2_name=ec2-54-212-103-170.us-west-2.compute.amazonaws.com
 client2=${user_name}@${client2_name}
 
-client3_name=ec2-13-229-139-178.ap-southeast-1.compute.amazonaws.com
+client3_name=ec2-54-212-103-170.us-west-2.compute.amazonaws.com
 client3=${user_name}@${client3_name}
 
-client4_name=ec2-3-253-155-13.eu-west-1.compute.amazonaws.com
+client4_name=ec2-54-212-103-170.us-west-2.compute.amazonaws.com
 client4=${user_name}@${client4_name}
 
-client5_name=ec2-52-67-23-103.sa-east-1.compute.amazonaws.com
+client5_name=ec2-54-212-103-170.us-west-2.compute.amazonaws.com
 client5=${user_name}@${client5_name}
 
 declare -a machines=(${replica1} ${replica2} ${replica3} ${replica4} ${replica5} ${client1} ${client2} ${client3} ${client4} ${client5})
