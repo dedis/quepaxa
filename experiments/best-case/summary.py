@@ -230,7 +230,6 @@ for p in paxosV2Summary:
     paxos_v2_latency.append(p[3])
     paxos_v2_tail.append(p[4])
 
-
 rabia_throughput = []
 rabia_latency = []
 rabia_tail = []
@@ -248,7 +247,6 @@ quepaxa_1_throughput = []
 quepaxa_1_latency = []
 quepaxa_1_tail = []
 
-
 for ra in quePaxaSummary:
     if ra[0] == "quepaxa-1":
         quepaxa_1_throughput.append(ra[2])
@@ -260,8 +258,8 @@ for ra in quePaxaSummary:
         quepaxa_0_latency.append(ra[3])
         quepaxa_0_tail.append(ra[4])
 
-
 import matplotlib.pyplot as plt
+
 
 def di_func(array):
     returnList = []
@@ -286,12 +284,8 @@ if setting == "LAN":
 # ax.set_ylim([0, 5000])
 
 
-if setting == "LAN":
-    plt.plot(di_func(quepaxa_1_throughput), di_func(quepaxa_1_tail), 'g.-', label="QuePaxa-LAN")
-
-plt.plot(di_func(quepaxa_0_throughput), di_func(quepaxa_0_tail), 'b.-', label="QuePaxa")
+plt.plot(di_func(quepaxa_1_throughput), di_func(quepaxa_1_tail), 'b.-', label="QuePaxa")
 plt.plot(di_func(paxos_v1_throughput), di_func(paxos_v1_tail), 'c*-', label="Multi-Paxos")
-# plt.plot(di_func(paxos_v2_throughput), di_func(paxos_v2_tail), 'r*-', label="Multi-Paxos-I2")
 plt.plot(di_func(epaxos_no_exec_throughput), di_func(epaxos_no_exec_tail), 'mx-', label="Epaxos-commit")
 plt.plot(di_func(epaxos_exec_throughput), di_func(epaxos_exec_tail), 'yo-.', label="Epaxos-exec")
 plt.plot(di_func(rabia_throughput), di_func(rabia_tail), 'k-', label="Rabia")
@@ -319,12 +313,8 @@ if setting == "WAN":
     #     ax.set_xlim([0, 360])
     ax.set_ylim([200, 800])
 
-if setting == "LAN":
-    plt.plot(di_func(quepaxa_1_throughput), di_func(quepaxa_1_latency), 'g.-', label="QuePaxa-LAN")
-
-plt.plot(di_func(quepaxa_0_throughput), di_func(quepaxa_0_latency), 'b.-', label="QuePaxa")
+plt.plot(di_func(quepaxa_1_throughput), di_func(quepaxa_1_latency), 'b.-', label="QuePaxa")
 plt.plot(di_func(paxos_v1_throughput), di_func(paxos_v1_latency), 'c*-', label="Multi-Paxos")
-# plt.plot(di_func(paxos_v2_throughput), di_func(paxos_v2_latency), 'r*-', label="Multi-Paxos-I2")
 plt.plot(di_func(epaxos_no_exec_throughput), di_func(epaxos_no_exec_latency), 'mx-', label="Epaxos-commit")
 plt.plot(di_func(epaxos_exec_throughput), di_func(epaxos_exec_latency), 'yo-.', label="Epaxos-exec")
 plt.plot(di_func(rabia_throughput), di_func(rabia_latency), 'k-', label="Rabia")
