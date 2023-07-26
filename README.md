@@ -49,14 +49,6 @@ In this section, we explain how to build, install and run ```QuePaxa``` in a sin
 
 #####  Setup
 
-- First log into the VM using ssh
-  ```ssh -i cert username@x.x.x.x```
-  
-  where,
-  ```cert```: the private key of the VM
- ```username```: the user name of VM
- ```x.x.x.x``` the VM name
-
 - install ```python pip3```, ```matplotlib``` and ```go 1.19.5```
   
   ```sudo apt update```;
