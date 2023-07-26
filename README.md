@@ -33,8 +33,6 @@ configuration parameters.
 
 - how to read ```QuePaxa``` codebase
 
-- artifact evaluation guidelines for AWS
-
 ### How to build and run QuePaxa
 
 In this section, we explain how to build, install and run ```QuePaxa``` in a single VM
