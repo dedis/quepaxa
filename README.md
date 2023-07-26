@@ -70,11 +70,8 @@ In this section, we explain how to build, install and run ```QuePaxa``` in a sin
 
   ```
   raxos/replica/src
-
   raxos/replica
-
   raxos/client/cmd
-
   raxos/client
   ```
 
