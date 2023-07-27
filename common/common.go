@@ -1,0 +1,102 @@
+package common
+
+import (
+	"bytes"
+	"encoding/gob"
+	"raxos/proto"
+	"time"
+)
+
+// this file defines the data structures and timer that are common to client and the replica
+
+/*
+	RPC pair assigns a unique id to each type of message defined in the proto files
+*/
+
+type RPCPair struct {
+	Code uint8
+	Obj  proto.Serializable
+}
+
+/*
+	Outgoing RPC assigns a rpc to its intended destination peer, the peer can be a replica or a client
+*/
+
+type OutgoingRPC struct {
+	RpcPair *RPCPair
+	Peer    int64
+}
+
+/*
+	Timer for triggering event upon timeout
+*/
+
+type TimerWithCancel struct {
+	t *time.Timer
+	d time.Duration
+	c chan interface{}
+	f func()
+}
+
+/*
+	instantiate a new timer with cancel
+*/
+
+func NewTimerWithCancel(d time.Duration) *TimerWithCancel {
+	t := &TimerWithCancel{}
+	t.d = d
+	t.c = make(chan interface{}, 50)
+	return t
+}
+
+/*
+	Start the timer
+*/
+
+func (t *TimerWithCancel) Start() {
+	t.t = time.NewTimer(t.d)
+	go func() {
+		select {
+		case <-t.t.C:
+			t.f()
+			return
+		case <-t.c:
+			return
+		}
+	}()
+}
+
+/*
+	Set a function to call when timeout
+*/
+
+func (t *TimerWithCancel) SetTimeoutFuntion(f func()) {
+	t.f = f
+}
+
+/*
+	Cancel timer
+*/
+func (t *TimerWithCancel) Cancel() {
+	select {
+	case t.c <- nil:
+		// Success
+		break
+	default:
+		//Unsuccessful
+		break
+	}
+
+}
+
+/*
+	A util function to get the size of a message in bytes
+*/
+
+func GetRealSizeOf(v interface{}) (int, error) {
+	b := new(bytes.Buffer)
+	if err := gob.NewEncoder(b).Encode(v); err != nil {
+		return 0, err
+	}
+	return b.Len(), nil
+}
