@@ -74,7 +74,7 @@ In this section, we explain how to build, install and run ```QuePaxa``` in a sin
   
   ```build.sh``` will produce an error ```protoc: command not found```, if you have not installed the ```protoc``` compiler correctly. 
 
-  NOTE: The outputs might show ```raxos``` and ```QuePaxa``` interchangeably. This is because, ```QuePaxa``` code was initially names ```Raxos``` and later renamed to ```QuePaxa```. 
+  NOTE: The outputs might show ```raxos``` and ```QuePaxa``` interchangeably. This is because, ```QuePaxa``` code was initially named ```Raxos``` and later renamed to ```QuePaxa```. 
 
 - run 5 replicas and 5 submitters in the same VM with ```50k cmd/sec``` aggregate arrival rate
   
@@ -115,7 +115,7 @@ In this section, we explain how to build, install and run ```QuePaxa``` in a sin
   TEST PASS
   ```
 
-- Run integration tests that checks the SMR correctness of ```QuePaxa``` under different configuration parameters
+- Run integration tests that check the SMR correctness of ```QuePaxa``` under different configuration parameters
 
   ```python3 integration-test/python/integration-automation.py```
 
