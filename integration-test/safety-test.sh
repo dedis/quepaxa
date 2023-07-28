@@ -14,9 +14,6 @@ rm -r configuration/local
 mkdir -p configuration/local
 python3 configuration/config-generate.py 5 5 0.0.0.0 0.0.0.0 0.0.0.0 0.0.0.0 0.0.0.0 0.0.0.0 0.0.0.0 0.0.0.0 0.0.0.0 0.0.0.0 > configuration/local/configuration.yml
 
-# build the project
-mage generate && mage build
-
 raxos_path="replica/bin/replica"
 ctl_path="client/bin/client"
 output_path="logs/${leaderTimeout}/${serverMode}/${leaderMode}/${pipeline}/${batchTime}/${batchSize}/${arrivalRate}/${closeLoopWindow}/${requestPropagationTime}/${asynchronousSimulationTime}/"

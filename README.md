@@ -49,33 +49,34 @@ In this section, we explain how to build, install and run ```QuePaxa``` in a sin
 
 - install ```python pip3```, ```matplotlib``` and ```go 1.19.5```
   
-  ```sudo apt update```;
-  ```sudo apt install python3-pip; pip3 install matplotlib```;
-  ```rm -rf /usr/local/go```;
-  ```wget https://go.dev/dl/go1.19.5.linux-amd64.tar.gz```;
-  ```sudo tar -C /usr/local -xzf go1.19.5.linux-amd64.tar.gz```;
-  ```export PATH=$PATH:/usr/local/go/bin```;
+  ```
+  sudo apt update
+  sudo apt install python3-pip; pip3 install matplotlib
+  rm -rf /usr/local/go
+  wget https://go.dev/dl/go1.19.5.linux-amd64.tar.gz
+  sudo tar -C /usr/local -xzf go1.19.5.linux-amd64.tar.gz
+  export PATH=$PATH:/usr/local/go/bin
+  ```
 
   Check if the installation is successful by issueing the command: ```go version```
   which should output ```go1.19.5 linux/amd64```.
 
+  This repository uses [Protocol Buffers](https://developers.google.com/protocol-buffers/).
+  Install the protoc compiler by following the [Protocol Buffers](https://developers.google.com/protocol-buffers/).  
 
 - clone QuePaxa from github and build the project
   
-  ```git clone https://github.com/dedis/quepaxa```;
-  ```cd quepaxa```;
-  ```/bin/bash build.sh```
-
-  If the build process is successful, the final output should look like the following
-
   ```
-  raxos/replica/src
-  raxos/replica
-  raxos/client/cmd
-  raxos/client
+  git clone https://github.com/dedis/quepaxa
+  cd quepaxa
+  /bin/bash build.sh
   ```
+  
+  ```build.sh``` will produce an error ```protoc: command not found```, if you have not installed the ```protoc``` compiler correctly. 
 
-- Run 5 replicas and 5 submitters test using ```50k cmd/sec``` aggregate arrival rate
+  NOTE: The outputs might show ```raxos``` and ```QuePaxa``` interchangeably. This is because, ```QuePaxa``` code was initially names ```Raxos``` and later renamed to ```QuePaxa```. 
+
+- run 5 replicas and 5 submitters in the same VM with ```50k cmd/sec``` aggregate arrival rate
   
   ```/bin/bash integration-test/safety-test.sh 200000 0 0 1 5000 50 10000 100 0 0```
 
@@ -118,7 +119,11 @@ In this section, we explain how to build, install and run ```QuePaxa``` in a sin
 
   ```python3 integration-test/python/integration-automation.py```
 
+  The integration tests consists of 9 tests, each of which exercise ```QuePaxa``` under different leader modes, timeouts and network conditions, using 5 replicas and 5 submitters setup in a single VM.  
   In the ```logs/``` folder you will find the log files corresponding to each test.
+  Each subdirectory of ```logs/``` is indexed as ```logs/leaderTimeout/serverMode/leaderMode/pipeline/batchTime/batchSize/arrivalRate/closeLoopWindow/requestPropagationTime/asynchronousSimulationTime/```
+  Please cross-check with the ```integration-test/python/integration-automation.py``` file to see what parameters are used in each integration subtest, that will help you to locate the output sub-folder in the ```logs/```  
+  
 
 ### How to read QuePaxa code
 
@@ -161,7 +166,6 @@ QuePaxa client supports the following configuration parameters.
 ```QuePaxa``` replica implements the ```QuePaxa``` consensus algorithm and the state machine replication logic.
 ```QuePaxa``` replica supports the following configurations.
 
-- asyncTimeOut int: artificial async timeout in milli seconds (default 500)
 - batchSize int: replica batch size (default 50)
 - batchTime int: replica batch time in micro seconds (default 5000)
 - benchmark int: Benchmark: 0 for KV store and 1 for Redis
@@ -182,6 +186,7 @@ QuePaxa client supports the following configuration parameters.
 - serverMode int: 0 for non-lan-optimized, 1 for lan optimized
 - timeEpochSize int: duration of a time epoch for the attacker in milli seconds (default 500)
 - valLen int: length of value (default 8)
+- asyncTimeOut int: artificial async timeout in milli seconds (default 500)
 
 ```QuePaxa``` replica consists of three layers: ```Proxy```, ```Proposer``` and ```Recorder```.
 
