@@ -1,6 +1,8 @@
 # QuePaxa
 
-```QuePaxa``` is a novel crash fault tolerant and asynchronous consensus algorithm.
+```QuePaxa``` is a crash fault tolerant and asynchronous consensus algorithm.
+
+```QuePaxa``` is described in detail in [QuePaxa Research Paper](https://dl.acm.org/doi/10.1145/3600006.3613150) published at [SOSP 2023](https://sosp2023.mpi-sws.org/program.html)”,
 
 The main innovations of ```QuePaxa```, compared to the existing consensus algorithms such as ```Multi-Paxos```, ```Raft```, ```Rabia``` and ```EPaxos``` are threefold:
 
@@ -11,8 +13,6 @@ whereas for ```Raft``` and ```Multi-Paxos```, a conservatively high timeout shou
 
 - ```QuePaxa``` dynamically tunes the protocol at runtime to maximize the performance.
 
-
-Our SOSP paper, ```QuePaxa: Escaping the tyranny of timeouts in consensus``` describes QuePaxa's design and evaluation in detail.
 
 ## Project Keywords
 
